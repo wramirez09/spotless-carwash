@@ -12,11 +12,11 @@ html {
   }
 }
 
-/* Anchor jumps land the section heading in the upper third of the
-   viewport rather than under the sticky nav. The clamp scales offset
-   from ~96px on small phones up to ~30vh on desktops. */
+/* Anchor jumps land the section heading just below the sticky nav with
+   breathing room — keeps the heading near the top on desktops while
+   still clearing the nav on phones. */
 section[id] {
-  scroll-margin-top: clamp(96px, 22vh, 240px);
+  scroll-margin-top: clamp(96px, 12vh, 140px);
 }
 
 body {
