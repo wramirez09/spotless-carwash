@@ -1,0 +1,535 @@
+/* ============================================================================
+   SPOTLESS AUTO WASH - COMPETITIVE INTELLIGENCE REPORT
+   Professional Report Styling
+   ============================================================================ */
+
+/* Root Variables */
+:root {
+    --primary-color: #1e40af;
+    --primary-light: #3b82f6;
+    --primary-dark: #1e3a8a;
+    --secondary-color: #059669;
+    --secondary-light: #10b981;
+    --accent-color: #f59e0b;
+    --danger-color: #dc2626;
+    --success-color: #16a34a;
+    --neutral-50: #f9fafb;
+    --neutral-100: #f3f4f6;
+    --neutral-200: #e5e7eb;
+    --neutral-300: #d1d5db;
+    --neutral-400: #9ca3af;
+    --neutral-600: #4b5563;
+    --neutral-700: #374151;
+    --neutral-800: #1f2937;
+    --neutral-900: #111827;
+
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================================================
+   RESET & TYPOGRAPHY
+   ============================================================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Open Sans', 'Helvetica Neue', sans-serif;
+    line-height: 1.6;
+    color: var(--neutral-800);
+    background-color: var(--neutral-50);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    line-height: 1.2;
+    font-weight: 700;
+    margin-top: var(--spacing-xl);
+    margin-bottom: var(--spacing-md);
+    color: var(--neutral-900);
+}
+
+h1 {
+    font-size: 2.5rem;
+    margin-bottom: var(--spacing-lg);
+}
+
+h2 {
+    font-size: 2rem;
+    color: var(--primary-dark);
+    border-bottom: 3px solid var(--primary-light);
+    padding-bottom: var(--spacing-md);
+}
+
+h3 {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+h4 {
+    font-size: 1.25rem;
+    color: var(--neutral-800);
+}
+
+h5 {
+    font-size: 1.1rem;
+    color: var(--neutral-800);
+}
+
+p {
+    margin-bottom: var(--spacing-md);
+}
+
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
+strong {
+    font-weight: 600;
+}
+
+/* ============================================================================
+   CONTAINER & LAYOUT
+   ============================================================================ */
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--spacing-xl);
+}
+
+/* ============================================================================
+   HEADER
+   ============================================================================ */
+
+.header {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+    color: white;
+    padding: var(--spacing-2xl);
+    border-radius: 8px;
+    margin-bottom: var(--spacing-2xl);
+    box-shadow: var(--shadow-lg);
+}
+
+.header h1 {
+    margin-bottom: var(--spacing-lg);
+    color: white;
+}
+
+.metadata {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.metadata p {
+    margin-bottom: var(--spacing-sm);
+    font-size: 0.95rem;
+}
+
+.metadata a {
+    color: #dbeafe;
+}
+
+.metadata a:hover {
+    color: white;
+}
+
+.status-moderate {
+    background-color: rgba(255, 255, 255, 0.2);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+/* ============================================================================
+   SECTIONS
+   ============================================================================ */
+
+.section {
+    background: white;
+    padding: var(--spacing-2xl);
+    margin-bottom: var(--spacing-2xl);
+    border-radius: 8px;
+    box-shadow: var(--shadow-md);
+}
+
+.section ul,
+.section ol {
+    margin-left: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+}
+
+.section li {
+    margin-bottom: var(--spacing-sm);
+}
+
+/* ============================================================================
+   INSIGHT BOXES
+   ============================================================================ */
+
+.insight-box {
+    padding: var(--spacing-lg);
+    border-left: 4px solid var(--primary-color);
+    background-color: var(--neutral-50);
+    margin: var(--spacing-lg) 0;
+    border-radius: 4px;
+}
+
+.insight-box.highlight {
+    border-left-color: var(--accent-color);
+    background-color: #fffbeb;
+}
+
+.insight-box.opportunity {
+    border-left-color: var(--success-color);
+    background-color: #f0fdf4;
+}
+
+.insight-box h4,
+.insight-box strong {
+    display: block;
+    margin-bottom: var(--spacing-sm);
+}
+
+.insight-box ul {
+    margin-left: var(--spacing-lg);
+}
+
+/* ============================================================================
+   RECOMMENDATIONS
+   ============================================================================ */
+
+.recommendations {
+    counter-reset: recs;
+    list-style: none;
+}
+
+.recommendations li {
+    counter-increment: recs;
+    padding: var(--spacing-md) var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+    background-color: var(--neutral-100);
+    border-left: 4px solid var(--primary-color);
+    border-radius: 4px;
+}
+
+.recommendations li:before {
+    content: counter(recs);
+    font-weight: 700;
+    color: white;
+    background-color: var(--primary-color);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: var(--spacing-md);
+    font-size: 0.9rem;
+}
+
+/* ============================================================================
+   TABLES
+   ============================================================================ */
+
+.table-wrapper {
+    overflow-x: auto;
+    margin: var(--spacing-lg) 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+}
+
+thead {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+th {
+    padding: var(--spacing-md);
+    text-align: left;
+    font-weight: 600;
+    border: 1px solid var(--neutral-200);
+}
+
+td {
+    padding: var(--spacing-md);
+    border: 1px solid var(--neutral-200);
+}
+
+tbody tr:nth-child(odd) {
+    background-color: var(--neutral-50);
+}
+
+tbody tr:hover {
+    background-color: var(--neutral-100);
+}
+
+.highlight-row {
+    background-color: #fff3cd !important;
+    font-weight: 600;
+}
+
+.competitors-table td:first-child,
+.pricing-table td:first-child {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.comparison-table th,
+.comparison-table td {
+    font-size: 0.95rem;
+}
+
+.feature-table .center {
+    text-align: center;
+    font-weight: 600;
+}
+
+.feature-table .yes {
+    color: var(--success-color);
+}
+
+.feature-table .category-header {
+    background-color: var(--neutral-100);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    color: var(--neutral-700);
+}
+
+/* ============================================================================
+   COMPETITOR PROFILES
+   ============================================================================ */
+
+.competitor-profile {
+    background-color: var(--neutral-50);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+    border-radius: 6px;
+    border-left: 4px solid var(--primary-color);
+}
+
+.competitor-profile h3 {
+    color: var(--primary-dark);
+    margin-top: 0;
+}
+
+.profile-meta {
+    background-color: white;
+    padding: var(--spacing-lg);
+    border-radius: 4px;
+    margin: var(--spacing-lg) 0;
+    border-left: 3px solid var(--primary-light);
+}
+
+.profile-meta p {
+    margin-bottom: var(--spacing-sm);
+    font-size: 0.95rem;
+}
+
+/* ============================================================================
+   SWOT ANALYSIS
+   ============================================================================ */
+
+.swot-box {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-lg);
+    margin: var(--spacing-lg) 0;
+}
+
+.swot-box.full-width {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.swot-section {
+    padding: var(--spacing-lg);
+    border-radius: 6px;
+}
+
+.swot-section h5 {
+    margin-top: 0;
+    margin-bottom: var(--spacing-md);
+}
+
+.swot-section ul {
+    list-style: none;
+}
+
+.swot-section li {
+    padding-left: var(--spacing-lg);
+    position: relative;
+    margin-bottom: var(--spacing-sm);
+}
+
+.swot-section li:before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    font-weight: bold;
+}
+
+.swot-section.strengths {
+    background-color: #ecfdf5;
+    border: 2px solid var(--success-color);
+}
+
+.swot-section.strengths h5 {
+    color: var(--success-color);
+}
+
+.swot-section.weaknesses {
+    background-color: #fee2e2;
+    border: 2px solid var(--danger-color);
+}
+
+.swot-section.weaknesses h5 {
+    color: var(--danger-color);
+}
+
+.swot-section.opportunities {
+    background-color: #fef3c7;
+    border: 2px solid var(--accent-color);
+}
+
+.swot-section.opportunities h5 {
+    color: #b45309;
+}
+
+.swot-section.threats {
+    background-color: #ede9fe;
+    border: 2px solid #7c3aed;
+}
+
+.swot-section.threats h5 {
+    color: #7c3aed;
+}
+
+/* ============================================================================
+   FOOTER
+   ============================================================================ */
+
+.footer {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--neutral-600);
+    font-size: 0.9rem;
+    border-top: 1px solid var(--neutral-200);
+    margin-top: var(--spacing-2xl);
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+
+@media (max-width: 768px) {
+    .container {
+        padding: var(--spacing-lg);
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+    }
+
+    h3 {
+        font-size: 1.25rem;
+    }
+
+    .header {
+        padding: var(--spacing-xl);
+    }
+
+    .metadata {
+        grid-template-columns: 1fr;
+    }
+
+    .section {
+        padding: var(--spacing-lg);
+    }
+
+    .swot-box {
+        grid-template-columns: 1fr;
+    }
+
+    .swot-box.full-width {
+        grid-template-columns: 1fr;
+    }
+
+    .table-wrapper {
+        font-size: 0.9rem;
+    }
+
+    th,
+    td {
+        padding: var(--spacing-sm) var(--spacing-xs);
+    }
+
+    .feature-table .center {
+        padding: var(--spacing-xs);
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    h2 {
+        font-size: 1.25rem;
+    }
+
+    h3 {
+        font-size: 1.1rem;
+    }
+
+    .header {
+        padding: var(--spacing-lg);
+    }
+
+    .section {
+        padding: var(--spacing-lg);
+    }
+
+    .table-wrapper {
+        font-size: 0.8rem;
+    }
+}
