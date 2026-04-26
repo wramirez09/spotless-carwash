@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Anchor jumps land the section heading in the upper third of the
+   viewport rather than under the sticky nav. The clamp scales offset
+   from ~96px on small phones up to ~30vh on desktops. */
+section[id] {
+  scroll-margin-top: clamp(96px, 22vh, 240px);
+}
+
 body {
   -webkit-font-smoothing: antialiased;
 }
