@@ -1,7 +1,9 @@
+import HeroLights from './HeroLights'
+
 const tickerItems = [
   'KEEP IT CLEAN',
   'TOUCHLESS AUTO WASH',
-  'HEATED ENCLOSED BAYS',
+  'HEATED BAYS AT ROOSEVELT RD',
   'OPEN 24 HOURS',
   'SPOT FREE RINSE',
 ]
@@ -39,7 +41,7 @@ export default function Hero() {
               className="w-2 h-2 rounded-full bg-yellow-400"
               style={{ boxShadow: '0 0 0 4px rgba(255,217,61,.18)' }}
             ></span>
-            Forest Park, Illinois · Two locations · Open 24/7
+            Forest Park, Illinois · Two locations · Open 24/7 · Since 1998
           </div>
           <h1 className="display text-[64px] sm:text-[96px] md:text-[140px] lg:text-[168px]">
             <span className="text-yellow-400">S</span>potless
@@ -47,7 +49,10 @@ export default function Hero() {
             Carwash
             <span className="block text-blue-100 text-[0.62em] mt-2">— keep it clean.</span>
           </h1>
-          <p className="mt-7 text-lg max-w-[520px] text-blue-100 leading-relaxed">
+          <p className="mt-5 text-xl md:text-2xl font-bold text-yellow-400 max-w-[640px]">
+            Forest Park's 24/7 touchless car wash.
+          </p>
+          <p className="mt-5 text-lg max-w-[520px] text-blue-100 leading-relaxed">
             Touchless, brushless, tractless &amp; scratchless. Drive in, line up the green light,
             and let the wash do the work. No appointments, no lines, no mess.
           </p>
@@ -78,35 +83,13 @@ export default function Hero() {
             ></span>
             Bay 02 ready · Roosevelt Rd
           </div>
-          <h3 className="mt-3.5 text-[22px] font-extrabold tracking-tight">
+          <h2 className="mt-3.5 text-[22px] font-extrabold tracking-tight">
             Pull up &amp; watch the lights.
-          </h3>
+          </h2>
           <p className="text-[#5b6987] text-sm mt-1">
             Don't enter unless the light is green. Pull forward slowly, let the message guide you.
           </p>
-          <div className="grid grid-cols-3 gap-2.5 mt-4">
-            <div className="aspect-square rounded-xl flex flex-col items-center justify-center gap-1.5 bg-[#0d1a3a] text-white font-bold text-[11px] tracking-[0.12em] uppercase">
-              <div
-                className="w-[34px] h-[34px] rounded-full"
-                style={{ background: '#3a1015', boxShadow: 'inset 0 -6px 12px rgba(0,0,0,.4)' }}
-              ></div>
-              Wait
-            </div>
-            <div className="aspect-square rounded-xl flex flex-col items-center justify-center gap-1.5 bg-[#0d1a3a] text-white font-bold text-[11px] tracking-[0.12em] uppercase">
-              <div
-                className="w-[34px] h-[34px] rounded-full"
-                style={{ background: '#3a2a10', boxShadow: 'inset 0 -6px 12px rgba(0,0,0,.4)' }}
-              ></div>
-              Slow
-            </div>
-            <div className="aspect-square rounded-xl flex flex-col items-center justify-center gap-1.5 bg-[#0d1a3a] text-white font-bold text-[11px] tracking-[0.12em] uppercase">
-              <div
-                className="w-[34px] h-[34px] rounded-full bg-sky-400"
-                style={{ boxShadow: '0 0 22px rgba(91,168,255,.85),inset 0 -6px 12px rgba(0,0,0,.3)' }}
-              ></div>
-              Go
-            </div>
-          </div>
+          <HeroLights />
           <div className="flex justify-between items-center mt-4 pt-3.5 border-t border-dashed border-line text-[13px]">
             <span>Avg. wash time</span>
             <b className="font-extrabold">4 min 30s</b>

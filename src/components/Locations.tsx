@@ -1,26 +1,5 @@
-type Loc = {
-  name: string
-  isNew?: boolean
-  address: [string, string]
-  photo: string
-  gradient: string
-}
-
-const locs: Loc[] = [
-  {
-    name: 'Roosevelt Rd',
-    isNew: true,
-    address: ['7343 Roosevelt Road', 'Forest Park, IL 60130'],
-    photo: '// photo: roosevelt-rd-exterior.jpg',
-    gradient: 'linear-gradient(135deg,#1B4FD9 0%,#0A2A6B 100%)',
-  },
-  {
-    name: 'Madison St',
-    address: ['7802 Madison Street', 'Forest Park, IL 60130'],
-    photo: '// photo: madison-st-exterior.jpg',
-    gradient: 'linear-gradient(135deg,#0A2A6B 0%,#1B4FD9 100%)',
-  },
-]
+import Link from 'next/link'
+import { locations, directionsUrl, type Location } from '@/src/data/locations'
 
 function Pin() {
   return (
@@ -31,7 +10,7 @@ function Pin() {
   )
 }
 
-function Card({ loc }: { loc: Loc }) {
+function Card({ loc }: { loc: Location }) {
   return (
     <article className="bg-white rounded-[22px] overflow-hidden border border-line flex flex-col">
       <div
@@ -39,7 +18,7 @@ function Card({ loc }: { loc: Loc }) {
         style={{ background: loc.gradient }}
       >
         <span className="absolute top-3.5 right-3.5 mono text-[11px] text-white/50 bg-black/20 px-2 py-1 rounded">
-          {loc.photo}
+          {loc.photoCaption}
         </span>
         <h3 className="display text-[48px] m-0 relative">
           {loc.name}
@@ -54,20 +33,20 @@ function Card({ loc }: { loc: Loc }) {
         <div className="flex items-start gap-2.5 text-[#445273] leading-relaxed">
           <Pin />
           <div>
-            {loc.address[0]}
+            {loc.street}
             <br />
-            {loc.address[1]}
+            {loc.city}, {loc.region} {loc.postalCode}
           </div>
         </div>
         <div className="grid grid-cols-3 gap-3.5 py-4 border-y border-dashed border-line">
           <div>
-            <div className="display text-3xl text-blue-500">3</div>
+            <div className="display text-3xl text-blue-500">{loc.selfServeBays}</div>
             <div className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#5b6987] mt-0.5">
               Self-serve bays
             </div>
           </div>
           <div>
-            <div className="display text-3xl text-blue-500">2</div>
+            <div className="display text-3xl text-blue-500">{loc.touchlessBays}</div>
             <div className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#5b6987] mt-0.5">
               Touchless auto
             </div>
@@ -87,21 +66,25 @@ function Card({ loc }: { loc: Loc }) {
             ></span>
             Open now
           </span>
-          <span className="mono text-[13px] text-[#5b6987]">(708) 771-2945</span>
+          <a href={loc.phoneHref} className="mono text-[13px] text-[#5b6987]">
+            {loc.phone}
+          </a>
         </div>
         <div className="flex gap-2.5 mt-auto pt-3.5">
           <a
-            href="#"
+            href={directionsUrl(loc)}
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex-1 py-3 text-center rounded-xl font-bold text-sm bg-blue-500 text-white border border-blue-500 hover:bg-blue-700 transition"
           >
             Get directions
           </a>
-          <a
-            href="#"
+          <Link
+            href={`/locations/${loc.slug}`}
             className="flex-1 py-3 text-center rounded-xl font-bold text-sm border border-line hover:border-blue-500 hover:text-blue-500 transition"
           >
             Site details
-          </a>
+          </Link>
         </div>
       </div>
     </article>
@@ -115,10 +98,10 @@ export default function Locations() {
         <div className="flex items-end justify-between gap-10 mb-10 md:mb-12 flex-wrap">
           <div>
             <div className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.22em] uppercase text-blue-500 mb-2.5">
-              <span className="mono text-[#9aa9c9] font-medium">03 /</span> Locations
+              <span className="mono text-[#5b6987] font-medium">03 /</span> Locations
             </div>
             <h2 className="display text-[40px] sm:text-[56px] md:text-[72px] max-w-[780px] m-0">
-              Two bays in <em className="text-blue-500 yellow-hl">Forest Park</em>.
+              Two locations. Ten bays. All in <em className="text-blue-500 yellow-hl">Forest Park</em>.
             </h2>
           </div>
           <p className="max-w-[380px] text-[#445273] leading-relaxed">
@@ -128,8 +111,8 @@ export default function Locations() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
-          {locs.map((l) => (
-            <Card key={l.name} loc={l} />
+          {locations.map((l) => (
+            <Card key={l.slug} loc={l} />
           ))}
         </div>
       </div>

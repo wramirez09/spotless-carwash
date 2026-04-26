@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useState } from 'react'
 
 const steps = [
@@ -49,14 +51,14 @@ export default function How() {
               slow, hit the stop signal, and let the timer count down.
             </p>
             <div className="flex flex-col gap-5 mt-8">
-              {steps.map((s) => (
-                <div key={s.n} className="flex gap-4 items-start">
+              {steps.map((st) => (
+                <div key={st.n} className="flex gap-4 items-start">
                   <div className="display text-[34px] text-yellow-400 leading-none w-11 shrink-0">
-                    {s.n}
+                    {st.n}
                   </div>
                   <div>
-                    <h4 className="m-0 mb-1 text-[17px] font-extrabold tracking-tight">{s.t}</h4>
-                    <p className="m-0 text-sm text-blue-100">{s.d}</p>
+                    <h3 className="m-0 mb-1 text-[17px] font-extrabold tracking-tight">{st.t}</h3>
+                    <p className="m-0 text-sm text-blue-100">{st.d}</p>
                   </div>
                 </div>
               ))}

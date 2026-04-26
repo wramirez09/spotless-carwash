@@ -12,7 +12,7 @@ const bays: Bay[] = [
   {
     title: ['Touchless', 'Automatic Bays'],
     desc:
-      'Nothing touches your car except soap & water. Pull in, the wash does the rest. Heated enclosed bays at both locations for winter — your car is washed and blown dry inside.',
+      'Nothing touches your car except soap & water. Pull in, the wash does the rest. Heated enclosed bays at our Roosevelt Road location for winter — your car is washed and blown dry inside.',
     features: ['Heated for winter', 'Air cannon dryers', 'Countdown timer', 'Brushless & scratchless'],
     photo: '// photo: auto-bay-interior.jpg',
     bgClass: 'bay-stripe',
@@ -81,7 +81,7 @@ export default function Bays() {
         <div className="flex items-end justify-between gap-10 mb-10 md:mb-12 flex-wrap">
           <div>
             <div className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.22em] uppercase text-blue-500 mb-2.5">
-              <span className="mono text-[#9aa9c9] font-medium">04 /</span> Two ways to wash
+              <span className="mono text-[#5b6987] font-medium">04 /</span> Two ways to wash
             </div>
             <h2 className="display text-[40px] sm:text-[56px] md:text-[72px] max-w-[780px] m-0">
               Sit back, or <em className="text-blue-500 yellow-hl">do it yourself</em>.

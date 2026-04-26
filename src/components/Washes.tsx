@@ -1,58 +1,4 @@
-type Pkg = {
-  num: string
-  name: string
-  price: string
-  features: { text: string; included: boolean }[]
-  featured?: boolean
-}
-
-const packages: Pkg[] = [
-  {
-    num: '01',
-    name: 'Basic',
-    price: '$8',
-    features: [
-      { text: 'Pre-soak', included: true },
-      { text: 'High-pressure rinse', included: true },
-      { text: 'Air cannon dryer', included: false },
-      { text: 'Wheel cleaner', included: false },
-    ],
-  },
-  {
-    num: '02',
-    name: 'Clean',
-    price: '$10',
-    features: [
-      { text: 'Pre-soak & foam', included: true },
-      { text: 'High-pressure rinse', included: true },
-      { text: 'Air cannon dryer', included: true },
-      { text: 'Lustra Shield', included: false },
-    ],
-  },
-  {
-    num: '03',
-    name: 'Spotless',
-    price: '$13',
-    featured: true,
-    features: [
-      { text: 'Undercarriage spray', included: true },
-      { text: 'Foaming brush polish', included: true },
-      { text: 'Air cannon dryer', included: true },
-      { text: 'Spot-free rinse', included: true },
-    ],
-  },
-  {
-    num: '04',
-    name: 'Showroom',
-    price: '$16',
-    features: [
-      { text: 'Triple-foam wax', included: true },
-      { text: 'Lustra Shield seal', included: true },
-      { text: 'Hot wax overhead', included: true },
-      { text: 'Air cannon dryer', included: true },
-    ],
-  },
-]
+import { packages, type Pkg } from '@/src/data/washes'
 
 function Check({ className }: { className: string }) {
   return (
@@ -86,7 +32,7 @@ function Card({ pkg }: { pkg: Pkg }) {
           ))}
         </ul>
         <a
-          href="#"
+          href="#tokens"
           className="mt-auto bg-yellow-400 text-blue-700 text-center py-3 rounded-xl font-bold text-sm border border-yellow-400 hover:bg-white transition"
         >
           Choose {pkg.name}
@@ -97,7 +43,7 @@ function Card({ pkg }: { pkg: Pkg }) {
   return (
     <article className="hover:lift bg-white border border-line rounded-2xl p-6 flex flex-col gap-3.5 hover:-translate-y-1 hover:border-blue-500 hover:shadow-[0_18px_40px_rgba(27,79,217,.12)] transition">
       <div className="flex items-center justify-between">
-        <span className="mono text-xs font-semibold text-[#9aa9c9]">PKG / {pkg.num}</span>
+        <span className="mono text-xs font-semibold text-[#5b6987]">PKG / {pkg.num}</span>
       </div>
       <h3 className="display text-[32px] m-0">{pkg.name}</h3>
       <div className="display text-[54px] leading-none">
@@ -114,7 +60,7 @@ function Card({ pkg }: { pkg: Pkg }) {
           ) : (
             <li
               key={i}
-              className="flex items-start gap-2 text-sm text-[#aab5cd] leading-snug line-through"
+              className="flex items-start gap-2 text-sm text-[#5b6987] leading-snug line-through"
             >
               <Check className="w-4 h-4 text-[#cfd6e6] mt-0.5 shrink-0" />
               {f.text}
@@ -123,7 +69,7 @@ function Card({ pkg }: { pkg: Pkg }) {
         )}
       </ul>
       <a
-        href="#"
+        href="#tokens"
         className="mt-auto bg-paper text-ink text-center py-3 rounded-xl font-bold text-sm border border-line hover:bg-blue-500 hover:text-white hover:border-blue-500 transition"
       >
         Choose {pkg.name}
@@ -139,7 +85,7 @@ export default function Washes() {
         <div className="flex items-end justify-between gap-10 mb-10 md:mb-12 flex-wrap">
           <div>
             <div className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.22em] uppercase text-blue-500 mb-2.5">
-              <span className="mono text-[#9aa9c9] font-medium">01 /</span> Wash packages
+              <span className="mono text-[#5b6987] font-medium">01 /</span> Wash packages
             </div>
             <h2 className="display text-[40px] sm:text-[56px] md:text-[72px] max-w-[780px] m-0">
               Four ways to make your car <em className="text-blue-500 yellow-hl">shine</em>.

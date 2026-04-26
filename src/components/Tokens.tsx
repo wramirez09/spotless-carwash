@@ -27,12 +27,17 @@ export default function Tokens() {
               <br />
               save a stack of <em className="text-yellow-400">cash</em>.
             </h2>
+            <p className="text-yellow-400 font-bold leading-relaxed max-w-[440px] mb-3">
+              Each token = one Spotless wash ($13 value). Never expires. Works at both locations.
+            </p>
             <p className="text-blue-100 leading-relaxed max-w-[440px] mb-7">
-              Pre-paid tokens for the automatic bays — works at both Forest Park locations. Stash
-              'em in the glovebox and skip the cash station.
+              Pre-paid tokens for the automatic bays. Stash 'em in the glovebox and skip the cash
+              station. Great as gifts — buy in person at either bay station, or online below.
             </p>
             <a
-              href="#"
+              href="https://www.paypal.com/ncp/payment/VZ896M2HPTEPC"
+              target="_blank"
+              rel="noopener noreferrer"
               className="self-start inline-flex items-center gap-2.5 px-5 py-3.5 rounded-full font-bold text-[15px] bg-yellow-400 text-blue-700 hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(255,217,61,.35)] transition"
             >
               Buy tokens
@@ -45,10 +50,12 @@ export default function Tokens() {
             {tiers.map((t) => (
               <div
                 key={t.qty}
-                className="bg-yellow-400 text-blue-700 rounded-full px-7 py-4.5 flex items-center gap-4.5 display shadow-[0_12px_30px_rgba(0,0,0,.3)] w-fit"
+                className="bg-yellow-400 text-blue-700 rounded-full px-7 py-[18px] flex items-center gap-[18px] display shadow-[0_12px_30px_rgba(0,0,0,.3)] w-fit"
               >
-                <span className="text-[38px] leading-none">{t.qty}</span>
-                <span className="text-sm not-italic font-sans font-extrabold tracking-[0.08em] uppercase border-l-2 border-blue-700 pl-4.5">
+                <span className="text-[38px] leading-none pr-[18px] border-r-2 border-blue-700">
+                  {t.qty}
+                </span>
+                <span className="text-sm not-italic font-sans font-extrabold tracking-[0.08em] uppercase">
                   Tokens
                 </span>
                 <span className="bg-blue-700 text-yellow-400 text-[11px] not-italic font-sans font-extrabold px-2.5 py-1 rounded-full tracking-[0.1em]">

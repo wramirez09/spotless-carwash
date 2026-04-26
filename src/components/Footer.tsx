@@ -1,29 +1,32 @@
-type Col = { title: string; items: { href: string; label: string }[] }
+import Link from 'next/link'
+
+type Item = { href: string; label: string; external?: boolean }
+type Col = { title: string; items: Item[] }
 
 const cols: Col[] = [
   {
     title: 'Locations',
     items: [
-      { href: '#locations', label: '7343 Roosevelt Rd' },
-      { href: '#locations', label: '7802 Madison St' },
-      { href: '#', label: 'Both: Forest Park, IL' },
+      { href: '/locations/roosevelt-rd', label: '7343 Roosevelt Rd' },
+      { href: '/locations/madison-st', label: '7802 Madison St' },
     ],
   },
   {
     title: 'Site',
     items: [
-      { href: '#washes', label: 'Wash packages' },
-      { href: '#bays', label: 'Bays' },
-      { href: '#tokens', label: 'Wash tokens' },
-      { href: '#how', label: 'How it works' },
+      { href: '/#washes', label: 'Wash packages' },
+      { href: '/#bays', label: 'Bays' },
+      { href: '/#tokens', label: 'Wash tokens' },
+      { href: '/#how', label: 'How it works' },
+      { href: '/faq', label: 'FAQ' },
     ],
   },
   {
     title: 'Contact',
     items: [
-      { href: 'tel:7087712945', label: '(708) 771-2945' },
-      { href: 'mailto:hello@spotlesscarwash.com', label: 'hello@spotlesscarwash.com' },
-      { href: '#', label: 'Open 24/7' },
+      { href: 'tel:7087712945', label: '(708) 771-2945', external: true },
+      { href: 'mailto:hello@spotlesscarwash.com', label: 'hello@spotlesscarwash.com', external: true },
+      { href: '/faq', label: 'Open 24/7' },
     ],
   },
 ]
@@ -34,11 +37,11 @@ export default function Footer() {
       <div className="max-w-[1240px] mx-auto px-5 md:px-7">
         <div className="grid md:grid-cols-[1.4fr_1fr_1fr_1fr] gap-10 mb-12">
           <div>
-            <div className="logo-mark inline-block">
+            <Link href="/" className="logo-mark inline-block mb-3" >
               <span className="display text-white text-[22px]">
                 <span className="text-yellow-400">S</span>POTLESS
               </span>
-            </div>
+            </Link>
             <p className="text-blue-200 text-sm leading-relaxed max-w-[340px] mt-4.5">
               Touchless, brushless, tractless &amp; scratchless automatic carwashes serving Forest
               Park since 1998.
@@ -46,17 +49,25 @@ export default function Footer() {
           </div>
           {cols.map((c) => (
             <div key={c.title}>
-              <h5 className="m-0 mb-4.5 text-[11px] tracking-[0.22em] uppercase font-bold text-blue-200">
+              <h2 className="m-0 mb-4.5 text-[11px] tracking-[0.22em] uppercase font-bold text-blue-200">
                 {c.title}
-              </h5>
+              </h2>
               <ul className="list-none p-0 m-0 flex flex-col gap-2.5">
-                {c.items.map((it) => (
-                  <li key={it.label}>
-                    <a href={it.href} className="text-sm text-blue-50 hover:text-yellow-400">
-                      {it.label}
-                    </a>
-                  </li>
-                ))}
+                {c.items.map((it) =>
+                  it.external ? (
+                    <li key={it.label}>
+                      <a href={it.href} className="text-sm text-blue-50 hover:text-yellow-400">
+                        {it.label}
+                      </a>
+                    </li>
+                  ) : (
+                    <li key={it.label}>
+                      <Link href={it.href} className="text-sm text-blue-50 hover:text-yellow-400">
+                        {it.label}
+                      </Link>
+                    </li>
+                  ),
+                )}
               </ul>
             </div>
           ))}

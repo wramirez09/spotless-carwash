@@ -3,17 +3,16 @@
 @tailwind utilities;
 
 body {
-  font-family: 'Archivo', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 .display {
-  font-family: 'Archivo Black', 'Archivo', sans-serif;
+  font-family: var(--font-archivo-black), 'Archivo', sans-serif;
   font-style: italic;
   letter-spacing: -0.02em;
   line-height: 0.92;
 }
 .mono {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: var(--font-jetbrains), ui-monospace, monospace;
 }
 .lamp {
   width: 120px;

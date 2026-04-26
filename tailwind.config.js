@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  content: ['./app/**/*.{ts,tsx}', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
@@ -13,9 +13,9 @@ export default {
         line: '#D7E1F2',
       },
       fontFamily: {
-        sans: ['Archivo', 'system-ui', 'sans-serif'],
-        display: ['"Archivo Black"', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+        sans: ['var(--font-archivo)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-archivo-black)', 'sans-serif'],
+        mono: ['var(--font-jetbrains)', 'ui-monospace', 'monospace'],
       },
       keyframes: {
         pulse2: {
