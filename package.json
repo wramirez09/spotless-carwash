@@ -29,5 +29,8 @@
     "next": {
       "postcss": "^8.5.12"
     }
+  },
+  "resolutions": {
+    "postcss": "^8.5.12"
   }
 }
