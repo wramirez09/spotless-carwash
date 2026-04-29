@@ -20,7 +20,7 @@ export default function Tokens() {
           ></div>
           <div className="relative flex flex-col justify-center h-full">
             <div className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.22em] uppercase text-yellow-400 mb-2.5">
-              <span className="mono text-blue-200 font-medium">06 /</span> Wash tokens
+              <span className="mono text-blue-200 font-medium">07 /</span> Wash tokens
             </div>
             <h2 className="display text-[40px] sm:text-[56px] md:text-[68px] m-0 mb-4">
               Buy a stack,

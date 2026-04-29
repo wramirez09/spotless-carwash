@@ -8,6 +8,7 @@ const sectionLinks = [
   { href: '/#washes', label: 'Washes' },
   { href: '/#how', label: 'How it works' },
   { href: '/#bays', label: 'Bays' },
+  { href: '/#services', label: 'Services' },
   { href: '/#tokens', label: 'Tokens' },
 ]
 
