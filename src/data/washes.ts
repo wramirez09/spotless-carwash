@@ -30,6 +30,7 @@ export const packages: Pkg[] = [
     price: '$9',
     priceNumber: 9,
     color: 'green',
+    featured: true,
     features: [
       { text: 'Pre-soak & foam', included: true },
       { text: 'High-pressure rinse', included: true },
@@ -43,7 +44,6 @@ export const packages: Pkg[] = [
     price: '$10',
     priceNumber: 10,
     color: 'purple',
-    featured: true,
     features: [
       { text: 'Undercarriage spray', included: true },
       { text: 'Foaming brush polish', included: true },

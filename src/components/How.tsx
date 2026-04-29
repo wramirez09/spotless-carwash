@@ -11,9 +11,9 @@ const steps = [
 
 const seq = [
   { r: 0, y: 0, g: 1, t: 'GO' },
-  { r: 0, y: 1, g: 0, t: 'SLOW' },
+  { r: 0, y: 1, g: 0, t: 'BACK UP' },
   { r: 1, y: 0, g: 0, t: 'STOP' },
-  { r: 0, y: 1, g: 0, t: 'SLOW' },
+  { r: 0, y: 1, g: 0, t: 'BACK UP' },
 ]
 
 export default function How() {

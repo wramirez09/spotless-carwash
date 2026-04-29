@@ -41,7 +41,7 @@ export default function Hero() {
               className="w-2 h-2 rounded-full bg-yellow-400"
               style={{ boxShadow: '0 0 0 4px rgba(255,217,61,.18)' }}
             ></span>
-            Forest Park, Illinois · Two locations · Open 7am–10pm daily
+            Forest Park, Illinois · Two locations · Since the 90s
           </div>
           <h1 className="display text-[64px] sm:text-[96px] md:text-[140px] lg:text-[168px] [text-shadow:-0.035em_0.05em_0_#0a2a6b]">
             <span className="text-yellow-400 text-[200px]">S</span>potless
