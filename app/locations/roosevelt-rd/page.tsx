@@ -7,7 +7,7 @@ const loc = locations.find((l) => l.slug === 'roosevelt-rd')!
 
 export const metadata: Metadata = {
   title: `${loc.name} · Heated Touchless Car Wash`,
-  description: `Spotless Carwash on Roosevelt Road in Forest Park, IL. Heated, enclosed automatic bays for winter washing plus self-serve wand bays. Open 24/7. ${loc.street}.`,
+  description: `Spotless Carwash on Roosevelt Road in Forest Park, IL. Heated, enclosed automatic bays for winter washing plus self-serve wand bays. Open 7am–10pm daily. ${loc.street}.`,
 }
 
 export default function Page() {

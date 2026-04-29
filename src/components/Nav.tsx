@@ -36,7 +36,7 @@ export default function Nav() {
       <div className="max-w-[1240px] mx-auto flex items-center gap-4 md:gap-6 px-5 md:px-7 py-3.5">
         <Link href="/" className="logo-mark" onClick={close}>
           <span className="display text-white text-[22px]">
-            <span className="text-yellow-400">S</span>POTLESS
+            <span className="text-yellow-400 text-[35px]">S</span>POTLESS
           </span>
         </Link>
 
@@ -148,11 +148,6 @@ export default function Nav() {
                   >
                     {loc.name}
                   </Link>
-                  {loc.isNew && (
-                    <span className="bg-yellow-400 text-blue-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full tracking-[0.16em]">
-                      NEW
-                    </span>
-                  )}
                 </div>
                 <div className="text-blue-100 text-sm leading-snug mb-3">{fullAddress(loc)}</div>
                 <div className="flex gap-2">
@@ -195,7 +190,7 @@ export default function Nav() {
             >
               hello@spotlesscarwash.com
             </a>
-            <div className="text-blue-200 text-sm">Open 24 hours, every day</div>
+            <div className="text-blue-200 text-sm">Open 7am–10pm, every day</div>
           </div>
 
           <a

@@ -4,7 +4,7 @@ const tickerItems = [
   'KEEP IT CLEAN',
   'TOUCHLESS AUTO WASH',
   'HEATED BAYS AT ROOSEVELT RD',
-  'OPEN 24 HOURS',
+  'OPEN 7AM–10PM',
   'SPOT FREE RINSE',
 ]
 
@@ -41,19 +41,19 @@ export default function Hero() {
               className="w-2 h-2 rounded-full bg-yellow-400"
               style={{ boxShadow: '0 0 0 4px rgba(255,217,61,.18)' }}
             ></span>
-            Forest Park, Illinois · Two locations · Open 24/7 · Since 1998
+            Forest Park, Illinois · Two locations · Open 7am–10pm daily
           </div>
-          <h1 className="display text-[64px] sm:text-[96px] md:text-[140px] lg:text-[168px]">
-            <span className="text-yellow-400">S</span>potless
+          <h1 className="display text-[64px] sm:text-[96px] md:text-[140px] lg:text-[168px] [text-shadow:-0.035em_0.05em_0_#0a2a6b]">
+            <span className="text-yellow-400 text-[200px]">S</span>potless
             <br />
             Carwash
             <span className="block text-blue-100 text-[0.62em] mt-2">— keep it clean.</span>
           </h1>
           <p className="mt-5 text-xl md:text-2xl font-bold text-yellow-400 max-w-[640px]">
-            Forest Park's 24/7 touchless car wash.
+            Forest Park's touchless car wash.
           </p>
           <p className="mt-5 text-lg max-w-[520px] text-blue-100 leading-relaxed">
-            Touchless, brushless, tractless &amp; scratchless. Drive in, line up the green light,
+            Touchless, brushless, trackless &amp; scratchless. Drive in, line up the green light,
             and let the wash do the work. No appointments, no lines, no mess.
           </p>
           <div className="flex gap-3 mt-8 flex-wrap">
@@ -95,8 +95,8 @@ export default function Hero() {
             <b className="font-extrabold">4 min 30s</b>
           </div>
           <div className="flex justify-between items-center mt-3.5 pt-3.5 border-t border-dashed border-line text-[13px]">
-            <span>Cards accepted</span>
-            <b className="font-extrabold">Visa · MC · Amex</b>
+            <span>Payments</span>
+            <b className="font-extrabold">Visa · MC · Amex · Apple Pay · Cash · Tokens</b>
           </div>
         </aside>
       </div>

@@ -1,7 +1,6 @@
 export type Location = {
   slug: 'roosevelt-rd' | 'madison-st'
   name: string
-  isNew?: boolean
   street: string
   city: string
   region: string
@@ -19,7 +18,6 @@ export const locations: Location[] = [
   {
     slug: 'roosevelt-rd',
     name: 'Roosevelt Rd',
-    isNew: true,
     street: '7343 Roosevelt Road',
     city: 'Forest Park',
     region: 'IL',

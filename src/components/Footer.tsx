@@ -26,7 +26,7 @@ const cols: Col[] = [
     items: [
       { href: 'tel:7087712945', label: '(708) 771-2945', external: true },
       { href: 'mailto:hello@spotlesscarwash.com', label: 'hello@spotlesscarwash.com', external: true },
-      { href: '/faq', label: 'Open 24/7' },
+      { href: '/faq', label: 'Open 7am–10pm' },
     ],
   },
 ]
@@ -43,8 +43,8 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-blue-200 text-sm leading-relaxed max-w-[340px] mt-4.5">
-              Touchless, brushless, tractless &amp; scratchless automatic carwashes serving Forest
-              Park since 1998.
+              Touchless, brushless, trackless &amp; scratchless automatic carwashes serving Forest
+              Park.
             </p>
           </div>
           {cols.map((c) => (

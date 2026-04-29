@@ -1,4 +1,4 @@
-import { packages, type Pkg } from '@/src/data/washes'
+import { packages, type Pkg, type WashColor } from '@/src/data/washes'
 
 function Check({ className }: { className: string }) {
   return (
@@ -8,13 +8,28 @@ function Check({ className }: { className: string }) {
   )
 }
 
+const colorBadge: Record<WashColor, string> = {
+  red: 'bg-red-500 text-white',
+  green: 'bg-emerald-500 text-white',
+  purple: 'bg-purple-500 text-white',
+  blue: 'bg-sky-500 text-white',
+}
+
+const colorAccent: Record<WashColor, string> = {
+  red: 'bg-red-500',
+  green: 'bg-emerald-500',
+  purple: 'bg-purple-500',
+  blue: 'bg-sky-500',
+}
+
 function Card({ pkg }: { pkg: Pkg }) {
   if (pkg.featured) {
     return (
-      <article className="bg-blue-500 text-white border border-blue-700 rounded-2xl p-6 flex flex-col gap-3.5 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(27,79,217,.3)] transition">
+      <article className="relative overflow-hidden bg-blue-500 text-white border border-blue-700 rounded-2xl p-6 flex flex-col gap-3.5 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(27,79,217,.3)] transition">
+        <span className={`absolute top-0 left-0 right-0 h-1.5 ${colorAccent[pkg.color]}`}></span>
         <div className="flex items-center justify-between">
-          <span className="mono text-xs font-semibold text-blue-100">PKG / {pkg.num}</span>
-          <span className="bg-yellow-400 text-blue-700 text-[10px] tracking-[0.16em] font-extrabold px-2.5 py-1 rounded-full uppercase">
+          <span className="mono text-xs font-semibold text-blue-100">WASH / {pkg.num}</span>
+          <span className={`text-[10px] tracking-[0.16em] font-extrabold px-2.5 py-1 rounded-full uppercase ${colorBadge[pkg.color]}`}>
             Most picked
           </span>
         </div>
@@ -41,9 +56,13 @@ function Card({ pkg }: { pkg: Pkg }) {
     )
   }
   return (
-    <article className="hover:lift bg-white border border-line rounded-2xl p-6 flex flex-col gap-3.5 hover:-translate-y-1 hover:border-blue-500 hover:shadow-[0_18px_40px_rgba(27,79,217,.12)] transition">
+    <article className="hover:lift bg-white border border-line rounded-2xl p-6 flex flex-col gap-3.5 hover:-translate-y-1 hover:border-blue-500 hover:shadow-[0_18px_40px_rgba(27,79,217,.12)] transition relative overflow-hidden">
+      <span className={`absolute top-0 left-0 right-0 h-1.5 ${colorAccent[pkg.color]}`}></span>
       <div className="flex items-center justify-between">
-        <span className="mono text-xs font-semibold text-[#5b6987]">PKG / {pkg.num}</span>
+        <span className="mono text-xs font-semibold text-[#5b6987]">WASH / {pkg.num}</span>
+        <span className={`text-[10px] tracking-[0.16em] font-extrabold px-2.5 py-1 rounded-full uppercase ${colorBadge[pkg.color]}`}>
+          {pkg.color}
+        </span>
       </div>
       <h3 className="display text-[32px] m-0">{pkg.name}</h3>
       <div className="display text-[54px] leading-none">
@@ -92,8 +111,8 @@ export default function Washes() {
             </h2>
           </div>
           <p className="max-w-[380px] text-[#445273] leading-relaxed">
-            Top three packages include the air cannon dryers. Just put your money or swipe your
-            credit card in the cash station — choose, then wait for green.
+            Top three packages include the air cannon dryers. Pay at the cash station with Visa,
+            Mastercard, Amex, tap, Apple Pay, cash, or wash tokens — choose, then wait for green.
           </p>
         </div>
 

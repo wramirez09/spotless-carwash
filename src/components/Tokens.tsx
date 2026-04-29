@@ -28,11 +28,12 @@ export default function Tokens() {
               save a stack of <em className="text-yellow-400">cash</em>.
             </h2>
             <p className="text-yellow-400 font-bold leading-relaxed max-w-[440px] mb-3">
-              Each token = one Spotless wash ($13 value). Never expires. Works at both locations.
+              Each token = one Ultimate wash ($10 value). Never expires. Works at both locations.
             </p>
             <p className="text-blue-100 leading-relaxed max-w-[440px] mb-7">
-              Pre-paid tokens for the automatic bays. Stash 'em in the glovebox and skip the cash
-              station. Great as gifts — buy in person at either bay station, or online below.
+              Prepaid wash tokens make every visit quick and easy — keep them in your glovebox and
+              skip the cash station. They also make a great gift, and can be purchased from our
+              attendant or online below.
             </p>
             <a
               href="https://www.paypal.com/ncp/payment/VZ896M2HPTEPC"

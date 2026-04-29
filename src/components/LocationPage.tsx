@@ -17,7 +17,7 @@ export default function LocationPage({ location }: { location: Location }) {
               className="w-2 h-2 rounded-full bg-yellow-400"
               style={{ boxShadow: '0 0 0 4px rgba(255,217,61,.18)' }}
             ></span>
-            Spotless Carwash · Forest Park, IL · Open 24/7
+            Spotless Carwash · Forest Park, IL · Open 7am–10pm daily
           </div>
           <h1 className="display text-[48px] sm:text-[72px] md:text-[104px] leading-[0.92]">
             <span className="text-yellow-400">S</span>potless Carwash
@@ -27,7 +27,7 @@ export default function LocationPage({ location }: { location: Location }) {
           <p className="mt-6 text-lg max-w-[560px] text-blue-100 leading-relaxed">
             {location.heated
               ? 'Heated, enclosed automatic touchless bays — your car is washed and air-dried inside, so doors and locks don\'t freeze on the way out. Self-serve wand bays on site too.'
-              : 'Touchless automatic bays and self-serve wand bays. Drive in any hour, any day — Spotless is always open.'}
+              : 'Touchless automatic bays and self-serve wand bays. Open 7am–10pm every day.'}
           </p>
 
           <div className="mt-8 grid sm:grid-cols-2 gap-6 max-w-[640px]">
@@ -47,7 +47,7 @@ export default function LocationPage({ location }: { location: Location }) {
               <a href={location.phoneHref} className="font-semibold text-white block">
                 {location.phone}
               </a>
-              <div className="text-blue-100 text-sm">Open 24 hours, every day</div>
+              <div className="text-blue-100 text-sm">Open 7am–10pm, every day</div>
             </div>
           </div>
 
@@ -90,16 +90,16 @@ export default function LocationPage({ location }: { location: Location }) {
               Self-serve wand bays
             </div>
             <p className="mt-3 text-sm text-[#445273]">
-              Nine-setting dial: pre-soak through spot-free rinse. $0.25 / 30s.
+              Nine-setting dial: presoak through spot-free rinse. $4.00 for 5 minutes.
             </p>
           </div>
           <div className="bg-paper rounded-2xl p-7 border border-line">
-            <div className="display text-5xl text-blue-500">24h</div>
+            <div className="display text-5xl text-blue-500">7–10</div>
             <div className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#5b6987] mt-1.5">
               Open every day
             </div>
             <p className="mt-3 text-sm text-[#445273]">
-              Cards and cash accepted at every bay. Visa · Mastercard · Amex.
+              Visa · Mastercard · Amex · Tap · Apple Pay · Cash · Wash tokens.
             </p>
           </div>
         </div>
@@ -114,8 +114,8 @@ export default function LocationPage({ location }: { location: Location }) {
             >
               {fullAddress(location)}
             </a>
-            . The bays are unattended overnight; everything is card-and-cash operated at the
-            station. {location.heated ? 'In winter, head straight for the heated automatic bays — your car is washed inside and air-dried before you pull out.' : ''}
+            . Pay at the station with Visa, Mastercard, Amex, tap or Apple Pay, cash, or wash
+            tokens. {location.heated ? 'In winter, head straight for the heated automatic bays — your car is washed inside and air-dried before you pull out.' : ''}
           </p>
         </div>
       </section>

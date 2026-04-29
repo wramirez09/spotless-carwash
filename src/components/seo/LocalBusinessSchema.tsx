@@ -8,7 +8,7 @@ export default function LocalBusinessSchema({ location }: { location: Location }
     '@type': 'AutoWash',
     '@id': `#location-${location.slug}`,
     name: `Spotless Carwash — ${location.name}`,
-    description: `${location.heated ? 'Heated, enclosed ' : ''}touchless automatic and self-serve car wash bays in Forest Park, IL. Open 24 hours.`,
+    description: `${location.heated ? 'Heated, enclosed ' : ''}touchless automatic and self-serve car wash bays in Forest Park, IL. Open 7am–10pm daily.`,
     address: {
       '@type': 'PostalAddress',
       streetAddress: location.street,
@@ -23,12 +23,12 @@ export default function LocalBusinessSchema({ location }: { location: Location }
       {
         '@type': 'OpeningHoursSpecification',
         dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-        opens: '00:00',
-        closes: '23:59',
+        opens: '07:00',
+        closes: '22:00',
       },
     ],
     priceRange: '$$',
-    paymentAccepted: 'Cash, Visa, Mastercard, Amex',
+    paymentAccepted: 'Cash, Visa, Mastercard, Amex, Apple Pay, Tap, Wash tokens',
     areaServed: {
       '@type': 'City',
       name: 'Forest Park',

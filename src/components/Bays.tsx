@@ -12,8 +12,8 @@ const bays: Bay[] = [
   {
     title: ['Touchless', 'Automatic Bays'],
     desc:
-      'Nothing touches your car except soap & water. Pull in, the wash does the rest. Heated enclosed bays at our Roosevelt Road location for winter — your car is washed and blown dry inside.',
-    features: ['Heated for winter', 'Air cannon dryers', 'Countdown timer', 'Brushless & scratchless'],
+      'Nothing touches your vehicle except soap, wax, and water. Simply pull in, and our touchless wash does the rest. At our Roosevelt Road location, heated enclosed bays keep your vehicle washed and blow-dried indoors — perfect for winter.',
+    features: ['Heated indoor bays', 'Air cannon dryers', '~4 min wash', 'Brushless & scratchless'],
     photo: '// photo: auto-bay-interior.jpg',
     bgClass: 'bay-stripe',
     icon: (
@@ -27,8 +27,8 @@ const bays: Bay[] = [
   {
     title: ['Self-Serve', 'Wand Bays'],
     desc:
-      'Nine wash products to dial through: engine cleaner, low-pressure presoak, wheel cleaner, foaming brush, polish, Lustra Shield surface gloss, and spot-free rinse.',
-    features: ['9 wash products', 'Spot-free rinse', 'Lustra Shield', 'Foaming brush'],
+      'Nine premium wash and dry options at your fingertips: tire & wheel cleaner, low-pressure presoak, foaming brush, polish, DuraShield surface gloss, high-pressure soap, high-pressure rinse, spot-free rinse, and Air-shammee Air Dryer. $4 for 5 minutes.',
+    features: ['9 wash products', 'Spot-free rinse', 'DuraShield', 'Air-shammee dryer'],
     photo: '// photo: self-serve-bay.jpg',
     bgClass: 'bg-blue-500',
     icon: (
@@ -88,8 +88,8 @@ export default function Bays() {
             </h2>
           </div>
           <p className="max-w-[380px] text-[#445273] leading-relaxed">
-            Touchless automatic for the hands-off treatment, self-serve bays when you want to get
-            in there with a foaming brush.
+            Whether you prefer the convenience of a touchless automatic wash or the control of our
+            self-serve bays with foaming brushes, we've got the perfect wash for every vehicle.
           </p>
         </div>
 

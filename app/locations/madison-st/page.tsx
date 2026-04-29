@@ -7,7 +7,7 @@ const loc = locations.find((l) => l.slug === 'madison-st')!
 
 export const metadata: Metadata = {
   title: `${loc.name} · Touchless Car Wash`,
-  description: `Spotless Carwash on Madison Street in Forest Park, IL. Touchless automatic bays and self-serve wand bays open 24/7. ${loc.street}.`,
+  description: `Spotless Carwash on Madison Street in Forest Park, IL. Touchless automatic bays and self-serve wand bays. Open 7am–10pm daily. ${loc.street}.`,
 }
 
 export default function Page() {

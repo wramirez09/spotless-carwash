@@ -31,11 +31,11 @@ const isProduction = process.env.VERCEL_ENV === 'production'
 // tags emit absolute URLs (e.g. new URL('https://spotlesscarwash.com')).
 export const metadata: Metadata = {
   title: {
-    default: 'Spotless Carwash · 24/7 Touchless Car Wash · Forest Park, IL',
+    default: 'Spotless Carwash · Touchless Car Wash · Forest Park, IL',
     template: '%s · Spotless Carwash',
   },
   description:
-    "Forest Park's 24/7 touchless car wash since 1998. Two locations with heated automatic bays for winter and self-serve wand bays open every hour of the year.",
+    "Forest Park's touchless car wash. Two locations with heated automatic bays for winter and self-serve wand bays. Open 7am–10pm daily.",
   applicationName: 'Spotless Carwash',
   keywords: [
     'car wash',
@@ -43,23 +43,24 @@ export const metadata: Metadata = {
     'self-serve car wash',
     'Forest Park IL',
     'Forest Park car wash',
-    '24 hour car wash',
     'heated car wash',
     'wash tokens',
+    'apple pay car wash',
+    'tap to pay car wash',
   ],
   openGraph: {
-    title: 'Spotless Carwash · 24/7 Touchless Car Wash · Forest Park, IL',
+    title: 'Spotless Carwash · Touchless Car Wash · Forest Park, IL',
     description:
-      "Two Forest Park locations, heated automatic bays, self-serve wand bays. Open 24/7 since 1998.",
+      "Two Forest Park locations, heated automatic bays, self-serve wand bays. Open 7am–10pm daily.",
     siteName: 'Spotless Carwash',
     locale: 'en_US',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Spotless Carwash · 24/7 Touchless Car Wash · Forest Park, IL',
+    title: 'Spotless Carwash · Touchless Car Wash · Forest Park, IL',
     description:
-      "Two Forest Park locations, heated automatic bays, self-serve wand bays. Open 24/7 since 1998.",
+      "Two Forest Park locations, heated automatic bays, self-serve wand bays. Open 7am–10pm daily.",
   },
   robots: isProduction
     ? { index: true, follow: true }

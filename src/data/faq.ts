@@ -7,19 +7,19 @@ export const faqs: FAQ[] = [
   },
   {
     q: 'How do I use a self-serve car wash bay?',
-    a: 'Pull in, drop quarters or swipe a card at the meter, then dial through the nine settings in order: engine cleaner, pre-soak, tire & wheel cleaner, high-pressure soap, foaming brush, high-pressure rinse, tri-foam polish, Lustra Shield, and spot-free rinse. Always work top-down and finish on spot-free rinse — never Lustra Shield as the last step.',
+    a: 'Pull in and pay at the meter ($4.00 for 5 minutes — cash, card, tap, or Apple Pay), then dial through the nine settings: tire & wheel cleaner, low-pressure presoak, foaming brush, polish, DuraShield surface gloss, high-pressure soap, high-pressure rinse, spot-free rinse, and the Air-shammee Air Dryer. Always work top-down, let the presoak dwell 10–20 seconds, and finish on spot-free rinse — never DuraShield as the last step.',
   },
   {
     q: 'Are car wash tokens worth it?',
-    a: 'For regular customers, yes. Each token equals one Spotless wash (a $13 value). The 10-pack is $85 (save $5) and the 25-pack is $200 (save $25). Tokens never expire, work at both Forest Park locations, and skip the cash station — they make decent gifts too.',
+    a: 'For regular customers, yes. Each token equals one Ultimate wash (a $10 value). The 10-pack is $85 (save $5) and the 25-pack is $200 (save $25). Tokens never expire, work at both Forest Park locations, and skip the cash station — they make decent gifts too.',
   },
   {
     q: 'What does a wash token cost?',
-    a: 'Tokens are sold in packs: 5 for $45, 10 for $85 (save $5), and 25 for $200 (save $25). Each token redeems for one Spotless-tier wash, normally $13.',
+    a: 'Tokens are sold in packs: 5 for $45, 10 for $85 (save $5), and 25 for $200 (save $25). Each token redeems for one Ultimate-tier wash, normally $10.',
   },
   {
-    q: 'Is your car wash open 24 hours?',
-    a: 'Yes — both Spotless Carwash locations in Forest Park are open 24 hours a day, 7 days a week, 365 days a year. The automatic and self-serve bays are unattended overnight; everything is card-and-cash operated at the bay.',
+    q: 'What are your hours?',
+    a: 'Both Spotless Carwash locations in Forest Park are open 7am–10pm, every day. The automatic and self-serve bays are card-and-cash operated at the bay — Visa, Mastercard, Amex, tap, Apple Pay, cash, and wash tokens accepted.',
   },
   {
     q: 'Are your bays heated in winter?',
@@ -27,7 +27,7 @@ export const faqs: FAQ[] = [
   },
   {
     q: 'Where are you located in Forest Park?',
-    a: 'Spotless Carwash has two locations in Forest Park, IL: 7343 Roosevelt Road and 7802 Madison Street. Both sites have automatic touchless bays and self-serve wand bays, and both are open 24/7.',
+    a: 'Spotless Carwash has two locations in Forest Park, IL: 7343 Roosevelt Road and 7802 Madison Street. Both sites have automatic touchless bays and self-serve wand bays, and both are open 7am–10pm daily.',
   },
   {
     q: 'Do tokens expire?',

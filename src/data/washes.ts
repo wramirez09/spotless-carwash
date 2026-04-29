@@ -1,42 +1,48 @@
+export type WashColor = 'red' | 'green' | 'purple' | 'blue'
+
 export type Pkg = {
   num: string
   name: string
   price: string
   priceNumber: number
+  color: WashColor
   features: { text: string; included: boolean }[]
   featured?: boolean
 }
 
 export const packages: Pkg[] = [
   {
-    num: '01',
-    name: 'Basic',
+    num: '08',
+    name: 'Deluxe (No Dryer)',
     price: '$8',
     priceNumber: 8,
+    color: 'red',
     features: [
       { text: 'Pre-soak', included: true },
       { text: 'High-pressure rinse', included: true },
+      { text: 'Foaming brush polish', included: false },
       { text: 'Air cannon dryer', included: false },
-      { text: 'Wheel cleaner', included: false },
     ],
   },
   {
-    num: '02',
-    name: 'Clean',
-    price: '$10',
-    priceNumber: 10,
+    num: '09',
+    name: 'Deluxe',
+    price: '$9',
+    priceNumber: 9,
+    color: 'green',
     features: [
       { text: 'Pre-soak & foam', included: true },
       { text: 'High-pressure rinse', included: true },
       { text: 'Air cannon dryer', included: true },
-      { text: 'Lustra Shield', included: false },
+      { text: 'DuraShield surface gloss', included: false },
     ],
   },
   {
-    num: '03',
-    name: 'Spotless',
-    price: '$13',
-    priceNumber: 13,
+    num: '10',
+    name: 'Ultimate',
+    price: '$10',
+    priceNumber: 10,
+    color: 'purple',
     featured: true,
     features: [
       { text: 'Undercarriage spray', included: true },
@@ -46,13 +52,14 @@ export const packages: Pkg[] = [
     ],
   },
   {
-    num: '04',
-    name: 'Showroom',
-    price: '$16',
-    priceNumber: 16,
+    num: '12',
+    name: 'Lustre',
+    price: '$12',
+    priceNumber: 12,
+    color: 'blue',
     features: [
       { text: 'Triple-foam wax', included: true },
-      { text: 'Lustra Shield seal', included: true },
+      { text: 'DuraShield surface gloss', included: true },
       { text: 'Hot wax overhead', included: true },
       { text: 'Air cannon dryer', included: true },
     ],

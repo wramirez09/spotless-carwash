@@ -15,7 +15,7 @@ export default function Instructions() {
           </h2>
           <p className="max-w-[380px] text-blue-100 leading-relaxed mt-6">
             Always start at the top, work top-to-bottom, and let presoak sit 10–20 seconds before
-            rinsing. Finish with spot-free rinse — never Lustra Shield as the final step.
+            rinsing. Finish with spot-free rinse — never DuraShield as the final step.
           </p>
         </div>
         <div className="bg-white/5 border border-white/10 rounded-[20px] overflow-hidden">
@@ -30,18 +30,10 @@ export default function Instructions() {
               <div className="display text-[28px] text-yellow-400 leading-none">{s.n}</div>
               <div>
                 <h3 className="m-0 mb-0.5 text-base font-extrabold tracking-tight">{s.title}</h3>
-                <p className="m-0 text-[13px] text-blue-100 leading-snug">
-                  {s.n === 8 ? (
-                    <>
-                      Surface gloss — apply <strong>before</strong> spot-free.
-                    </>
-                  ) : (
-                    s.description
-                  )}
-                </p>
+                <p className="m-0 text-[13px] text-blue-100 leading-snug">{s.description}</p>
               </div>
               <div className="mono text-[13px] font-semibold bg-yellow-400/10 text-yellow-400 px-2.5 py-1.5 rounded-lg text-center">
-                $0.25 / 30s
+                $4 / 5 min
               </div>
             </div>
           ))}

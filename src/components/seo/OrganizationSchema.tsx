@@ -7,9 +7,8 @@ export default function OrganizationSchema() {
     '@type': 'Organization',
     name: 'Spotless Carwash',
     url: '/',
-    foundingDate: '1998',
     description:
-      "Forest Park's 24/7 touchless car wash since 1998. Two locations with heated automatic bays for winter and self-serve wand bays.",
+      "Forest Park's touchless car wash. Two locations with heated automatic bays for winter and self-serve wand bays. Open 7am–10pm daily.",
     department: locations.map((loc) => ({
       '@type': 'AutoWash',
       '@id': `#location-${loc.slug}`,

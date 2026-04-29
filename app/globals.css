@@ -73,14 +73,52 @@ body {
 }
 
 .logo-mark {
-  background: #1b4fd9;
-  border: 3px solid #fff;
-  border-radius: 14px;
-  padding: 6px 14px 7px;
-  box-shadow: 0 0 0 3px #0a2a6b;
-  display: flex;
+  --chamfer: 7px;
+  --clip: polygon(var(--chamfer) 0,
+      calc(100% - var(--chamfer)) 0,
+      100% var(--chamfer),
+      100% calc(100% - var(--chamfer)),
+      calc(100% - var(--chamfer)) 100%,
+      var(--chamfer) 100%,
+      0 calc(100% - var(--chamfer)),
+      0 var(--chamfer));
+
+  position: relative;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  /* old padding (6 14 7) + 3px white + 3px navy = 12 20 13 */
+  padding: 10px 20px 16px;
+  background: #0a2a6b;
+  /* outer navy ring */
+  clip-path: var(--clip);
+}
+
+.logo-mark::before,
+.logo-mark::after {
+  content: "";
+  position: absolute;
+  clip-path: var(--clip);
+  pointer-events: none;
+}
+
+.logo-mark::before {
+  inset: 3px;
+  background: #fff;
+  /* white middle ring */
+}
+
+.logo-mark::after {
+  inset: 6px;
+  background: #1b4fd9;
+  /* blue interior */
+}
+
+.logo-mark>* {
+  position: relative;
+  z-index: 1;
+  padding: .1rem;
+  /* keep the text above the ::after fill */
 }
 
 .yellow-hl {

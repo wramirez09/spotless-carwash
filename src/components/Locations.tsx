@@ -20,14 +20,7 @@ function Card({ loc }: { loc: Location }) {
         <span className="absolute top-3.5 right-3.5 mono text-[11px] text-white/50 bg-black/20 px-2 py-1 rounded">
           {loc.photoCaption}
         </span>
-        <h3 className="display text-[48px] m-0 relative">
-          {loc.name}
-          {loc.isNew && (
-            <span className="display inline-block bg-yellow-400 text-blue-700 text-[11px] font-sans not-italic font-extrabold px-2.5 py-1 rounded-full tracking-[0.16em] ml-2 -translate-y-2">
-              NEW
-            </span>
-          )}
-        </h3>
+        <h3 className="display text-[48px] m-0 relative">{loc.name}</h3>
       </div>
       <div className="p-7 flex flex-col gap-3.5 flex-1">
         <div className="flex items-start gap-2.5 text-[#445273] leading-relaxed">
@@ -52,9 +45,9 @@ function Card({ loc }: { loc: Location }) {
             </div>
           </div>
           <div>
-            <div className="display text-3xl text-blue-500">24h</div>
+            <div className="display text-3xl text-blue-500">7–10</div>
             <div className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#5b6987] mt-0.5">
-              Always open
+              Daily hours
             </div>
           </div>
         </div>
@@ -105,8 +98,8 @@ export default function Locations() {
             </h2>
           </div>
           <p className="max-w-[380px] text-[#445273] leading-relaxed">
-            Both locations open 24 hours. Roosevelt Road is our newer site — heated enclosed
-            automatic bays for winter washing.
+            Both locations open 7am–10pm daily. Roosevelt Road has heated, enclosed automatic bays
+            for winter washing.
           </p>
         </div>
 

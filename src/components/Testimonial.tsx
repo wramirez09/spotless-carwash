@@ -8,12 +8,12 @@ type Quote = { text: string; attribution: string }
 const quotes: Quote[] = [
   {
     text:
-      'Pulled in at 2am after a Chicago snowstorm. Heated bay, four and a half minutes, drove out spotless. The only place open and the only place that does it right.',
+      'Pulled in right before close after a Chicago snowstorm. Heated bay, four and a half minutes, drove out spotless. The only place that does it right.',
     attribution: 'Forest Park regular',
   },
   {
     text:
-      'Self-serve bays have everything you need. The Lustra Shield + spot-free combo is the move. Tokens make the price feel like nothing.',
+      'Self-serve bays have everything you need. The DuraShield + spot-free combo is the move. Tokens make the price feel like nothing.',
     attribution: 'Detail-obsessed neighbor',
   },
   {
