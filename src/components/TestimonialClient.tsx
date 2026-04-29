@@ -1,8 +1,15 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import type { ImageWithAlt } from '@/lib/sanityImage'
+import SanityImage from './SanityImage'
 
-export type Quote = { text: string; attribution: string }
+export type Quote = {
+  text: string
+  attribution: string
+  avatar?: ImageWithAlt | null
+  rating?: number | null
+}
 
 const AUTOPLAY_MS = 5000
 
@@ -27,6 +34,8 @@ export default function TestimonialClient({ quotes }: { quotes: Quote[] }) {
   const next = () => setI((x) => (x + 1) % quotes.length)
   const prev = () => setI((x) => (x - 1 + quotes.length) % quotes.length)
   const goTo = (n: number) => setI(n)
+  const current = quotes[i]
+  const rating = Math.max(1, Math.min(5, current.rating ?? 5))
 
   return (
     <section
@@ -38,7 +47,7 @@ export default function TestimonialClient({ quotes }: { quotes: Quote[] }) {
     >
       <div className="max-w-[860px] mx-auto px-5 md:px-7 text-center">
         <div className="flex justify-center gap-1 mb-6">
-          {Array.from({ length: 5 }).map((_, n) => (
+          {Array.from({ length: rating }).map((_, n) => (
             <Star key={n} />
           ))}
         </div>
@@ -56,8 +65,18 @@ export default function TestimonialClient({ quotes }: { quotes: Quote[] }) {
               <blockquote className="display text-[24px] sm:text-[32px] md:text-[40px] text-ink leading-tight">
                 “{q.text}”
               </blockquote>
-              <div className="mt-6 mono text-[13px] tracking-[0.18em] uppercase text-[#5b6987]">
-                — {q.attribution}
+              <div className="mt-6 flex items-center justify-center gap-3">
+                {q.avatar?.asset?._ref && (
+                  <SanityImage
+                    image={q.avatar}
+                    width={56}
+                    height={56}
+                    className="w-10 h-10 rounded-full object-cover border border-line"
+                  />
+                )}
+                <div className="mono text-[13px] tracking-[0.18em] uppercase text-[#5b6987]">
+                  — {q.attribution}
+                </div>
               </div>
             </div>
           ))}

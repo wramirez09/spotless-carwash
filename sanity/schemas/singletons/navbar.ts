@@ -6,6 +6,11 @@ export default defineType({
   type: 'document',
   fields: [
     defineField({
+      name: 'logo',
+      type: 'imageWithAlt',
+      description: 'Optional logo image. Replaces the typographic wordmark when set.',
+    }),
+    defineField({
       name: 'sectionLinks',
       title: 'Section links (in-page anchors)',
       type: 'array',

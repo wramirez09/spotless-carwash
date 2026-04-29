@@ -23,5 +23,10 @@ export default defineType({
     defineField({ name: 'bayCardBody', type: 'text', rows: 2 }),
     defineField({ name: 'avgWashTime', type: 'string', description: 'e.g. "4 min 30s"' }),
     defineField({ name: 'paymentLine', type: 'string', description: 'e.g. "Visa · MC · Amex · Apple Pay · Cash · Tokens"' }),
+    defineField({
+      name: 'backgroundImage',
+      type: 'imageWithAlt',
+      description: 'Optional photo behind the hero gradient. Sits at low opacity so the gradient still reads.',
+    }),
   ],
 })

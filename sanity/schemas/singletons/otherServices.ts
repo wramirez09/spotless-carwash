@@ -33,6 +33,28 @@ export default defineType({
               options: { list: ['default', 'blue', 'wide'], layout: 'radio' },
               initialValue: 'default',
             }),
+            defineField({
+              name: 'icon',
+              type: 'string',
+              options: { list: ['payment', 'vending', 'vacuum', 'clock', 'shield'], layout: 'radio' },
+              description: 'Icon shown in the top-right of the card.',
+            }),
+            defineField({
+              name: 'priceAmount',
+              type: 'string',
+              description: 'e.g. "$1". Renders alongside priceUnit on blue-theme cards.',
+            }),
+            defineField({
+              name: 'priceUnit',
+              type: 'string',
+              description: 'e.g. "/ 4 minutes".',
+            }),
+            defineField({
+              name: 'hoursStart',
+              type: 'string',
+              description: 'e.g. "7AM". When both hoursStart and hoursEnd are set, the card renders a big start–end display.',
+            }),
+            defineField({ name: 'hoursEnd', type: 'string', description: 'e.g. "10PM".' }),
           ],
         }),
       ],

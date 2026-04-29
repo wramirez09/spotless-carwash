@@ -1,5 +1,7 @@
 import HeroLights, { type HeroLightsLabels } from './HeroLights'
 import { sanityFetch } from '@/lib/sanityFetch'
+import SanityImage from './SanityImage'
+import type { ImageWithAlt } from '@/lib/sanityImage'
 
 const HERO_QUERY = `{
   "hero": *[_type == "hero"][0]{
@@ -16,7 +18,8 @@ const HERO_QUERY = `{
   bayCardHeading,
   bayCardBody,
   avgWashTime,
-  paymentLine
+  paymentLine,
+  backgroundImage
   },
   "lights": *[_type == "heroLights"][0]{
     redLabel, yellowLabel, greenLabel
@@ -39,9 +42,10 @@ type HeroData = {
   bayCardBody?: string
   avgWashTime?: string
   paymentLine?: string
+  backgroundImage?: ImageWithAlt | null
 }
 
-const HERO_FALLBACK: Required<HeroData> = {
+const HERO_FALLBACK: Required<Omit<HeroData, 'backgroundImage'>> = {
   eyebrow: 'Forest Park, Illinois · Two locations · Since the 90s',
   headlineLine1: 'Spotless',
   headlineLine2: 'Carwash',
@@ -99,6 +103,18 @@ export default async function Hero() {
       className="relative overflow-hidden text-white pt-14 md:pt-18"
       style={{ background: 'linear-gradient(180deg,#1947c9 0%,#1B4FD9 55%,#2358ee 100%)' }}
     >
+      {hero.backgroundImage?.asset?._ref && (
+        <div className="absolute inset-0 pointer-events-none">
+          <SanityImage
+            image={hero.backgroundImage}
+            width={2400}
+            height={1200}
+            sizes="100vw"
+            priority
+            className="w-full h-full object-cover opacity-25"
+          />
+        </div>
+      )}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{

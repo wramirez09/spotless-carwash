@@ -1,10 +1,13 @@
 import Link from 'next/link'
 import { sanityFetch } from '@/lib/sanityFetch'
+import type { ImageWithAlt } from '@/lib/sanityImage'
+import SanityImage from './SanityImage'
 
 type Item = { href: string; label: string; external?: boolean }
 type Col = { title: string; items: Item[] }
 
 const FOOTER_QUERY = `*[_type == "footer"][0]{
+  logo,
   tagline,
   columns[]{ title, items[]{ label, href, external } },
   copyrightLine,
@@ -12,6 +15,7 @@ const FOOTER_QUERY = `*[_type == "footer"][0]{
 }`
 
 type FooterData = {
+  logo?: ImageWithAlt | null
   tagline: string
   columns: Col[]
   copyrightLine: string
@@ -66,10 +70,19 @@ export default async function Footer() {
         <div className="grid md:grid-cols-[1.4fr_1fr_1fr_1fr] gap-10 mb-12">
           <div>
             <Link href="/" className="inline-block mb-3 leading-none">
-              <span className="display italic uppercase text-white text-[22px] leading-none [text-shadow:-0.035em_0.05em_0_#0a2a6b]">
-                <span className="text-[35px]">S</span>POTLESS
-                <div className="pl-[1em]">CARWASH</div>
-              </span>
+              {footer.logo?.asset?._ref ? (
+                <SanityImage
+                  image={footer.logo}
+                  width={240}
+                  height={72}
+                  className="h-14 w-auto"
+                />
+              ) : (
+                <span className="display italic uppercase text-white text-[22px] leading-none [text-shadow:-0.035em_0.05em_0_#0a2a6b]">
+                  <span className="text-[35px]">S</span>POTLESS
+                  <div className="pl-[1em]">CARWASH</div>
+                </span>
+              )}
             </Link>
             <p className="text-blue-200 text-sm leading-relaxed max-w-[340px] mt-4.5">
               {footer.tagline}

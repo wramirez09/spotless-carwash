@@ -1,6 +1,8 @@
 import { sanityFetch } from '@/lib/sanityFetch'
 import { renderHighlight } from '@/lib/renderHighlight'
 
+type IconKey = 'payment' | 'vending' | 'vacuum' | 'clock' | 'shield'
+
 type ServiceCard = {
   code?: string
   title: string
@@ -8,6 +10,11 @@ type ServiceCard = {
   chips?: string[]
   featured?: boolean
   theme?: 'default' | 'blue' | 'wide'
+  icon?: IconKey
+  priceAmount?: string
+  priceUnit?: string
+  hoursStart?: string
+  hoursEnd?: string
 }
 
 type ScheduleRow = { label: string; hours: string }
@@ -29,7 +36,7 @@ type OtherServicesData = {
 
 const OTHER_SERVICES_QUERY = `*[_type == "otherServices"][0]{
   eyebrow, sectionNumber, heading, subhead,
-  services[]{ code, title, body, chips, featured, theme },
+  services[]{ code, title, body, chips, featured, theme, icon, priceAmount, priceUnit, hoursStart, hoursEnd },
   attendant{ code, heading, body, schedule[]{ label, hours } },
   houseRules{ kicker, body }
 }`
@@ -47,6 +54,7 @@ const FALLBACK: OtherServicesData = {
       body:
         'All wash bays take all major credit cards, ones, fives & quarters. The automatics also take tens. Tap and Apple Pay accepted too.',
       chips: ['Credit cards', 'Tap / Apple Pay', '$1 / $5', '$10 (auto only)', 'Quarters'],
+      icon: 'payment',
     },
     {
       code: 'SVC / 02',
@@ -54,6 +62,7 @@ const FALLBACK: OtherServicesData = {
       body:
         'Fragrance trees, blue shammy towels & Armor All pads — stocked on-site whenever you need them.',
       chips: ['Fragrance trees', 'Shammy towels', 'Armor All pads'],
+      icon: 'vending',
     },
     {
       code: 'SVC / 03',
@@ -61,6 +70,9 @@ const FALLBACK: OtherServicesData = {
       body:
         'High-suction vacuums positioned around both lots. Drop a buck and clean out the cabin while your wax cures.',
       theme: 'blue',
+      icon: 'vacuum',
+      priceAmount: '$1',
+      priceUnit: '/ 4 minutes',
     },
     {
       code: 'SVC / 04',
@@ -75,6 +87,9 @@ const FALLBACK: OtherServicesData = {
       code: 'SVC / 05',
       title: 'Wash hours',
       body: 'Daily — every day of the week.',
+      icon: 'clock',
+      hoursStart: '7AM',
+      hoursEnd: '10PM',
     },
   ],
   attendant: {
@@ -131,11 +146,24 @@ function ClockIcon() {
   )
 }
 
-const ICON_FOR: (i: number) => React.ReactNode = (i) =>
-  [<PaymentIcon key="p" />, <VendingIcon key="v" />, <VacuumIcon key="vac" />, null, <ClockIcon key="c" />][i] ?? null
+function ShieldIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="#1B4FD9" strokeWidth="2">
+      <path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z" />
+    </svg>
+  )
+}
 
-function ServiceCardEl({ s, index }: { s: ServiceCard; index: number }) {
-  const icon = ICON_FOR(index)
+const ICON_BY_KEY: Record<IconKey, React.ReactNode> = {
+  payment: <PaymentIcon />,
+  vending: <VendingIcon />,
+  vacuum: <VacuumIcon />,
+  clock: <ClockIcon />,
+  shield: <ShieldIcon />,
+}
+
+function ServiceCardEl({ s }: { s: ServiceCard }) {
+  const icon = s.icon ? ICON_BY_KEY[s.icon] : null
 
   // Vacuums (blue theme card)
   if (s.theme === 'blue') {
@@ -151,10 +179,12 @@ function ServiceCardEl({ s, index }: { s: ServiceCard; index: number }) {
         </div>
         <h3 className="display text-[28px] m-0 relative">{s.title}</h3>
         <p className="m-0 text-blue-100 leading-relaxed text-[15px] relative">{s.body}</p>
-        <div className="relative flex items-baseline gap-2 mt-auto pt-2">
-          <span className="display text-5xl text-yellow-400 leading-none">$1</span>
-          <span className="text-blue-100 font-bold text-sm">/ 4 minutes</span>
-        </div>
+        {s.priceAmount && (
+          <div className="relative flex items-baseline gap-2 mt-auto pt-2">
+            <span className="display text-5xl text-yellow-400 leading-none">{s.priceAmount}</span>
+            {s.priceUnit && <span className="text-blue-100 font-bold text-sm">{s.priceUnit}</span>}
+          </div>
+        )}
       </article>
     )
   }
@@ -190,9 +220,8 @@ function ServiceCardEl({ s, index }: { s: ServiceCard; index: number }) {
     )
   }
 
-  // Wash hours card (index 4 in fallback) — special big-time display
-  const isWashHours = index === 4
-  if (isWashHours) {
+  // Hours card — big start/end display when both hoursStart and hoursEnd are set
+  if (s.hoursStart && s.hoursEnd) {
     return (
       <article className="bg-white border border-line rounded-2xl p-7 flex flex-col gap-3.5">
         <div className="flex items-center justify-between">
@@ -201,9 +230,9 @@ function ServiceCardEl({ s, index }: { s: ServiceCard; index: number }) {
         </div>
         <h3 className="display text-[28px] m-0">{s.title}</h3>
         <div className="flex items-baseline gap-1.5">
-          <span className="display text-[42px] text-blue-500 leading-none">7AM</span>
+          <span className="display text-[42px] text-blue-500 leading-none">{s.hoursStart}</span>
           <span className="text-[#5b6987] font-bold">–</span>
-          <span className="display text-[42px] text-blue-500 leading-none">10PM</span>
+          <span className="display text-[42px] text-blue-500 leading-none">{s.hoursEnd}</span>
         </div>
         <p className="m-0 text-[#445273] leading-relaxed text-sm">{s.body}</p>
       </article>
@@ -259,7 +288,7 @@ export default async function OtherServices() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {s.services.map((sv, i) => (
-            <ServiceCardEl key={`${sv.code ?? i}-${i}`} s={sv} index={i} />
+            <ServiceCardEl key={`${sv.code ?? i}-${i}`} s={sv} />
           ))}
         </div>
 

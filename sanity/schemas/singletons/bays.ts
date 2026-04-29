@@ -28,6 +28,12 @@ export default defineType({
               options: { layout: 'tags' },
             }),
             defineField({ name: 'photo', type: 'imageWithAlt' }),
+            defineField({
+              name: 'kind',
+              type: 'string',
+              options: { list: ['automatic', 'self-serve'], layout: 'radio' },
+              description: 'Drives the placeholder icon and stripe color when no photo is set.',
+            }),
           ],
         }),
       ],

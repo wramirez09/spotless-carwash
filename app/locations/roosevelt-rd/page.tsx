@@ -7,6 +7,7 @@ import { sanityFetch } from '@/lib/sanityFetch'
 const loc = locations.find((l) => l.slug === 'roosevelt-rd')!
 
 const META_QUERY = `*[_type == "location" && slug.current == $slug][0]{ metaTitle, metaDescription }`
+const LOCATION_DOC_QUERY = `*[_type == "location" && slug.current == $slug][0]{ photo, pageDescription, winterAddon }`
 
 export async function generateMetadata(): Promise<Metadata> {
   const data = await sanityFetch<{ metaTitle?: string; metaDescription?: string }>(
@@ -21,11 +22,22 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default function Page() {
+export default async function Page() {
+  const data = await sanityFetch<{
+    photo?: import('@/lib/sanityImage').ImageWithAlt | null
+    pageDescription?: string | null
+    winterAddon?: string | null
+  }>(LOCATION_DOC_QUERY, { params: { slug: loc.slug } })
+  const merged = {
+    ...loc,
+    photo: data?.photo ?? null,
+    pageDescription: data?.pageDescription ?? null,
+    winterAddon: data?.winterAddon ?? null,
+  }
   return (
     <>
-      <LocalBusinessSchema location={loc} />
-      <LocationPage location={loc} />
+      <LocalBusinessSchema location={merged} />
+      <LocationPage location={merged} />
     </>
   )
 }

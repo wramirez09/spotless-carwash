@@ -1,3 +1,5 @@
+import type { ImageWithAlt } from '../../lib/sanityImage'
+
 export type Location = {
   slug: 'roosevelt-rd' | 'madison-st'
   name: string
@@ -12,6 +14,9 @@ export type Location = {
   heated: boolean
   photoCaption: string
   gradient: string
+  photo?: ImageWithAlt | null
+  pageDescription?: string | null
+  winterAddon?: string | null
 }
 
 export const locations: Location[] = [

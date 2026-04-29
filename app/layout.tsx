@@ -4,6 +4,7 @@ import { draftMode, headers } from 'next/headers'
 import VisualEditing from 'next-sanity/visual-editing/client-component'
 import Nav from '@/src/components/Nav'
 import Footer from '@/src/components/Footer'
+import ExitPreviewButton from '@/src/components/ExitPreviewButton'
 import { sanityFetch } from '@/lib/sanityFetch'
 import './globals.css'
 
@@ -110,7 +111,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {!isStudio && <Nav />}
         <main>{children}</main>
         {!isStudio && <Footer />}
-        {isDraft && <VisualEditing />}
+        {isDraft && (
+          <>
+            <VisualEditing />
+            <ExitPreviewButton />
+          </>
+        )}
       </body>
     </html>
   )

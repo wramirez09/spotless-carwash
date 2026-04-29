@@ -5,6 +5,11 @@ export default defineType({
   title: 'Footer',
   type: 'document',
   fields: [
+    defineField({
+      name: 'logo',
+      type: 'imageWithAlt',
+      description: 'Optional logo image. Replaces the typographic wordmark when set.',
+    }),
     defineField({ name: 'tagline', type: 'text', rows: 3 }),
     defineField({
       name: 'columns',

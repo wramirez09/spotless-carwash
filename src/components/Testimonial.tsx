@@ -2,7 +2,7 @@ import { sanityFetch } from '@/lib/sanityFetch'
 import TestimonialClient, { type Quote } from './TestimonialClient'
 
 const TESTIMONIAL_QUERY = `*[_type == "testimonialSection"][0]{
-  quotes[]{ text, attribution }
+  quotes[]{ text, attribution, avatar, rating }
 }`
 
 const FALLBACK: Quote[] = [

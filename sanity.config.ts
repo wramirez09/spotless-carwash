@@ -3,6 +3,7 @@ import { structureTool } from 'sanity/structure'
 import { presentationTool } from 'sanity/presentation'
 import { schemaTypes, SINGLETON_TYPES } from './sanity/schemas'
 import { structure } from './sanity/structure'
+import StudioNavbar from './sanity/components/StudioNavbar'
 
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!
 const dataset = 'production'
@@ -46,6 +47,11 @@ export default defineConfig({
       },
     }),
   ],
+  studio: {
+    components: {
+      navbar: StudioNavbar,
+    },
+  },
   schema: {
     types: schemaTypes,
     // Hide "create new" + duplicate actions on singletons; one doc per type only.

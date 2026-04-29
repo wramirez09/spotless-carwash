@@ -3,10 +3,13 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { locations, directionsUrl, fullAddress } from '@/src/data/locations'
+import type { ImageWithAlt } from '@/lib/sanityImage'
+import SanityImage from './SanityImage'
 
 type NavLink = { label: string; href: string; external?: boolean }
 
 export type NavData = {
+  logo?: ImageWithAlt | null
   sectionLinks: NavLink[]
   pageLinks: NavLink[]
   paypalUrl: string
@@ -32,11 +35,21 @@ export default function NavClient({ data }: { data: NavData }) {
   return (
     <nav className="sticky top-0 z-50 bg-blue-500 text-white border-b-[3px] border-blue-700">
       <div className="max-w-[1240px] mx-auto flex items-center gap-4 md:gap-6 px-5 md:px-7 py-3.5">
-        <Link href="/" onClick={close}>
-          <span className="display italic uppercase text-white text-[22px] [text-shadow:-0.035em_0.05em_0_#0a2a6b]">
-            <span className="text-[35px]">S</span>POTLESS
-            <div className="pl-[1em]">CARWASH</div>
-          </span>
+        <Link href="/" onClick={close} className="leading-none">
+          {data.logo?.asset?._ref ? (
+            <SanityImage
+              image={data.logo}
+              width={220}
+              height={64}
+              priority
+              className="h-12 md:h-14 w-auto"
+            />
+          ) : (
+            <span className="display italic uppercase text-white text-[22px] [text-shadow:-0.035em_0.05em_0_#0a2a6b]">
+              <span className="text-[35px]">S</span>POTLESS
+              <div className="pl-[1em]">CARWASH</div>
+            </span>
+          )}
         </Link>
 
         <div className="ml-auto hidden md:flex flex-wrap gap-1.5">

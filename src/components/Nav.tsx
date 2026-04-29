@@ -2,6 +2,7 @@ import NavClient, { type NavData } from './NavClient'
 import { sanityFetch } from '@/lib/sanityFetch'
 
 const NAV_QUERY = `*[_type == "navbar"][0]{
+  logo,
   sectionLinks[]{ label, href, external },
   pageLinks[]{ label, href, external },
   paypalUrl,

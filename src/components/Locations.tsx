@@ -6,6 +6,8 @@ import {
   directionsUrl,
   type Location,
 } from '@/src/data/locations'
+import SanityImage from './SanityImage'
+import { getSiteSettings } from '@/lib/siteSettings'
 
 type LocationsSectionData = {
   eyebrow: string
@@ -23,7 +25,7 @@ const LOCATIONS_QUERY = `{
     "slug": slug.current,
     name, street, city, region, postalCode,
     phone, phoneHref, selfServeBays, touchlessBays, heated,
-    gradient
+    gradient, photo
   }
 }`
 
@@ -44,17 +46,26 @@ function Pin() {
   )
 }
 
-function Card({ loc }: { loc: Location }) {
+function Card({ loc, hoursShort }: { loc: Location; hoursShort: string }) {
   return (
     <article className="bg-white rounded-[22px] overflow-hidden border border-line flex flex-col">
       <div
-        className="h-[240px] relative flex items-end p-6 text-white stripe"
+        className="h-[240px] relative flex items-end p-6 text-white stripe overflow-hidden"
         style={{ background: loc.gradient }}
       >
-        <span className="absolute top-3.5 right-3.5 mono text-[11px] text-white/50 bg-black/20 px-2 py-1 rounded">
+        {loc.photo?.asset?._ref && (
+          <SanityImage
+            image={loc.photo}
+            width={1200}
+            height={600}
+            sizes="(max-width: 768px) 100vw, 600px"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
+        <span className="absolute top-3.5 right-3.5 mono text-[11px] text-white/70 bg-black/40 px-2 py-1 rounded z-10">
           {loc.photoCaption}
         </span>
-        <h3 className="display text-[48px] m-0 relative">{loc.name}</h3>
+        <h3 className="display text-[48px] m-0 relative z-10 drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">{loc.name}</h3>
       </div>
       <div className="p-7 flex flex-col gap-3.5 flex-1">
         <div className="flex items-start gap-2.5 text-[#445273] leading-relaxed">
@@ -79,7 +90,7 @@ function Card({ loc }: { loc: Location }) {
             </div>
           </div>
           <div>
-            <div className="display text-3xl text-blue-500">7–10</div>
+            <div className="display text-3xl text-blue-500">{hoursShort}</div>
             <div className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#5b6987] mt-0.5">
               Daily hours
             </div>
@@ -119,10 +130,13 @@ function Card({ loc }: { loc: Location }) {
 }
 
 export default async function Locations() {
-  const data = await sanityFetch<{
-    section?: Partial<LocationsSectionData>
-    locations?: Location[]
-  }>(LOCATIONS_QUERY)
+  const [data, settings] = await Promise.all([
+    sanityFetch<{
+      section?: Partial<LocationsSectionData>
+      locations?: Location[]
+    }>(LOCATIONS_QUERY),
+    getSiteSettings(),
+  ])
 
   const section = { ...LOCATIONS_FALLBACK, ...(data?.section ?? {}) }
   const locs: Location[] = data?.locations?.length ? data.locations : fallbackLocations
@@ -144,7 +158,7 @@ export default async function Locations() {
 
         <div className="grid md:grid-cols-2 gap-6">
           {locs.map((l) => (
-            <Card key={l.slug} loc={l} />
+            <Card key={l.slug} loc={l} hoursShort={settings.hoursShort} />
           ))}
         </div>
       </div>
