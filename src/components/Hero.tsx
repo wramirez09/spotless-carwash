@@ -1,17 +1,75 @@
-import HeroLights from './HeroLights'
+import HeroLights, { type HeroLightsLabels } from './HeroLights'
+import { sanityFetch } from '@/lib/sanityFetch'
 
-const tickerItems = [
-  'KEEP IT CLEAN',
-  'TOUCHLESS AUTO WASH',
-  'HEATED BAYS AT ROOSEVELT RD',
-  'OPEN 7AM–10PM',
-  'SPOT FREE RINSE',
-]
+const HERO_QUERY = `{
+  "hero": *[_type == "hero"][0]{
+  eyebrow,
+  headlineLine1,
+  headlineLine2,
+  headlineTagline,
+  subheadYellow,
+  subheadBody,
+  primaryCta{ label, href, external },
+  secondaryCta{ label, href, external },
+  tickerItems,
+  bayCardStatus,
+  bayCardHeading,
+  bayCardBody,
+  avgWashTime,
+  paymentLine
+  },
+  "lights": *[_type == "heroLights"][0]{
+    redLabel, yellowLabel, greenLabel
+  }
+}`
 
-function TickerRow() {
+type CtaLink = { label: string; href: string; external?: boolean }
+type HeroData = {
+  eyebrow?: string
+  headlineLine1?: string
+  headlineLine2?: string
+  headlineTagline?: string
+  subheadYellow?: string
+  subheadBody?: string
+  primaryCta?: CtaLink
+  secondaryCta?: CtaLink
+  tickerItems?: string[]
+  bayCardStatus?: string
+  bayCardHeading?: string
+  bayCardBody?: string
+  avgWashTime?: string
+  paymentLine?: string
+}
+
+const HERO_FALLBACK: Required<HeroData> = {
+  eyebrow: 'Forest Park, Illinois · Two locations · Since the 90s',
+  headlineLine1: 'Spotless',
+  headlineLine2: 'Carwash',
+  headlineTagline: '— keep it clean.',
+  subheadYellow: "Forest Park's touchless car wash.",
+  subheadBody:
+    'Nothing touches your vehicle except soap, wax, and water. Simply pull in, and our touchless wash does the rest. At our Roosevelt Road location, heated enclosed bays keep your vehicle washed and blow-dried indoors—perfect for winter.',
+  primaryCta: { label: 'See wash packages', href: '#washes', external: false },
+  secondaryCta: { label: 'How it works', href: '#how', external: false },
+  tickerItems: [
+    'KEEP IT CLEAN',
+    'TOUCHLESS AUTO WASH',
+    'HEATED BAYS AT ROOSEVELT RD',
+    'OPEN 7AM–10PM',
+    'SPOT FREE RINSE',
+  ],
+  bayCardStatus: 'Bay 02 ready · Roosevelt Rd',
+  bayCardHeading: 'Pull up & watch the lights.',
+  bayCardBody:
+    "Don't enter unless the light is green. Pull forward slowly, let the message guide you.",
+  avgWashTime: '4 min 30s',
+  paymentLine: 'Visa · MC · Amex · Apple Pay · Cash · Tokens',
+}
+
+function TickerRow({ items }: { items: string[] }) {
   return (
     <span className="inline-flex items-center gap-12">
-      {tickerItems.map((t, i) => (
+      {items.map((t, i) => (
         <span key={i} className="inline-flex items-center gap-12">
           {t}
           <span className="w-2.5 h-2.5 rounded-full bg-blue-700"></span>
@@ -21,7 +79,21 @@ function TickerRow() {
   )
 }
 
-export default function Hero() {
+type HeroQueryResult = {
+  hero?: HeroData | null
+  lights?: { redLabel?: string; yellowLabel?: string; greenLabel?: string } | null
+}
+
+export default async function Hero() {
+  const result = await sanityFetch<HeroQueryResult>(HERO_QUERY)
+  const hero = { ...HERO_FALLBACK, ...(result?.hero ?? {}) }
+  const headline1 = hero.headlineLine1
+  const lightLabels: HeroLightsLabels = {
+    wait: result?.lights?.redLabel,
+    slow: result?.lights?.yellowLabel,
+    go: result?.lights?.greenLabel,
+  }
+
   return (
     <header
       className="relative overflow-hidden text-white pt-14 md:pt-18"
@@ -41,35 +113,36 @@ export default function Hero() {
               className="w-2 h-2 rounded-full bg-yellow-400"
               style={{ boxShadow: '0 0 0 4px rgba(255,217,61,.18)' }}
             ></span>
-            Forest Park, Illinois · Two locations · Since the 90s
+            {hero.eyebrow}
           </div>
           <h1 className="display text-[64px] sm:text-[96px] md:text-[140px] lg:text-[168px] [text-shadow:-0.035em_0.05em_0_#0a2a6b]">
-            <span className="text-yellow-400 text-[200px]">S</span>potless
+            <span className="text-yellow-400 text-[200px]">{headline1.charAt(0)}</span>
+            {headline1.slice(1)}
             <br />
-            Carwash
-            <span className="block text-blue-100 text-[0.62em] mt-2">— keep it clean.</span>
+            {hero.headlineLine2}
+            <span className="block text-blue-100 text-[0.62em] mt-2">{hero.headlineTagline}</span>
           </h1>
           <p className="mt-5 text-xl md:text-2xl font-bold text-yellow-400 max-w-[640px]">
-            Forest Park's touchless car wash.
+            {hero.subheadYellow}
           </p>
           <p className="mt-5 text-lg max-w-[520px] text-blue-100 leading-relaxed">
-            Nothing touches your vehicle except soap, wax, and water. Simply pull in, and our touchless wash does the rest. At our Roosevelt Road location, heated enclosed bays keep your vehicle washed and blow-dried indoors—perfect for winter.
+            {hero.subheadBody}
           </p>
           <div className="flex gap-3 mt-8 flex-wrap">
             <a
-              href="#washes"
+              href={hero.primaryCta.href}
               className="inline-flex items-center gap-2.5 px-5 py-3.5 rounded-full font-bold text-[15px] bg-yellow-400 text-blue-700 hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(255,217,61,.35)] transition"
             >
-              See wash packages
+              {hero.primaryCta.label}
               <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M5 12h14M13 6l6 6-6 6" />
               </svg>
             </a>
             <a
-              href="#how"
+              href={hero.secondaryCta.href}
               className="inline-flex items-center gap-2.5 px-5 py-3.5 rounded-full font-bold text-[15px] border-2 border-white/40 hover:border-white hover:bg-white/10 transition"
             >
-              How it works
+              {hero.secondaryCta.label}
             </a>
           </div>
         </div>
@@ -80,30 +153,28 @@ export default function Hero() {
               className="w-2.5 h-2.5 rounded-full bg-sky-400 animate-pulse2"
               style={{ boxShadow: '0 0 0 5px rgba(91,168,255,.25)' }}
             ></span>
-            Bay 02 ready · Roosevelt Rd
+            {hero.bayCardStatus}
           </div>
           <h2 className="mt-3.5 text-[22px] font-extrabold tracking-tight">
-            Pull up &amp; watch the lights.
+            {hero.bayCardHeading}
           </h2>
-          <p className="text-[#5b6987] text-sm mt-1">
-            Don't enter unless the light is green. Pull forward slowly, let the message guide you.
-          </p>
-          <HeroLights />
+          <p className="text-[#5b6987] text-sm mt-1">{hero.bayCardBody}</p>
+          <HeroLights labels={lightLabels} />
           <div className="flex justify-between items-center mt-4 pt-3.5 border-t border-dashed border-line text-[13px]">
             <span>Avg. wash time</span>
-            <b className="font-extrabold">4 min 30s</b>
+            <b className="font-extrabold">{hero.avgWashTime}</b>
           </div>
           <div className="flex justify-between items-start gap-3 mt-3.5 pt-3.5 border-t border-dashed border-line text-[13px]">
             <span className="shrink-0">Payments</span>
-            <b className="font-extrabold text-right">Visa · MC · Amex · Apple Pay · Cash · Tokens</b>
+            <b className="font-extrabold text-right">{hero.paymentLine}</b>
           </div>
         </aside>
       </div>
 
       <div className="bg-yellow-400 text-blue-700 py-3.5 mt-14 md:mt-20 border-y-[3px] border-blue-700 overflow-hidden">
         <div className="flex gap-12 whitespace-nowrap animate-scroll display text-[22px]">
-          <TickerRow />
-          <TickerRow />
+          <TickerRow items={hero.tickerItems} />
+          <TickerRow items={hero.tickerItems} />
         </div>
       </div>
     </header>

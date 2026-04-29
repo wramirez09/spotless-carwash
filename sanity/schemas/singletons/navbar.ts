@@ -1,0 +1,27 @@
+import { defineField, defineType } from 'sanity'
+
+export default defineType({
+  name: 'navbar',
+  title: 'Nav bar',
+  type: 'document',
+  fields: [
+    defineField({
+      name: 'sectionLinks',
+      title: 'Section links (in-page anchors)',
+      type: 'array',
+      of: [{ type: 'ctaLink' }],
+    }),
+    defineField({
+      name: 'pageLinks',
+      title: 'Page links',
+      type: 'array',
+      of: [{ type: 'ctaLink' }],
+    }),
+    defineField({ name: 'paypalUrl', type: 'string', title: 'PayPal token-buy URL' }),
+    defineField({ name: 'buyTokensLabel', type: 'string', initialValue: 'Buy tokens →' }),
+    defineField({ name: 'phone', type: 'string' }),
+    defineField({ name: 'phoneHref', type: 'string' }),
+    defineField({ name: 'email', type: 'string' }),
+    defineField({ name: 'hoursLine', type: 'string' }),
+  ],
+})

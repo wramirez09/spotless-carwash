@@ -6,11 +6,13 @@ type Light = 'wait' | 'slow' | 'go'
 
 const order: Light[] = ['wait', 'slow', 'go', 'slow']
 
-const label: Record<Light, string> = {
+const DEFAULT_LABELS: Record<Light, string> = {
   wait: 'Stop',
   slow: 'Back up',
   go: 'Go',
 }
+
+export type HeroLightsLabels = Partial<Record<Light, string>>
 
 const off = {
   wait: { background: '#3a1015', boxShadow: 'inset 0 -6px 12px rgba(0,0,0,.4)' },
@@ -33,7 +35,8 @@ const on = {
   },
 } as const
 
-export default function HeroLights() {
+export default function HeroLights({ labels = {} }: { labels?: HeroLightsLabels } = {}) {
+  const label: Record<Light, string> = { ...DEFAULT_LABELS, ...labels }
   const [i, setI] = useState(0)
 
   useEffect(() => {

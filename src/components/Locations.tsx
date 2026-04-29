@@ -1,5 +1,39 @@
 import Link from 'next/link'
-import { locations, directionsUrl, type Location } from '@/src/data/locations'
+import { sanityFetch } from '@/lib/sanityFetch'
+import { renderHighlight } from '@/lib/renderHighlight'
+import {
+  locations as fallbackLocations,
+  directionsUrl,
+  type Location,
+} from '@/src/data/locations'
+
+type LocationsSectionData = {
+  eyebrow: string
+  sectionNumber: string
+  heading: string
+  subhead: string
+  locations: Location[]
+}
+
+const LOCATIONS_QUERY = `{
+  "section": *[_type == "locationsSection"][0]{
+    eyebrow, sectionNumber, heading, subhead
+  },
+  "locations": *[_type == "location"]{
+    "slug": slug.current,
+    name, street, city, region, postalCode,
+    phone, phoneHref, selfServeBays, touchlessBays, heated,
+    gradient
+  }
+}`
+
+const LOCATIONS_FALLBACK: Omit<LocationsSectionData, 'locations'> = {
+  eyebrow: 'Locations',
+  sectionNumber: '03',
+  heading: 'Two locations. Ten bays. All in **Forest Park**.',
+  subhead:
+    'Both locations open 7am–10pm daily. Roosevelt Road has heated, enclosed automatic bays for winter washing.',
+}
 
 function Pin() {
   return (
@@ -84,27 +118,32 @@ function Card({ loc }: { loc: Location }) {
   )
 }
 
-export default function Locations() {
+export default async function Locations() {
+  const data = await sanityFetch<{
+    section?: Partial<LocationsSectionData>
+    locations?: Location[]
+  }>(LOCATIONS_QUERY)
+
+  const section = { ...LOCATIONS_FALLBACK, ...(data?.section ?? {}) }
+  const locs: Location[] = data?.locations?.length ? data.locations : fallbackLocations
+
   return (
     <section id="locations" className="bg-paper2 border-y border-line py-16 md:py-24">
       <div className="max-w-[1240px] mx-auto px-5 md:px-7">
         <div className="flex items-end justify-between gap-10 mb-10 md:mb-12 flex-wrap">
           <div>
             <div className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.22em] uppercase text-blue-500 mb-2.5">
-              <span className="mono text-[#5b6987] font-medium">03 /</span> Locations
+              <span className="mono text-[#5b6987] font-medium">{section.sectionNumber} /</span> {section.eyebrow}
             </div>
             <h2 className="display text-[40px] sm:text-[56px] md:text-[72px] max-w-[780px] m-0">
-              Two locations. Ten bays. All in <em className="text-blue-500 yellow-hl">Forest Park</em>.
+              {renderHighlight(section.heading, 'text-blue-500 yellow-hl')}
             </h2>
           </div>
-          <p className="max-w-[380px] text-[#445273] leading-relaxed">
-            Both locations open 7am–10pm daily. Roosevelt Road has heated, enclosed automatic bays
-            for winter washing.
-          </p>
+          <p className="max-w-[380px] text-[#445273] leading-relaxed">{section.subhead}</p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
-          {locations.map((l) => (
+          {locs.map((l) => (
             <Card key={l.slug} loc={l} />
           ))}
         </div>

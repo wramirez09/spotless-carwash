@@ -1,4 +1,32 @@
-import { packages, type Pkg, type WashColor } from '@/src/data/washes'
+import { sanityFetch } from '@/lib/sanityFetch'
+import { renderHighlight } from '@/lib/renderHighlight'
+import { packages as fallbackPackages, type Pkg, type WashColor } from '@/src/data/washes'
+
+type WashesData = {
+  eyebrow: string
+  sectionNumber: string
+  heading: string
+  subhead: string
+  packages: Pkg[]
+}
+
+const WASHES_QUERY = `{
+  "section": *[_type == "washesSection"][0]{
+    eyebrow, sectionNumber, heading, subhead
+  },
+  "packages": *[_type == "washPackage"] | order(order asc, priceNumber asc){
+    num, name, price, priceNumber, color, featured,
+    features[]{ text, included }
+  }
+}`
+
+const WASHES_FALLBACK: Omit<WashesData, 'packages'> = {
+  eyebrow: 'Wash packages',
+  sectionNumber: '01',
+  heading: 'Four ways to make your car **shine**.',
+  subhead:
+    'Top three packages include the air cannon dryers. Pay at the cash station with Visa, Mastercard, Amex, tap, Apple Pay, cash, or wash tokens — choose, then wait for green.',
+}
 
 function Check({ className }: { className: string }) {
   return (
@@ -97,23 +125,28 @@ function Card({ pkg }: { pkg: Pkg }) {
   )
 }
 
-export default function Washes() {
+export default async function Washes() {
+  const data = await sanityFetch<{
+    section?: Partial<WashesData>
+    packages?: Pkg[]
+  }>(WASHES_QUERY)
+
+  const section = { ...WASHES_FALLBACK, ...(data?.section ?? {}) }
+  const packages: Pkg[] = data?.packages?.length ? data.packages : fallbackPackages
+
   return (
     <section id="washes" className="py-16 md:py-24">
       <div className="max-w-[1240px] mx-auto px-5 md:px-7">
         <div className="flex items-end justify-between gap-10 mb-10 md:mb-12 flex-wrap">
           <div>
             <div className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.22em] uppercase text-blue-500 mb-2.5">
-              <span className="mono text-[#5b6987] font-medium">01 /</span> Wash packages
+              <span className="mono text-[#5b6987] font-medium">{section.sectionNumber} /</span> {section.eyebrow}
             </div>
             <h2 className="display text-[40px] sm:text-[56px] md:text-[72px] max-w-[780px] m-0">
-              Four ways to make your car <em className="text-blue-500 yellow-hl">shine</em>.
+              {renderHighlight(section.heading, 'text-blue-500 yellow-hl')}
             </h2>
           </div>
-          <p className="max-w-[380px] text-[#445273] leading-relaxed">
-            Top three packages include the air cannon dryers. Pay at the cash station with Visa,
-            Mastercard, Amex, tap, Apple Pay, cash, or wash tokens — choose, then wait for green.
-          </p>
+          <p className="max-w-[380px] text-[#445273] leading-relaxed">{section.subhead}</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

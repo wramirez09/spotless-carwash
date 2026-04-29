@@ -1,7 +1,10 @@
 import type { Metadata } from 'next'
 import { Archivo, Archivo_Black, JetBrains_Mono } from 'next/font/google'
+import { draftMode, headers } from 'next/headers'
+import VisualEditing from 'next-sanity/visual-editing/client-component'
 import Nav from '@/src/components/Nav'
 import Footer from '@/src/components/Footer'
+import { sanityFetch } from '@/lib/sanityFetch'
 import './globals.css'
 
 const archivo = Archivo({
@@ -29,14 +32,17 @@ const isProduction = process.env.VERCEL_ENV === 'production'
 
 // TODO(domain): set metadataBase to the production URL once finalized so OG and canonical
 // tags emit absolute URLs (e.g. new URL('https://spotlesscarwash.com')).
-export const metadata: Metadata = {
-  title: {
-    default: 'Spotless Carwash · Touchless Car Wash · Forest Park, IL',
-    template: '%s · Spotless Carwash',
-  },
+
+const SITE_SETTINGS_QUERY = `*[_type == "siteSettings"][0]{
+  titleDefault, titleTemplate, description, keywords,
+  ogTitle, ogDescription, twitterTitle, twitterDescription
+}`
+
+const SITE_FALLBACK = {
+  titleDefault: 'Spotless Carwash · Touchless Car Wash · Forest Park, IL',
+  titleTemplate: '%s · Spotless Carwash',
   description:
     "Forest Park's touchless car wash. Two locations with heated automatic bays for winter and self-serve wand bays. Open 7am–10pm daily.",
-  applicationName: 'Spotless Carwash',
   keywords: [
     'car wash',
     'touchless car wash',
@@ -48,35 +54,55 @@ export const metadata: Metadata = {
     'apple pay car wash',
     'tap to pay car wash',
   ],
-  openGraph: {
-    title: 'Spotless Carwash · Touchless Car Wash · Forest Park, IL',
-    description:
-      "Two Forest Park locations, heated automatic bays, self-serve wand bays. Open 7am–10pm daily.",
-    siteName: 'Spotless Carwash',
-    locale: 'en_US',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Spotless Carwash · Touchless Car Wash · Forest Park, IL',
-    description:
-      "Two Forest Park locations, heated automatic bays, self-serve wand bays. Open 7am–10pm daily.",
-  },
-  robots: isProduction
-    ? { index: true, follow: true }
-    : { index: false, follow: false },
+  ogTitle: 'Spotless Carwash · Touchless Car Wash · Forest Park, IL',
+  ogDescription:
+    'Two Forest Park locations, heated automatic bays, self-serve wand bays. Open 7am–10pm daily.',
+  twitterTitle: 'Spotless Carwash · Touchless Car Wash · Forest Park, IL',
+  twitterDescription:
+    'Two Forest Park locations, heated automatic bays, self-serve wand bays. Open 7am–10pm daily.',
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export async function generateMetadata(): Promise<Metadata> {
+  const data = await sanityFetch<Partial<typeof SITE_FALLBACK>>(SITE_SETTINGS_QUERY)
+  const s = { ...SITE_FALLBACK, ...(data ?? {}) }
+  return {
+    title: { default: s.titleDefault, template: s.titleTemplate },
+    description: s.description,
+    applicationName: 'Spotless Carwash',
+    keywords: s.keywords,
+    openGraph: {
+      title: s.ogTitle,
+      description: s.ogDescription,
+      siteName: 'Spotless Carwash',
+      locale: 'en_US',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: s.twitterTitle,
+      description: s.twitterDescription,
+    },
+    robots: isProduction
+      ? { index: true, follow: true }
+      : { index: false, follow: false },
+  }
+}
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const { isEnabled: isDraft } = await draftMode()
+  const pathname = (await headers()).get('x-pathname') ?? ''
+  const isStudio = pathname.startsWith('/studio')
+
   return (
     <html
       lang="en"
       className={`${archivo.variable} ${archivoBlack.variable} ${jetbrains.variable}`}
     >
       <body className="bg-paper text-ink font-sans">
-        <Nav />
+        {!isStudio && <Nav />}
         <main>{children}</main>
-        <Footer />
+        {!isStudio && <Footer />}
+        {isDraft && <VisualEditing />}
       </body>
     </html>
   )
