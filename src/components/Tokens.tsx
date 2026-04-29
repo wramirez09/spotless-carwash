@@ -6,7 +6,7 @@ const tiers = [
 
 export default function Tokens() {
   return (
-    <section id="tokens" className="pb-16 md:pb-24 pt-16 md:pt-24">
+    <section id="tokens" className="pb-16 md:pb-24">
       <div className="max-w-[1240px] mx-auto px-5 md:px-7">
         <div
           className="rounded-[28px] p-8 md:p-16 grid md:grid-cols-2 gap-10 md:gap-15 items-center relative overflow-hidden text-white"

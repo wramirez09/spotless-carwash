@@ -4,7 +4,7 @@ function CardIcon({ children }: { children: React.ReactNode }) {
 
 export default function OtherServices() {
   return (
-    <section id="services" className="pb-16 md:pb-24 pt-16 md:pt-24">
+    <section id="services" className="pt-16 md:pt-24 pb-8 md:pb-10">
       <div className="max-w-[1240px] mx-auto px-5 md:px-7">
         <div className="flex items-end justify-between gap-10 mb-10 md:mb-12 flex-wrap">
           <div>
@@ -173,7 +173,7 @@ export default function OtherServices() {
         </article>
 
         {/* House rules banner */}
-        <div className="mt-6 bg-blue-700 text-white rounded-2xl p-8 md:px-10 flex flex-col sm:flex-row items-start sm:items-center gap-7 relative overflow-hidden">
+        <div className="mt-6 bg-blue-700 text-white rounded-2xl p-8 md:px-10 flex flex-col sm:flex-row items-center gap-7 relative overflow-hidden">
           <div
             className="absolute inset-0 pointer-events-none"
             style={{ background: 'radial-gradient(circle at 0% 50%,rgba(255,217,61,.12),transparent 50%)' }}
@@ -187,7 +187,7 @@ export default function OtherServices() {
               <path d="M10.3 3.86l-8.05 14a2 2 0 001.74 3h16.06a2 2 0 001.74-3l-8.05-14a2 2 0 00-3.48 0z" />
             </svg>
           </div>
-          <div className="relative">
+          <div className="relative flex flex-col justify-center">
             <div className="mono text-[11px] font-semibold text-yellow-400 tracking-[0.22em] uppercase mb-1.5">
               // please note
             </div>
