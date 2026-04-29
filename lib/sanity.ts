@@ -8,10 +8,11 @@ const studioUrl = '/studio'
 const vercelEnv = process.env.NEXT_PUBLIC_VERCEL_ENV
 const isProduction = vercelEnv === 'production'
 // Stega encoding powers Presentation's click-to-edit overlay. We turn it on
-// for every non-production environment (preview + local dev) so editing works
-// while the studio is being authored against. Production keeps it OFF so
-// public users never see the encoded markers.
-const stegaEnabled = !isProduction
+// only for Vercel preview deployments where editors review unpublished
+// content. Production keeps it OFF so public users never see encoded markers;
+// local development keeps it OFF so signed-out devs aren't shown overlays.
+// Set NEXT_PUBLIC_VERCEL_ENV=preview locally if you need to test the overlay.
+const stegaEnabled = vercelEnv === 'preview'
 
 export const sanityClient = createClient({
   projectId,
