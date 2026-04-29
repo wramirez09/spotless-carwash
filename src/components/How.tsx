@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react'
 
 const steps = [
-  { n: '01', t: 'Choose your wash', d: 'Cash or card at the bay station — Basic, Clean, Spotless, or Showroom.' },
+  { n: '01', t: 'Pay at the station', d: 'Tap, card, cash, or token — Apple Pay too. Pick your wash (8, 9, 10, or 12) and confirm.' },
   { n: '02', t: 'Wait for green', d: "Don't pull in unless you have a green light. Red & yellow mean wait." },
-  { n: '03', t: 'Pull forward slowly', d: 'Stop when the front-left tire hits the red light. Then let go & sit tight.' },
-  { n: '04', t: 'Exit slooowly', d: 'Door opens, dryers blow. Pull through & check the timer overhead.' },
+  { n: '03', t: 'Pull in & park', d: 'Pull forward slowly. Hit the RED STOP signal, then put your car in park and sit tight.' },
+  { n: '04', t: 'Watch the timer', d: 'Check the countdown timer straight ahead. When the door opens and the dryers finish, pull through.' },
 ]
 
 const seq = [

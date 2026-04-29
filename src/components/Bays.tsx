@@ -27,8 +27,8 @@ const bays: Bay[] = [
   {
     title: ['Self-Serve', 'Wand Bays'],
     desc:
-      'Nine premium wash and dry options at your fingertips: tire & wheel cleaner, low-pressure presoak, foaming brush, polish, DuraShield surface gloss, high-pressure soap, high-pressure rinse, spot-free rinse, and Air-shammee Air Dryer. $4 for 5 minutes.',
-    features: ['9 wash products', 'Spot-free rinse', 'DuraShield', 'Air-shammee dryer'],
+      'Nine premium wash options at your fingertips: engine cleaner, tire & wheel cleaner, low-pressure presoak, high-pressure detergent, foaming brush, high-pressure rinse, clear coat sealant, LustraShield, and spot-free rinse. $4 for 5 minutes.',
+    features: ['9 wash products', 'Spot-free rinse', 'LustraShield', 'Foaming brush'],
     photo: '// photo: self-serve-bay.jpg',
     bgClass: 'bg-blue-500',
     icon: (
@@ -88,8 +88,7 @@ export default function Bays() {
             </h2>
           </div>
           <p className="max-w-[380px] text-[#445273] leading-relaxed">
-            Whether you prefer the convenience of a touchless automatic wash or the control of our
-            self-serve bays with foaming brushes, we've got the perfect wash for every vehicle.
+            Hands-free touchless automatic washes, or self-serve bays with foaming brushes when you want to do it yourself.
           </p>
         </div>
 

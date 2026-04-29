@@ -5,6 +5,7 @@ import Locations from '@/src/components/Locations'
 import Bays from '@/src/components/Bays'
 import Testimonial from '@/src/components/Testimonial'
 import Instructions from '@/src/components/Instructions'
+import OtherServices from '@/src/components/OtherServices'
 import Tokens from '@/src/components/Tokens'
 import Email from '@/src/components/Email'
 import OrganizationSchema from '@/src/components/seo/OrganizationSchema'
@@ -30,6 +31,7 @@ export default function HomePage() {
       <Bays />
       <Testimonial />
       <Instructions />
+      <OtherServices />
       <Tokens />
       <Email />
     </>

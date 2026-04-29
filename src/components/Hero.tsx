@@ -53,8 +53,7 @@ export default function Hero() {
             Forest Park's touchless car wash.
           </p>
           <p className="mt-5 text-lg max-w-[520px] text-blue-100 leading-relaxed">
-            Touchless, brushless, trackless &amp; scratchless. Drive in, line up the green light,
-            and let the wash do the work. No appointments, no lines, no mess.
+            Nothing touches your vehicle except soap, wax, and water. Simply pull in, and our touchless wash does the rest. At our Roosevelt Road location, heated enclosed bays keep your vehicle washed and blow-dried indoors—perfect for winter.
           </p>
           <div className="flex gap-3 mt-8 flex-wrap">
             <a
@@ -94,9 +93,9 @@ export default function Hero() {
             <span>Avg. wash time</span>
             <b className="font-extrabold">4 min 30s</b>
           </div>
-          <div className="flex justify-between items-center mt-3.5 pt-3.5 border-t border-dashed border-line text-[13px]">
-            <span>Payments</span>
-            <b className="font-extrabold">Visa · MC · Amex · Apple Pay · Cash · Tokens</b>
+          <div className="flex justify-between items-start gap-3 mt-3.5 pt-3.5 border-t border-dashed border-line text-[13px]">
+            <span className="shrink-0">Payments</span>
+            <b className="font-extrabold text-right">Visa · MC · Amex · Apple Pay · Cash · Tokens</b>
           </div>
         </aside>
       </div>

@@ -13,7 +13,7 @@ const quotes: Quote[] = [
   },
   {
     text:
-      'Self-serve bays have everything you need. The DuraShield + spot-free combo is the move. Tokens make the price feel like nothing.',
+      'Self-serve bays have everything you need. The LustraShield + spot-free combo is the move. Tokens make the price feel like nothing.',
     attribution: 'Detail-obsessed neighbor',
   },
   {

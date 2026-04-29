@@ -1,5 +1,6 @@
 import Washes from './Washes'
 import Bays from './Bays'
+import OtherServices from './OtherServices'
 import Tokens from './Tokens'
 import Email from './Email'
 import { directionsUrl, fullAddress, type Location } from '@/src/data/locations'
@@ -122,6 +123,7 @@ export default function LocationPage({ location }: { location: Location }) {
 
       <Washes />
       <Bays />
+      <OtherServices />
       <Tokens />
       <Email />
     </>

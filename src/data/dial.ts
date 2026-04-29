@@ -8,13 +8,13 @@ export type DialStep = {
 }
 
 export const dialSteps: DialStep[] = [
-  { n: 1, title: 'Tire & wheel cleaner', description: 'Targeted blast for brake dust & salt buildup.' },
-  { n: 2, title: 'Low-pressure presoak', description: 'Loosens road grime — let it dwell 10–20 seconds.' },
-  { n: 3, title: 'Foaming brush', description: 'Soft brush + thick suds. Top-down.' },
-  { n: 4, title: 'Polish', description: 'Wax-rich tri-foam — restores shine.' },
-  { n: 5, title: 'DuraShield surface gloss', description: 'Surface gloss — apply before spot-free, not as the final step.' },
-  { n: 6, title: 'High-pressure soap', description: 'Deep clean — work corner-to-corner.' },
-  { n: 7, title: 'High-pressure rinse', description: 'Strip the suds before they dry.' },
-  { n: 8, title: 'Spot-free rinse', description: 'De-ionized — no streaks, no spots. Finish here.' },
-  { n: 9, title: 'Air-shammee Air Dryer', description: 'Powerful air dryer — finish dry without towels.' },
+  { n: 1, title: 'Engine cleaner', description: 'Apply to entire engine. Finish with spot-free rinse.' },
+  { n: 2, title: 'Tire & wheel cleaner', description: 'Apply to wheels or tires. High-pressure rinse.' },
+  { n: 3, title: 'Low-pressure presoak', description: 'Apply to entire vehicle from bottom up. Let it dwell 10–20 seconds.' },
+  { n: 4, title: 'High-pressure detergent', description: 'Apply to entire vehicle from bottom up.' },
+  { n: 5, title: 'Foaming brush', description: 'Scrub vehicle top to bottom, then high-pressure rinse.' },
+  { n: 6, title: 'High-pressure rinse', description: 'Rinse entire vehicle from top down.' },
+  { n: 7, title: 'Clear coat sealant', description: 'Apply to entire vehicle. Finish with final rinse.' },
+  { n: 8, title: 'LustraShield', description: 'Apply to entire vehicle. Finish with final rinse — not as the last step.' },
+  { n: 9, title: 'Spot-free rinse', description: 'Apply spot-free rinse to entire vehicle. Finish here.' },
 ]

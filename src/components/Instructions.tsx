@@ -15,7 +15,7 @@ export default function Instructions() {
           </h2>
           <p className="max-w-[380px] text-blue-100 leading-relaxed mt-6">
             Always start at the top, work top-to-bottom, and let presoak sit 10–20 seconds before
-            rinsing. Finish with spot-free rinse — never DuraShield as the final step.
+            rinsing. Finish with spot-free rinse — never LustraShield as the final step.
           </p>
         </div>
         <div className="bg-white/5 border border-white/10 rounded-[20px] overflow-hidden">

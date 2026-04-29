@@ -6,6 +6,12 @@ type Light = 'wait' | 'slow' | 'go'
 
 const order: Light[] = ['wait', 'slow', 'go', 'slow']
 
+const label: Record<Light, string> = {
+  wait: 'Stop',
+  slow: 'Back up',
+  go: 'Go',
+}
+
 const off = {
   wait: { background: '#3a1015', boxShadow: 'inset 0 -6px 12px rgba(0,0,0,.4)' },
   slow: { background: '#3a2a10', boxShadow: 'inset 0 -6px 12px rgba(0,0,0,.4)' },
@@ -51,7 +57,7 @@ export default function HeroLights() {
               className="w-[34px] h-[34px] rounded-full transition-all duration-500 ease-in-out"
               style={style}
             ></div>
-            {light}
+            {label[light]}
           </div>
         )
       })}

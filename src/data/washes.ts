@@ -35,7 +35,7 @@ export const packages: Pkg[] = [
       { text: 'Pre-soak & foam', included: true },
       { text: 'High-pressure rinse', included: true },
       { text: 'Air cannon dryer', included: true },
-      { text: 'DuraShield surface gloss', included: false },
+      { text: 'LustraShield surface gloss', included: false },
     ],
   },
   {
@@ -59,7 +59,7 @@ export const packages: Pkg[] = [
     color: 'blue',
     features: [
       { text: 'Triple-foam wax', included: true },
-      { text: 'DuraShield surface gloss', included: true },
+      { text: 'LustraShield surface gloss', included: true },
       { text: 'Hot wax overhead', included: true },
       { text: 'Air cannon dryer', included: true },
     ],
