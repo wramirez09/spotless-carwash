@@ -32,9 +32,10 @@ export default function NavClient({ data }: { data: NavData }) {
   return (
     <nav className="sticky top-0 z-50 bg-blue-500 text-white border-b-[3px] border-blue-700">
       <div className="max-w-[1240px] mx-auto flex items-center gap-4 md:gap-6 px-5 md:px-7 py-3.5">
-        <Link href="/" className="logo-mark" onClick={close}>
-          <span className="display text-white text-[22px]">
-            <span className="text-yellow-400 text-[35px]">S</span>POTLESS
+        <Link href="/" onClick={close}>
+          <span className="display italic uppercase text-white text-[22px] [text-shadow:-0.035em_0.05em_0_#0a2a6b]">
+            <span className="text-[35px]">S</span>POTLESS
+            <div className="pl-[1em]">CARWASH</div>
           </span>
         </Link>
 

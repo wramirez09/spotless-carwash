@@ -115,12 +115,11 @@ export default async function Hero() {
             ></span>
             {hero.eyebrow}
           </div>
-          <h1 className="display text-[64px] sm:text-[96px] md:text-[140px] lg:text-[168px] [text-shadow:-0.035em_0.05em_0_#0a2a6b]">
-            <span className="text-yellow-400 text-[200px]">{headline1.charAt(0)}</span>
+          <h1 className="display italic uppercase text-[64px] sm:text-[96px] md:text-[140px] lg:text-[168px] [text-shadow:-0.035em_0.05em_0_#0a2a6b]">
+            <span className="text-[1.75em]">{headline1.charAt(0)}</span>
             {headline1.slice(1)}
-            <br />
-            {hero.headlineLine2}
-            <span className="block text-blue-100 text-[0.62em] mt-2">{hero.headlineTagline}</span>
+            <span className="block pl-[0.5em]">{hero.headlineLine2}</span>
+            <span className="block normal-case text-blue-100 text-[0.62em] mt-2">{hero.headlineTagline}</span>
           </h1>
           <p className="mt-5 text-xl md:text-2xl font-bold text-yellow-400 max-w-[640px]">
             {hero.subheadYellow}

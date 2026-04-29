@@ -65,9 +65,10 @@ export default async function Footer() {
       <div className="max-w-[1240px] mx-auto px-5 md:px-7">
         <div className="grid md:grid-cols-[1.4fr_1fr_1fr_1fr] gap-10 mb-12">
           <div>
-            <Link href="/" className="logo-mark inline-flex items-center justify-center mb-3 leading-none">
-              <span className="display text-white text-[22px] leading-none">
-                <span className="text-yellow-400 text-[35px]">S</span>POTLESS
+            <Link href="/" className="inline-block mb-3 leading-none">
+              <span className="display italic uppercase text-white text-[22px] leading-none [text-shadow:-0.035em_0.05em_0_#0a2a6b]">
+                <span className="text-[35px]">S</span>POTLESS
+                <div className="pl-[1em]">CARWASH</div>
               </span>
             </Link>
             <p className="text-blue-200 text-sm leading-relaxed max-w-[340px] mt-4.5">

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Archivo, Archivo_Black, JetBrains_Mono } from 'next/font/google'
+import { Archivo, Archivo_Black, Barlow_Condensed, JetBrains_Mono } from 'next/font/google'
 import { draftMode, headers } from 'next/headers'
 import VisualEditing from 'next-sanity/visual-editing/client-component'
 import Nav from '@/src/components/Nav'
@@ -18,6 +18,14 @@ const archivoBlack = Archivo_Black({
   subsets: ['latin'],
   variable: '--font-archivo-black',
   weight: '400',
+  display: 'swap',
+})
+
+const barlowCondensed = Barlow_Condensed({
+  subsets: ['latin'],
+  variable: '--font-barlow-condensed',
+  weight: '700',
+  style: 'italic',
   display: 'swap',
 })
 
@@ -96,7 +104,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html
       lang="en"
-      className={`${archivo.variable} ${archivoBlack.variable} ${jetbrains.variable}`}
+      className={`${archivo.variable} ${archivoBlack.variable} ${barlowCondensed.variable} ${jetbrains.variable}`}
     >
       <body className="bg-paper text-ink font-sans">
         {!isStudio && <Nav />}

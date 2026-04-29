@@ -14,7 +14,7 @@ export default {
       },
       fontFamily: {
         sans: ['var(--font-archivo)', 'system-ui', 'sans-serif'],
-        display: ['var(--font-archivo-black)', 'sans-serif'],
+        display: ['var(--font-barlow-condensed)', 'Barlow Condensed', 'sans-serif'],
         mono: ['var(--font-jetbrains)', 'ui-monospace', 'monospace'],
       },
       keyframes: {

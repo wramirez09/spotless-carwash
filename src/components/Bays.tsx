@@ -77,12 +77,12 @@ function Card({ bay, index }: { bay: Bay; index: number }) {
         </div>
       </div>
       <div className="p-8 flex flex-col gap-4.5 flex-1">
-        <h3 className="display text-[36px] m-0 leading-none">
+        <h3 className="display text-[36px] m-0 leading-none mb-3">
           {bay.titleLine1}
           <br />
           {bay.titleLine2}
         </h3>
-        <p className="m-0 text-[#445273] leading-relaxed">{bay.desc}</p>
+        <p className="m-0 text-[#445273] leading-relaxed mb-3">{bay.desc}</p>
         <div className="grid grid-cols-2 gap-2.5">
           {bay.features.map((f) => (
             <div

@@ -24,8 +24,9 @@ body {
 }
 
 .display {
-  font-family: var(--font-archivo-black), 'Archivo', sans-serif;
+  font-family: var(--font-barlow-condensed), 'Barlow Condensed', sans-serif;
   font-style: italic;
+  font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 0.92;
 }
