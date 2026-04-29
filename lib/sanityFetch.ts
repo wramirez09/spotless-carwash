@@ -1,5 +1,5 @@
 import { draftMode } from 'next/headers'
-import { sanityClient } from './sanity'
+import { sanityClient, studioUrl } from './sanity'
 
 type FetchOptions = {
   params?: Record<string, unknown>
@@ -13,8 +13,9 @@ const readToken = process.env.SANITY_API_READ_TOKEN
  * Server-side fetch wrapper. Returns null on missing config or network errors
  * so callers can fall back to defaults instead of crashing the page.
  *
- * In draft mode (Sanity Presentation), uses `previewDrafts` perspective so
- * unpublished changes show up immediately. Production keeps `published`.
+ * In draft mode (Sanity Presentation), uses `previewDrafts` perspective and
+ * stega encoding so unpublished changes show up immediately and the inline
+ * edit overlay can find click targets — even in production deployments.
  */
 export async function sanityFetch<T>(query: string, opts: FetchOptions = {}): Promise<T | null> {
   if (!process.env.NEXT_PUBLIC_SANITY_PROJECT_ID) return null
@@ -32,6 +33,7 @@ export async function sanityFetch<T>(query: string, opts: FetchOptions = {}): Pr
           token: readToken,
           perspective: 'previewDrafts',
           useCdn: false,
+          stega: { enabled: true, studioUrl },
         })
       : sanityClient
 
