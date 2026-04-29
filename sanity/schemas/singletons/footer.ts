@@ -4,6 +4,7 @@ export default defineType({
   name: 'footer',
   title: 'Footer',
   type: 'document',
+  preview: { prepare: () => ({ title: 'Footer' }) },
   fields: [
     defineField({
       name: 'logo',

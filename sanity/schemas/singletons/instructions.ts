@@ -4,6 +4,7 @@ export default defineType({
   name: 'instructions',
   title: 'Self-serve instructions',
   type: 'document',
+  preview: { prepare: () => ({ title: 'Self-serve instructions' }) },
   fields: [
     defineField({ name: 'eyebrow', type: 'string', initialValue: 'Self-serve dial' }),
     defineField({ name: 'sectionNumber', type: 'string', initialValue: '05' }),

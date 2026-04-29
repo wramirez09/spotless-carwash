@@ -4,6 +4,7 @@ export default defineType({
   name: 'siteSettings',
   title: 'Site Settings',
   type: 'document',
+  preview: { prepare: () => ({ title: 'Site Settings' }) },
   fields: [
     defineField({ name: 'titleDefault', type: 'string', title: 'Default <title>' }),
     defineField({ name: 'titleTemplate', type: 'string', title: 'Title template (e.g. "%s · Spotless Carwash")' }),

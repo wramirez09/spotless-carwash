@@ -4,6 +4,7 @@ export default defineType({
   name: 'emailSection',
   title: 'Email signup',
   type: 'document',
+  preview: { prepare: () => ({ title: 'Email signup' }) },
   fields: [
     defineField({ name: 'headlineLine1', type: 'string' }),
     defineField({ name: 'headlineLine2', type: 'string' }),

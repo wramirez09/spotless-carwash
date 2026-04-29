@@ -4,6 +4,7 @@ export default defineType({
   name: 'howSection',
   title: 'How it works',
   type: 'document',
+  preview: { prepare: () => ({ title: 'How it works' }) },
   fields: [
     defineField({ name: 'eyebrow', type: 'string', initialValue: 'How it works' }),
     defineField({ name: 'sectionNumber', type: 'string', initialValue: '02' }),

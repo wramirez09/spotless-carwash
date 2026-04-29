@@ -4,6 +4,7 @@ export default defineType({
   name: 'tokens',
   title: 'Wash tokens',
   type: 'document',
+  preview: { prepare: () => ({ title: 'Wash tokens' }) },
   fields: [
     defineField({ name: 'eyebrow', type: 'string', initialValue: 'Wash tokens' }),
     defineField({ name: 'sectionNumber', type: 'string', initialValue: '07' }),

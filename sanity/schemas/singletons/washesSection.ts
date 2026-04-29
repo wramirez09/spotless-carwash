@@ -4,6 +4,7 @@ export default defineType({
   name: 'washesSection',
   title: 'Washes — section copy',
   type: 'document',
+  preview: { prepare: () => ({ title: 'Washes — section copy' }) },
   fields: [
     defineField({ name: 'eyebrow', type: 'string', description: 'e.g. "Wash packages"' }),
     defineField({ name: 'sectionNumber', type: 'string', initialValue: '01' }),

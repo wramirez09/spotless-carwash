@@ -4,6 +4,7 @@ export default defineType({
   name: 'testimonialSection',
   title: 'Testimonials',
   type: 'document',
+  preview: { prepare: () => ({ title: 'Testimonials' }) },
   fields: [
     defineField({
       name: 'quotes',

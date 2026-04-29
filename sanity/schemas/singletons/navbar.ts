@@ -4,6 +4,7 @@ export default defineType({
   name: 'navbar',
   title: 'Nav bar',
   type: 'document',
+  preview: { prepare: () => ({ title: 'Nav bar' }) },
   fields: [
     defineField({
       name: 'logo',

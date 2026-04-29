@@ -434,6 +434,29 @@ const faqEntryDocs = faqsData.map((f, i) => ({
 // Run
 // ---------------------------------------------------------------------------
 
+// Sanity requires a unique `_key` on every object inside an array. Walk the
+// payload and assign deterministic keys so re-runs produce identical output.
+function withKeys<T>(value: T, path = ''): T {
+  if (Array.isArray(value)) {
+    return value.map((item, i) => {
+      const next = withKeys(item, `${path}[${i}]`)
+      if (next && typeof next === 'object' && !Array.isArray(next)) {
+        const obj = next as Record<string, unknown>
+        if (!obj._key) obj._key = `${path.replace(/[^a-zA-Z0-9]+/g, '_') || 'k'}_${i}`
+      }
+      return next
+    }) as unknown as T
+  }
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k] = withKeys(v, `${path}.${k}`)
+    }
+    return out as unknown as T
+  }
+  return value
+}
+
 async function main() {
   const all = [
     ...Object.values(singletons),
@@ -441,7 +464,7 @@ async function main() {
     ...washPackageDocs,
     ...dialStepDocs,
     ...faqEntryDocs,
-  ]
+  ].map((doc) => withKeys(doc))
 
   console.log(`Seeding ${all.length} documents → project ${projectId} / dataset production`)
 

@@ -4,6 +4,7 @@ export default defineType({
   name: 'faqPage',
   title: 'FAQ page',
   type: 'document',
+  preview: { prepare: () => ({ title: 'FAQ page' }) },
   fields: [
     defineField({ name: 'eyebrow', type: 'string', initialValue: 'Frequently asked' }),
     defineField({ name: 'metaTitle', type: 'string' }),

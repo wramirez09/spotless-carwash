@@ -4,6 +4,7 @@ export default defineType({
   name: 'hero',
   title: 'Hero',
   type: 'document',
+  preview: { prepare: () => ({ title: 'Hero' }) },
   fields: [
     defineField({ name: 'eyebrow', type: 'string', description: 'Pre-headline tag, e.g. "Forest Park, Illinois · Two locations · Since the 90s"' }),
     defineField({ name: 'headlineLine1', type: 'string' }),
