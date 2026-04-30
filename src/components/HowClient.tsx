@@ -67,14 +67,16 @@ export default function HowClient({ data }: { data: HowData }) {
             </div>
           </div>
           <div
-            className="relative bg-[#06122c] rounded-3xl border-2 border-[#142855] p-9 flex flex-col gap-4.5 items-center"
+            className="relative bg-[#06122c] rounded-3xl border-2 border-[#142855] p-9 flex flex-col items-center"
             style={{ boxShadow: 'inset 0 0 60px rgba(0,0,0,.6),0 30px 80px rgba(0,0,0,.5)' }}
           >
             <div className="display text-white text-lg">{data.bayLabel}</div>
-            <div className={'lamp' + (s.r ? ' on-r' : '')}></div>
-            <div className={'lamp' + (s.y ? ' on-y' : '')}></div>
-            <div className={'lamp' + (s.g ? ' on-g' : '')}></div>
-            <div className="mono text-[11px] tracking-[0.18em] uppercase text-blue-200 -mt-2">
+            <div className="flex-1 flex flex-col items-center justify-center gap-4.5 my-6">
+              <div className={'lamp' + (s.r ? ' on-r' : '')}></div>
+              <div className={'lamp' + (s.y ? ' on-y' : '')}></div>
+              <div className={'lamp' + (s.g ? ' on-g' : '')}></div>
+            </div>
+            <div className="mono text-[11px] tracking-[0.18em] uppercase text-blue-200">
               // status: {s.t}
             </div>
           </div>
