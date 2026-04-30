@@ -17,7 +17,7 @@ export type HeroLightsLabels = Partial<Record<Light, string>>
 const off = {
   wait: { background: '#3a1015', boxShadow: 'inset 0 -6px 12px rgba(0,0,0,.4)' },
   slow: { background: '#3a2a10', boxShadow: 'inset 0 -6px 12px rgba(0,0,0,.4)' },
-  go: { background: '#0d1a3a', boxShadow: 'inset 0 -6px 12px rgba(0,0,0,.4)' },
+  go: { background: '#0a2a14', boxShadow: 'inset 0 -6px 12px rgba(0,0,0,.4)' },
 } as const
 
 const on = {
@@ -30,8 +30,8 @@ const on = {
     boxShadow: '0 0 22px rgba(244,180,0,.8),inset 0 -6px 12px rgba(0,0,0,.3)',
   },
   go: {
-    background: 'radial-gradient(circle at 35% 30%,#bcd9ff,#5BA8FF 70%)',
-    boxShadow: '0 0 22px rgba(91,168,255,.85),inset 0 -6px 12px rgba(0,0,0,.3)',
+    background: 'radial-gradient(circle at 35% 30%,#a8f0b4,#22c55e 70%)',
+    boxShadow: '0 0 22px rgba(34,197,94,.85),inset 0 -6px 12px rgba(0,0,0,.3)',
   },
 } as const
 

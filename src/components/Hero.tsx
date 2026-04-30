@@ -165,8 +165,8 @@ export default async function Hero() {
         <aside className="bg-white text-ink rounded-3xl p-6 translate-y-0 md:translate-y-15 shadow-[0_24px_60px_rgba(8,24,63,.35)]">
           <div className="flex items-center gap-2.5 font-bold text-[13px] text-blue-500">
             <span
-              className="w-2.5 h-2.5 rounded-full bg-sky-400 animate-pulse2"
-              style={{ boxShadow: '0 0 0 5px rgba(91,168,255,.25)' }}
+              className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse2"
+              style={{ boxShadow: '0 0 0 5px rgba(34,197,94,.25)' }}
             ></span>
             {hero.bayCardStatus}
           </div>

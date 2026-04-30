@@ -93,7 +93,7 @@ export default async function Footer() {
               <h2 className="m-0 mb-4.5 text-[11px] tracking-[0.22em] uppercase font-bold text-blue-200">
                 {c.title}
               </h2>
-              <ul className="list-none p-0 m-0 flex flex-col gap-2.5">
+              <ul className="list-none p-0 m-0 flex flex-col gap-1">
                 {c.items.map((it) =>
                   it.external ? (
                     <li key={it.label}>

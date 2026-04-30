@@ -99,8 +99,8 @@ function Card({ loc, hoursShort }: { loc: Location; hoursShort: string }) {
         <div className="flex justify-between items-center text-sm">
           <span className="text-blue-500 font-bold inline-flex items-center gap-1.5">
             <span
-              className="w-2 h-2 rounded-full bg-sky-400 animate-pulse2"
-              style={{ boxShadow: '0 0 0 4px rgba(91,168,255,.25)' }}
+              className="w-2 h-2 rounded-full bg-green-400 animate-pulse2"
+              style={{ boxShadow: '0 0 0 4px rgba(34,197,94,.25)' }}
             ></span>
             Open now
           </span>
