@@ -96,9 +96,19 @@ const LOCAL_PHOTO_BY_KIND: Record<BayKind, { src: string; alt: string; caption: 
   },
 }
 
-function Card({ bay, index }: { bay: Bay; index: number }) {
+type LocalPhoto = { src: string; alt: string; caption: string; objectPosition: string }
+
+function Card({
+  bay,
+  index,
+  photoOverrides,
+}: {
+  bay: Bay
+  index: number
+  photoOverrides?: Partial<Record<BayKind, LocalPhoto>>
+}) {
   const kind: BayKind = (bay.kind ?? 'automatic') as BayKind
-  const local = LOCAL_PHOTO_BY_KIND[kind]
+  const local = photoOverrides?.[kind] ?? LOCAL_PHOTO_BY_KIND[kind]
   const hasSanityPhoto = !!bay.photo?.asset?._ref
   const showImage = hasSanityPhoto || !!local
   return (
@@ -173,7 +183,11 @@ function Card({ bay, index }: { bay: Bay; index: number }) {
   )
 }
 
-export default async function Bays() {
+export default async function Bays({
+  photoOverrides,
+}: {
+  photoOverrides?: Partial<Record<BayKind, LocalPhoto>>
+} = {}) {
   const data = await sanityFetch<Partial<BaysData>>(BAYS_QUERY)
   const section: BaysData = {
     ...BAYS_FALLBACK,
@@ -209,7 +223,7 @@ export default async function Bays() {
 
         <div className="grid md:grid-cols-2 gap-6">
           {bays.map((b, i) => (
-            <Card key={i} bay={b} index={i} />
+            <Card key={i} bay={b} index={i} photoOverrides={photoOverrides} />
           ))}
         </div>
       </div>
