@@ -86,7 +86,7 @@ const FALLBACK: OtherServicesData = {
     {
       code: 'SVC / 05',
       title: 'Wash hours',
-      body: 'Daily — every day of the week.',
+      body: '7AM – 10PM daily, every day of the week.',
       icon: 'clock',
       hoursStart: '7AM',
       hoursEnd: '10PM',
@@ -220,19 +220,28 @@ function ServiceCardEl({ s }: { s: ServiceCard }) {
     )
   }
 
-  // Hours card — big start/end display when both hoursStart and hoursEnd are set
-  if (s.hoursStart && s.hoursEnd) {
+  // Hours card — big start/end display when icon is "clock", both hours are set,
+  // or the title mentions "hours". Defaults to the site's 7AM–10PM if Sanity values
+  // are missing.
+  const isHoursCard =
+    s.icon === 'clock' ||
+    (!!s.hoursStart && !!s.hoursEnd) ||
+    /hours/i.test(s.title ?? '')
+  if (isHoursCard) {
+    const start = s.hoursStart || '7AM'
+    const end = s.hoursEnd || '10PM'
+    const hoursIcon = icon ?? ICON_BY_KEY.clock
     return (
       <article className="bg-white border border-line rounded-2xl p-7 flex flex-col gap-3.5">
         <div className="flex items-center justify-between">
           <span className="mono text-xs font-semibold text-[#5b6987]">{s.code}</span>
-          {icon && <CardIcon>{icon}</CardIcon>}
+          <CardIcon>{hoursIcon}</CardIcon>
         </div>
         <h3 className="display text-[28px] m-0">{s.title}</h3>
         <div className="flex items-baseline gap-1.5">
-          <span className="display text-[42px] text-blue-500 leading-none">{s.hoursStart}</span>
+          <span className="display text-[42px] text-blue-500 leading-none">{start}</span>
           <span className="text-[#5b6987] font-bold">–</span>
-          <span className="display text-[42px] text-blue-500 leading-none">{s.hoursEnd}</span>
+          <span className="display text-[42px] text-blue-500 leading-none">{end}</span>
         </div>
         <p className="m-0 text-[#445273] leading-relaxed text-sm">{s.body}</p>
       </article>
