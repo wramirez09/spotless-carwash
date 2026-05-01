@@ -47,11 +47,24 @@ function Pin() {
   )
 }
 
+const LOCAL_CARD_PHOTO: Record<string, { src: string; alt: string; objectPosition: string }> = {
+  'roosevelt-rd': {
+    src: '/images/location-exterior.jpg',
+    alt: 'Roosevelt Rd storefront exterior',
+    objectPosition: '50% 55%',
+  },
+  'madison-st': {
+    src: '/images/madison-loaction.jpg',
+    alt: 'Madison St storefront exterior',
+    objectPosition: '50% 55%',
+  },
+}
+
 function Card({ loc, hoursShort }: { loc: Location; hoursShort: string }) {
   const isRoosevelt = loc.slug === 'roosevelt-rd'
-  const headerHeight = isRoosevelt ? 'h-[320px]' : 'h-[240px]'
+  const headerHeight = 'h-[320px]'
   const hasSanityPhoto = !!loc.photo?.asset?._ref
-  const showLocalFallback = isRoosevelt && !hasSanityPhoto
+  const localPhoto = !hasSanityPhoto ? LOCAL_CARD_PHOTO[loc.slug] : undefined
   return (
     <article className="bg-white rounded-[22px] overflow-hidden border border-line flex flex-col">
       <div
@@ -67,13 +80,13 @@ function Card({ loc, hoursShort }: { loc: Location; hoursShort: string }) {
             className="absolute inset-0 w-full h-full object-cover"
           />
         )}
-        {showLocalFallback && (
+        {localPhoto && (
           <Image
-            src="/images/location-exterior.jpg"
-            alt={`${loc.name} storefront exterior`}
+            src={localPhoto.src}
+            alt={localPhoto.alt}
             fill
             sizes="(max-width: 768px) 100vw, 600px"
-            style={{ objectFit: 'cover', objectPosition: '50% 55%' }}
+            style={{ objectFit: 'cover', objectPosition: localPhoto.objectPosition }}
             className="absolute inset-0"
           />
         )}

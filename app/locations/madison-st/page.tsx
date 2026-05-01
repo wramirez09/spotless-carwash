@@ -190,7 +190,13 @@ export default async function Page() {
       <Washes />
       <Bays
         photoOverrides={{
-          automatic: touchlessSanity,
+          automatic:
+            touchlessSanity ?? {
+              src: '/images/madison-touchless-bays.jpg',
+              alt: 'Madison St touchless automatic bays',
+              caption: '// touchless-bay',
+              objectPosition: '50% 55%',
+            },
           'self-serve':
             selfServeSanity ?? {
               src: '/images/madison-bays.jpg',
