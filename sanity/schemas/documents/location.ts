@@ -22,7 +22,28 @@ export default defineType({
     defineField({ name: 'touchlessBays', type: 'number' }),
     defineField({ name: 'heated', type: 'boolean', initialValue: false }),
     defineField({ name: 'gradient', type: 'string', description: 'CSS gradient string used as the page header background' }),
-    defineField({ name: 'photo', type: 'imageWithAlt' }),
+    defineField({
+      name: 'photo',
+      type: 'imageWithAlt',
+      description: 'Card background in the homepage Locations section.',
+    }),
+    defineField({
+      name: 'heroImage',
+      type: 'imageWithAlt',
+      description: 'Square photo shown in the right column of the location page hero.',
+    }),
+    defineField({
+      name: 'touchlessBayPhoto',
+      type: 'imageWithAlt',
+      description:
+        'Override for the touchless bay card on this location page. Defaults to the bays section photo.',
+    }),
+    defineField({
+      name: 'selfServeBayPhoto',
+      type: 'imageWithAlt',
+      description:
+        'Override for the self-serve bay card on this location page. Defaults to the bays section photo.',
+    }),
     defineField({ name: 'metaTitle', type: 'string', description: 'Per-page <title> override' }),
     defineField({ name: 'metaDescription', type: 'text', rows: 3 }),
     defineField({

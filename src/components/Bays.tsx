@@ -97,6 +97,11 @@ const LOCAL_PHOTO_BY_KIND: Record<BayKind, { src: string; alt: string; caption: 
 }
 
 type LocalPhoto = { src: string; alt: string; caption: string; objectPosition: string }
+type PhotoOverride = ImageWithAlt | LocalPhoto | null | undefined
+
+function isSanityImage(v: PhotoOverride): v is ImageWithAlt {
+  return !!v && typeof v === 'object' && 'asset' in v && !!(v as ImageWithAlt).asset?._ref
+}
 
 function Card({
   bay,
@@ -105,11 +110,15 @@ function Card({
 }: {
   bay: Bay
   index: number
-  photoOverrides?: Partial<Record<BayKind, LocalPhoto>>
+  photoOverrides?: Partial<Record<BayKind, PhotoOverride>>
 }) {
   const kind: BayKind = (bay.kind ?? 'automatic') as BayKind
-  const local = photoOverrides?.[kind] ?? LOCAL_PHOTO_BY_KIND[kind]
-  const hasSanityPhoto = !!bay.photo?.asset?._ref
+  const override = photoOverrides?.[kind]
+  const overrideSanity = isSanityImage(override) ? override : null
+  const overrideLocal = !overrideSanity && override && 'src' in (override as LocalPhoto) ? (override as LocalPhoto) : null
+  const local = overrideLocal ?? LOCAL_PHOTO_BY_KIND[kind]
+  const hasSanityPhoto = !!overrideSanity || !!bay.photo?.asset?._ref
+  const sanityImage = overrideSanity ?? bay.photo
   const showImage = hasSanityPhoto || !!local
   return (
     <article className="bg-white border border-line rounded-[22px] overflow-hidden flex flex-col">
@@ -117,9 +126,9 @@ function Card({
         className={`h-[280px] relative overflow-hidden ${showImage ? '' : bay.bgClass ?? ''}`}
         style={showImage ? { position: 'relative' } : bay.bgStyle}
       >
-        {hasSanityPhoto ? (
+        {hasSanityPhoto && sanityImage ? (
           <SanityImage
-            image={bay.photo}
+            image={sanityImage}
             width={1200}
             height={560}
             sizes="(max-width: 768px) 100vw, 600px"
@@ -186,7 +195,7 @@ function Card({
 export default async function Bays({
   photoOverrides,
 }: {
-  photoOverrides?: Partial<Record<BayKind, LocalPhoto>>
+  photoOverrides?: Partial<Record<BayKind, PhotoOverride>>
 } = {}) {
   const data = await sanityFetch<Partial<BaysData>>(BAYS_QUERY)
   const section: BaysData = {

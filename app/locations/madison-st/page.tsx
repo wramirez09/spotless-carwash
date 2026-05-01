@@ -7,8 +7,10 @@ import OtherServices from '@/src/components/OtherServices'
 import Tokens from '@/src/components/Tokens'
 import Email from '@/src/components/Email'
 import LocalBusinessSchema from '@/src/components/seo/LocalBusinessSchema'
+import SanityImage from '@/src/components/SanityImage'
 import { locations } from '@/src/data/locations'
 import { sanityFetch } from '@/lib/sanityFetch'
+import type { ImageWithAlt } from '@/lib/sanityImage'
 
 const loc = locations.find((l) => l.slug === 'madison-st')!
 
@@ -18,6 +20,15 @@ const DIRECTIONS_URL = `https://www.google.com/maps/search/?api=1&query=${encode
 )}`
 
 const META_QUERY = `*[_type == "location" && slug.current == $slug][0]{ metaTitle, metaDescription }`
+const IMAGES_QUERY = `*[_type == "location" && slug.current == $slug][0]{
+  heroImage, touchlessBayPhoto, selfServeBayPhoto
+}`
+
+type LocationImages = {
+  heroImage?: ImageWithAlt | null
+  touchlessBayPhoto?: ImageWithAlt | null
+  selfServeBayPhoto?: ImageWithAlt | null
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   const data = await sanityFetch<{ metaTitle?: string; metaDescription?: string }>(
@@ -32,7 +43,13 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default function Page() {
+export default async function Page() {
+  const images = await sanityFetch<LocationImages>(IMAGES_QUERY, {
+    params: { slug: loc.slug },
+  })
+  const heroImage = images?.heroImage ?? null
+  const touchlessSanity = images?.touchlessBayPhoto ?? null
+  const selfServeSanity = images?.selfServeBayPhoto ?? null
   return (
     <>
       <LocalBusinessSchema location={loc} />
@@ -134,15 +151,26 @@ export default function Page() {
               className="relative aspect-square rounded-[28px] overflow-hidden border-2 border-white/15"
               style={{ boxShadow: '0 30px 80px rgba(8,24,63,.45)' }}
             >
-              <Image
-                src="/images/madison-hero.png"
-                alt="Spotless Carwash Madison St storefront"
-                fill
-                priority
-                sizes="(max-width: 1024px) 100vw, 480px"
-                style={{ objectFit: 'cover', objectPosition: '50% 55%' }}
-                decoding="async"
-              />
+              {heroImage?.asset?._ref ? (
+                <SanityImage
+                  image={heroImage}
+                  width={1200}
+                  height={1200}
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 480px"
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              ) : (
+                <Image
+                  src="/images/madison-hero.png"
+                  alt="Spotless Carwash Madison St storefront"
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 480px"
+                  style={{ objectFit: 'cover', objectPosition: '50% 55%' }}
+                  decoding="async"
+                />
+              )}
             </div>
             <div
               className="absolute -bottom-4 -left-5 bg-yellow-400 text-blue-700 rounded-2xl px-4 py-3 border-2 border-blue-700"
@@ -162,12 +190,14 @@ export default function Page() {
       <Washes />
       <Bays
         photoOverrides={{
-          'self-serve': {
-            src: '/images/madison-bays.jpg',
-            alt: 'Madison St self-serve wand bays',
-            caption: '// self-serve-bays',
-            objectPosition: '50% 55%',
-          },
+          automatic: touchlessSanity,
+          'self-serve':
+            selfServeSanity ?? {
+              src: '/images/madison-bays.jpg',
+              alt: 'Madison St self-serve wand bays',
+              caption: '// self-serve-bays',
+              objectPosition: '50% 55%',
+            },
         }}
       />
       <OtherServices />
