@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { sanityFetch } from '@/lib/sanityFetch'
 import { renderHighlight } from '@/lib/renderHighlight'
@@ -47,25 +48,54 @@ function Pin() {
 }
 
 function Card({ loc, hoursShort }: { loc: Location; hoursShort: string }) {
+  const isRoosevelt = loc.slug === 'roosevelt-rd'
+  const headerHeight = isRoosevelt ? 'h-[320px]' : 'h-[240px]'
+  const hasSanityPhoto = !!loc.photo?.asset?._ref
+  const showLocalFallback = isRoosevelt && !hasSanityPhoto
   return (
     <article className="bg-white rounded-[22px] overflow-hidden border border-line flex flex-col">
       <div
-        className="h-[240px] relative flex items-end p-6 text-white stripe overflow-hidden"
-        style={{ background: loc.gradient }}
+        className={`${headerHeight} relative flex items-end p-6 text-white stripe overflow-hidden`}
+        style={{ background: loc.gradient, position: 'relative' }}
       >
-        {loc.photo?.asset?._ref && (
+        {hasSanityPhoto && (
           <SanityImage
-            image={loc.photo}
+            image={loc.photo!}
             width={1200}
-            height={600}
+            height={isRoosevelt ? 800 : 600}
             sizes="(max-width: 768px) 100vw, 600px"
             className="absolute inset-0 w-full h-full object-cover"
           />
         )}
-        <span className="absolute top-3.5 right-3.5 mono text-[11px] text-white/70 bg-black/40 px-2 py-1 rounded z-10">
-          {loc.photoCaption}
+        {showLocalFallback && (
+          <Image
+            src="/images/location-exterior.jpg"
+            alt={`${loc.name} storefront exterior`}
+            fill
+            sizes="(max-width: 768px) 100vw, 600px"
+            style={{ objectFit: 'cover', objectPosition: '50% 55%' }}
+            className="absolute inset-0"
+          />
+        )}
+        {isRoosevelt && (
+          <>
+            <div
+              aria-hidden
+              className="absolute inset-0 z-[1]"
+              style={{
+                background:
+                  'linear-gradient(180deg, rgba(8,24,63,0) 40%, rgba(8,24,63,.9) 100%)',
+              }}
+            />
+            <span className="absolute top-3.5 left-3.5 inline-block bg-yellow-300 text-[#08183f] text-[11px] font-bold tracking-[0.16em] uppercase px-2.5 py-1 rounded z-[2]">
+              New
+            </span>
+          </>
+        )}
+        <span className="absolute top-3.5 right-3.5 mono text-[11px] text-white/70 bg-black/40 px-2 py-1 rounded z-[2]">
+          {isRoosevelt ? '// roosevelt-rd' : loc.photoCaption}
         </span>
-        <h3 className="display text-[48px] m-0 relative z-10 drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">{loc.name}</h3>
+        <h3 className="display text-[48px] m-0 relative z-[2] drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">{loc.name}</h3>
       </div>
       <div className="p-7 flex flex-col gap-3.5 flex-1">
         <div className="flex items-start gap-2.5 text-[#445273] leading-relaxed">

@@ -82,10 +82,12 @@ export default async function LocationPage({ location }: { location: Location })
             ></span>
             Spotless Carwash · Forest Park, IL · {settings.hoursLine}
           </div>
-          <h1 className="display text-[48px] sm:text-[72px] md:text-[104px] leading-[0.92]">
-            <span className="text-yellow-400">S</span>potless Carwash
-            <br />
-            <span className="text-blue-100 text-[0.62em]">on {location.name}</span>
+          <h1 className="display italic uppercase text-[56px] sm:text-[80px] md:text-[112px] lg:text-[140px] [text-shadow:-0.035em_0.05em_0_#0a2a6b]">
+            <span className="text-[1.75em]">S</span>potless
+            <span className="block pl-[0.5em]">Carwash</span>
+            <span className="block normal-case text-blue-100 text-[0.62em] mt-2">
+              on {location.name}
+            </span>
           </h1>
           <p className="mt-6 text-lg max-w-[560px] text-blue-100 leading-relaxed">
             {location.pageDescription || heroBlurb}

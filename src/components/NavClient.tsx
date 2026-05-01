@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { locations, directionsUrl, fullAddress } from '@/src/data/locations'
 import type { ImageWithAlt } from '@/lib/sanityImage'
@@ -22,6 +23,11 @@ export type NavData = {
 
 export default function NavClient({ data }: { data: NavData }) {
   const [open, setOpen] = useState(false)
+  const pathname = usePathname() ?? ''
+  const isActive = (href: string) => {
+    if (!href || href.startsWith('/#') || href.startsWith('#')) return false
+    return pathname === href || pathname.startsWith(href + '/')
+  }
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : ''
@@ -62,15 +68,24 @@ export default function NavClient({ data }: { data: NavData }) {
               {l.label}
             </Link>
           ))}
-          {data.pageLinks.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="px-3.5 py-2 rounded-full font-semibold text-sm text-blue-100 hover:bg-white/10 hover:text-white transition"
-            >
-              {l.label}
-            </Link>
-          ))}
+          {data.pageLinks.map((l) => {
+            const active = isActive(l.href)
+            return (
+              <Link
+                key={l.href}
+                href={l.href}
+                aria-current={active ? 'page' : undefined}
+                className={
+                  'px-3.5 py-2 rounded-full font-semibold text-sm transition ' +
+                  (active
+                    ? 'bg-white/10 text-white'
+                    : 'text-blue-100 hover:bg-white/10 hover:text-white')
+                }
+              >
+                {l.label}
+              </Link>
+            )
+          })}
         </div>
 
         <a

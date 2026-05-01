@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { sanityFetch } from '@/lib/sanityFetch'
 import { renderHighlight } from '@/lib/renderHighlight'
 import type { ImageWithAlt } from '../../lib/sanityImage'
@@ -80,11 +81,33 @@ const ICON_BY_KIND: Record<BayKind, React.ReactNode> = {
   ),
 }
 
+const LOCAL_PHOTO_BY_KIND: Record<BayKind, { src: string; alt: string; caption: string; objectPosition: string }> = {
+  automatic: {
+    src: '/images/roosevelt-bay.jpg',
+    alt: 'Touchless automatic bay interior',
+    caption: '// touchless-bay',
+    objectPosition: '50% 55%',
+  },
+  'self-serve': {
+    src: '/images/self-serve-bay.jpg',
+    alt: 'Self-serve wand bays exterior',
+    caption: '// self-serve-bays',
+    objectPosition: '50% 60%',
+  },
+}
+
 function Card({ bay, index }: { bay: Bay; index: number }) {
+  const kind: BayKind = (bay.kind ?? 'automatic') as BayKind
+  const local = LOCAL_PHOTO_BY_KIND[kind]
+  const hasSanityPhoto = !!bay.photo?.asset?._ref
+  const showImage = hasSanityPhoto || !!local
   return (
     <article className="bg-white border border-line rounded-[22px] overflow-hidden flex flex-col">
-      <div className={`h-[280px] relative overflow-hidden ${bay.bgClass ?? ''}`} style={bay.bgStyle}>
-        {bay.photo?.asset?._ref ? (
+      <div
+        className={`h-[280px] relative overflow-hidden ${showImage ? '' : bay.bgClass ?? ''}`}
+        style={showImage ? { position: 'relative' } : bay.bgStyle}
+      >
+        {hasSanityPhoto ? (
           <SanityImage
             image={bay.photo}
             width={1200}
@@ -92,15 +115,39 @@ function Card({ bay, index }: { bay: Bay; index: number }) {
             sizes="(max-width: 768px) 100vw, 600px"
             className="absolute inset-0 w-full h-full object-cover"
           />
+        ) : local ? (
+          <Image
+            src={local.src}
+            alt={local.alt}
+            fill
+            sizes="(max-width: 768px) 100vw, 600px"
+            style={{ objectFit: 'cover', objectPosition: local.objectPosition }}
+            className="absolute inset-0"
+          />
         ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-white/20">
+            {bay.icon}
+          </div>
+        )}
+        {showImage && (
           <>
-            <span className="absolute top-4 left-4 mono text-[11px] text-white/60 bg-black/40 px-2.5 py-1.5 rounded z-10">
-              // photo: bay-{index + 1}.jpg
+            <div
+              aria-hidden
+              className="absolute inset-0 z-[1]"
+              style={{
+                background:
+                  'linear-gradient(180deg, rgba(8,24,63,.15) 0%, rgba(8,24,63,.4) 100%)',
+              }}
+            />
+            <span className="absolute top-4 left-4 mono text-[11px] text-white/80 bg-black/40 px-2.5 py-1.5 rounded z-[2]">
+              {local?.caption ?? `// photo: bay-${index + 1}.jpg`}
             </span>
-            <div className="absolute inset-0 flex items-center justify-center text-white/20">
-              {bay.icon}
-            </div>
           </>
+        )}
+        {!showImage && (
+          <span className="absolute top-4 left-4 mono text-[11px] text-white/60 bg-black/40 px-2.5 py-1.5 rounded z-10">
+            // photo: bay-{index + 1}.jpg
+          </span>
         )}
       </div>
       <div className="p-8 flex flex-col gap-4.5 flex-1">
@@ -133,10 +180,11 @@ export default async function Bays() {
     ...(data ?? {}),
     bays: data?.bays?.length ? data.bays : BAYS_FALLBACK.bays,
   }
-  const bays: Bay[] = section.bays.map((b) => {
-    const kind: BayKind = b.kind ?? 'automatic'
+  const bays: Bay[] = section.bays.map((b, i) => {
+    const kind: BayKind = b.kind ?? (i === 0 ? 'automatic' : 'self-serve')
     return {
       ...b,
+      kind,
       bgClass: BG_BY_KIND[kind],
       icon: ICON_BY_KIND[kind],
     }
