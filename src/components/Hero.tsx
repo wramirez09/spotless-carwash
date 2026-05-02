@@ -58,7 +58,7 @@ const HERO_FALLBACK: Required<Omit<HeroData, 'backgroundImage'>> = {
   tickerItems: [
     'KEEP IT CLEAN',
     'TOUCHLESS AUTO WASH',
-    'HEATED BAYS AT ROOSEVELT RD',
+    'HEATED BAYS AT BOTH LOCATIONS',
     'OPEN 7AM–10PM',
     'SPOT FREE RINSE',
   ],

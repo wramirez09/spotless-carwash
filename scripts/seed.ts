@@ -38,7 +38,7 @@ const client = createClient({
 // Singleton documents
 // ---------------------------------------------------------------------------
 
-type SeedDoc = { _id: string; _type: string; [k: string]: unknown }
+type SeedDoc = { _id: string; _type: string;[k: string]: unknown }
 
 const singletons: Record<string, SeedDoc> = {
   siteSettings: {
@@ -141,7 +141,7 @@ const singletons: Record<string, SeedDoc> = {
     tickerItems: [
       'KEEP IT CLEAN',
       'TOUCHLESS AUTO WASH',
-      'HEATED BAYS AT ROOSEVELT RD',
+      'HEATED BAYS AT BOTH LOCATIONS',
       'OPEN 7AM–10PM',
       'SPOT FREE RINSE',
     ],
