@@ -6,6 +6,8 @@ import SanityImage from './SanityImage'
 
 type BayKind = 'automatic' | 'self-serve'
 
+
+
 type BayContent = {
   titleLine1: string
   titleLine2: string

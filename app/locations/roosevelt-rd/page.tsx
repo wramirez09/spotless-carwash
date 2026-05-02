@@ -82,7 +82,7 @@ export default async function Page() {
 
             <h1 className="display italic uppercase text-[56px] sm:text-[80px] md:text-[112px] lg:text-[140px] [text-shadow:-0.035em_0.05em_0_#0a2a6b]">
               <span className="text-[1.75em]">S</span>potless
-              <span className="block pl-[0.5em]">Carwash</span>
+              <span className="block pl-[1em]">Carwash</span>
               <span className="block normal-case text-blue-100 text-[0.62em] mt-2">
                 on Roosevelt Rd
               </span>

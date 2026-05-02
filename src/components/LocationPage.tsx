@@ -74,7 +74,7 @@ export default async function LocationPage({ location }: { location: Location })
             />
           </div>
         )}
-        <div className="relative z-10 max-w-[1240px] mx-auto px-5 md:px-7">
+        <div className="relative z-10 max-w-[1240px] mx-auto px-5 md:px-1">
           <div className="inline-flex items-center gap-2.5 text-xs font-bold tracking-[0.18em] uppercase text-blue-100 mb-6">
             <span
               className="w-2 h-2 rounded-full bg-yellow-400"
@@ -84,7 +84,7 @@ export default async function LocationPage({ location }: { location: Location })
           </div>
           <h1 className="display italic uppercase text-[56px] sm:text-[80px] md:text-[112px] lg:text-[140px] [text-shadow:-0.035em_0.05em_0_#0a2a6b]">
             <span className="text-[1.75em]">S</span>potless
-            <span className="block pl-[0.5em]">Carwash</span>
+            <span className="block pl-[1em]">Carwash</span>
             <span className="block normal-case text-blue-100 text-[0.62em] mt-2">
               on {location.name}
             </span>
