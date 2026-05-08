@@ -274,7 +274,7 @@ const singletons: Record<string, SeedDoc> = {
     headlineLine1: 'Nine settings.',
     headlineLine2: 'One **clean** car.',
     tip:
-      'Always start at the top, work top-to-bottom, and let presoak sit 10–20 seconds before rinsing. Finish with spot-free rinse — never LustraShield as the final step.',
+      'Nine premium wash and dry options at your fingertips, including tire & wheel cleaner, low-pressure presoak, foaming brush, polish, DuraShield surface gloss, high-pressure soap, high-pressure rinse, spot-free rinse and Air-shammee Air Dryers.\n\n$4.00 for 5 mins.\n\nFor best results, start at the top and work your way down. Let presoak soak for 10–20 seconds before rinsing, and always finish with a spot-free rinse—not DuraShield, then dry your car to perfection.\n\nPrepaid wash tokens make every visit quick and easy—keep them in your glovebox and skip the cash station. They also make a great gift and can be purchased from our attendant or online below.',
     priceLabel: '$4 / 5 min',
   },
 

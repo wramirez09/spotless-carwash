@@ -26,7 +26,7 @@ const FALLBACK: Omit<InstructionsData, 'steps'> = {
   headlineLine1: 'Nine settings.',
   headlineLine2: 'One **clean** car.',
   tip:
-    'Always start at the top, work top-to-bottom, and let presoak sit 10–20 seconds before rinsing. Finish with spot-free rinse — never LustraShield as the final step.',
+    'Nine premium wash and dry options at your fingertips, including tire & wheel cleaner, low-pressure presoak, foaming brush, polish, DuraShield surface gloss, high-pressure soap, high-pressure rinse, spot-free rinse and Air-shammee Air Dryers.\n\n$4.00 for 5 mins.\n\nFor best results, start at the top and work your way down. Let presoak soak for 10–20 seconds before rinsing, and always finish with a spot-free rinse—not DuraShield, then dry your car to perfection.\n\nPrepaid wash tokens make every visit quick and easy—keep them in your glovebox and skip the cash station. They also make a great gift and can be purchased from our attendant or online below.',
   priceLabel: '$4 / 5 min',
 }
 
@@ -51,7 +51,32 @@ export default async function Instructions() {
             <br />
             {renderHighlight(section.headlineLine2, 'text-yellow-400')}
           </h2>
-          <p className="max-w-[380px] text-blue-100 leading-relaxed mt-6">{section.tip}</p>
+          <div className="max-w-[380px] mt-6">
+            {section.tip.split(/\n\n+/).map((para, i) => {
+              const isPrice = /^\$[\d.]+/.test(para.trim())
+              if (isPrice) {
+                return (
+                  <p
+                    key={i}
+                    className="my-5 inline-block mono text-[13px] font-semibold bg-yellow-400/10 text-yellow-400 px-3 py-1.5 rounded-lg"
+                  >
+                    {para}
+                  </p>
+                )
+              }
+              return (
+                <p
+                  key={i}
+                  className={
+                    'm-0 text-blue-100 leading-relaxed' +
+                    (i > 0 ? ' mt-6 pt-6 border-t border-white/10' : '')
+                  }
+                >
+                  {para}
+                </p>
+              )
+            })}
+          </div>
         </div>
         <div className="bg-white/5 border border-white/10 rounded-[20px] overflow-hidden">
           {steps.map((s, i) => (

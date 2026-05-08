@@ -12,6 +12,6 @@ export default function robots(): MetadataRoute.Robots {
   // Until then we omit the field — sitemap protocol requires absolute URLs and Lighthouse
   // (correctly) rejects relative ones. Crawlers will still find /sitemap.xml by convention.
   return {
-    rules: { userAgent: '*', allow: '/' },
+    rules: { userAgent: '*', allow: '/', disallow: ['/marketing-audit', '/competitor-report', '/seo-audit'] },
   }
 }
