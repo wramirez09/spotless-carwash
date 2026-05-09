@@ -35,12 +35,12 @@ const entries: Entry[] = [
   {
     slug: 'roosevelt-rd',
     file: 'public/images/location-exterior.jpg',
-    alt: 'Roosevelt Rd storefront exterior',
+    alt: 'Spotless Carwash Roosevelt Rd touchless car wash storefront in Forest Park, IL',
   },
   {
     slug: 'madison-st',
-    file: 'public/images/madison-loaction.jpg',
-    alt: 'Madison St storefront exterior',
+    file: 'public/images/madison-location.jpg',
+    alt: 'Spotless Carwash Madison St touchless and self-serve car wash storefront in Forest Park, IL',
   },
 ]
 

@@ -24,16 +24,16 @@ const TOKENS_QUERY = `*[_type == "tokens"][0]{
 const FALLBACK: TokensData = {
   eyebrow: 'Wash tokens',
   sectionNumber: '07',
-  headlineLine1: 'Buy a stack,',
-  headlineLine2: 'save a stack of **cash**.',
-  valueLine: 'Each token = one Ultimate wash ($10 value). Never expires. Works at both locations.',
+  headlineLine1: 'Buy a stack.',
+  headlineLine2: 'Save up to **$50**.',
+  valueLine: 'Each token = one Ultimate wash. Never expires. Works at both locations.',
   description:
-    'Prepaid wash tokens make every visit quick and easy — keep them in your glovebox and skip the cash station. They also make a great gift, and can be purchased from our attendant or online below.',
-  cta: { label: 'Buy tokens', href: 'https://www.paypal.com/ncp/payment/VZ896M2HPTEPC' },
+    'Prepaid Ultimate wash tokens save you up to 20% per wash. Keep them in your glovebox, skip the cash station — and they make a great Forest Park gift.',
+  cta: { label: 'Buy tokens · save up to 20%', href: 'https://www.paypal.com/ncp/payment/VZ896M2HPTEPC' },
   tiers: [
-    { qty: 5, price: '$45' },
-    { qty: 10, price: '$85 · save $5' },
-    { qty: 25, price: '$200 · save $25' },
+    { qty: 5, price: '$45 · save $5' },
+    { qty: 10, price: '$85 · save $15' },
+    { qty: 25, price: '$200 · save $50' },
   ],
 }
 

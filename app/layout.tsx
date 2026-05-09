@@ -39,8 +39,7 @@ const jetbrains = JetBrains_Mono({
 
 const isProduction = process.env.VERCEL_ENV === 'production'
 
-// TODO(domain): set metadataBase to the production URL once finalized so OG and canonical
-// tags emit absolute URLs (e.g. new URL('https://spotlesscarwash.com')).
+const SITE_URL = 'https://spotlesscarwash.com'
 
 const SITE_SETTINGS_QUERY = `*[_type == "siteSettings"][0]{
   titleDefault, titleTemplate, description, keywords,
@@ -48,8 +47,8 @@ const SITE_SETTINGS_QUERY = `*[_type == "siteSettings"][0]{
 }`
 
 const SITE_FALLBACK = {
-  titleDefault: 'Spotless Carwash · Touchless Car Wash · Forest Park, IL',
-  titleTemplate: '%s · Spotless Carwash',
+  titleDefault: 'Touchless Car Wash in Forest Park, IL | Spotless Carwash',
+  titleTemplate: '%s | Spotless Carwash',
   description:
     "Forest Park's touchless car wash. Two locations with heated automatic bays for winter and self-serve wand bays. Open 7am–10pm daily.",
   keywords: [
@@ -75,21 +74,33 @@ export async function generateMetadata(): Promise<Metadata> {
   const data = await sanityFetch<Partial<typeof SITE_FALLBACK>>(SITE_SETTINGS_QUERY)
   const s = { ...SITE_FALLBACK, ...(data ?? {}) }
   return {
+    metadataBase: new URL(SITE_URL),
     title: { default: s.titleDefault, template: s.titleTemplate },
     description: s.description,
     applicationName: 'Spotless Carwash',
     keywords: s.keywords,
+    alternates: { canonical: '/' },
     openGraph: {
       title: s.ogTitle,
       description: s.ogDescription,
+      url: SITE_URL,
       siteName: 'Spotless Carwash',
       locale: 'en_US',
       type: 'website',
+      images: [
+        {
+          url: '/images/og-image.jpg',
+          width: 1200,
+          height: 630,
+          alt: 'Spotless Carwash — touchless car wash in Forest Park, IL',
+        },
+      ],
     },
     twitter: {
       card: 'summary_large_image',
       title: s.twitterTitle,
       description: s.twitterDescription,
+      images: ['/images/og-image.jpg'],
     },
     robots: isProduction
       ? { index: true, follow: true }

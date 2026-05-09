@@ -35,7 +35,7 @@ const LOCATIONS_FALLBACK: Omit<LocationsSectionData, 'locations'> = {
   sectionNumber: '03',
   heading: 'Two locations. Ten bays. All in **Forest Park**.',
   subhead:
-    'Both locations open 7am–10pm daily. Roosevelt Road has heated, enclosed automatic bays for winter washing.',
+    'Both locations open 7am–10pm daily. Roosevelt Rd has heated, enclosed automatic bays for winter — perfect for Forest Park, River Forest, and Oak Park drivers. Madison St serves Forest Park, Oak Park, and Eisenhower commuters from the north.',
 }
 
 function Pin() {
@@ -50,12 +50,12 @@ function Pin() {
 const LOCAL_CARD_PHOTO: Record<string, { src: string; alt: string; objectPosition: string }> = {
   'roosevelt-rd': {
     src: '/images/location-exterior.jpg',
-    alt: 'Roosevelt Rd storefront exterior',
+    alt: 'Spotless Carwash Roosevelt Rd touchless car wash storefront in Forest Park, IL',
     objectPosition: '50% 55%',
   },
   'madison-st': {
-    src: '/images/madison-loaction.jpg',
-    alt: 'Madison St storefront exterior',
+    src: '/images/madison-location.jpg',
+    alt: 'Spotless Carwash Madison St touchless and self-serve car wash storefront in Forest Park, IL',
     objectPosition: '50% 55%',
   },
 }
@@ -164,7 +164,7 @@ function Card({ loc, hoursShort }: { loc: Location; hoursShort: string }) {
             href={`/locations/${loc.slug}`}
             className="flex-1 py-3 text-center rounded-xl font-bold text-sm border border-line hover:border-blue-500 hover:text-blue-500 transition"
           >
-            Site details
+            See {loc.name} →
           </Link>
         </div>
       </div>

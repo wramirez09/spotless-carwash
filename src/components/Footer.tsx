@@ -67,6 +67,19 @@ export default async function Footer() {
   return (
     <footer className="bg-blue-700 text-blue-100 pt-16 pb-8">
       <div className="max-w-[1240px] mx-auto px-5 md:px-7">
+        <div className="mb-10 pb-8 border-b border-white/10">
+          <div className="text-[11px] font-bold tracking-[0.22em] uppercase text-blue-200 mb-3">
+            Serving the Forest Park area
+          </div>
+          <p className="text-blue-100 leading-relaxed text-[15px] max-w-[760px] m-0">
+            Spotless Carwash is the touchless &amp; self-serve car wash for{' '}
+            <Link href="/locations/roosevelt-rd" className="text-white font-semibold hover:text-yellow-400">
+              Forest Park
+            </Link>
+            , Oak Park, River Forest, Berwyn, Maywood, Cicero, and Oak Park-River Forest
+            commuters across western Cook County. Two locations, open 7am–10pm every day since 1994.
+          </p>
+        </div>
         <div className="grid md:grid-cols-[1.4fr_1fr_1fr_1fr] gap-10 mb-12">
           <div>
             <Link href="/" className="inline-block mb-3 leading-none">
@@ -115,7 +128,11 @@ export default async function Footer() {
         </div>
         <div className="flex justify-between items-center border-t border-white/10 pt-6 text-xs text-blue-200 flex-wrap gap-3">
           <div className="mono">{footer.copyrightLine}</div>
-          <div className="mono">{footer.kicker}</div>
+          <div className="flex items-center gap-4 mono">
+            <Link href="/privacy" className="hover:text-yellow-400">Privacy</Link>
+            <Link href="/terms" className="hover:text-yellow-400">Terms</Link>
+            <span>{footer.kicker}</span>
+          </div>
         </div>
       </div>
     </footer>

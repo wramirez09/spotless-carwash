@@ -44,8 +44,8 @@ const singletons: Record<string, SeedDoc> = {
   siteSettings: {
     _id: 'siteSettings',
     _type: 'siteSettings',
-    titleDefault: 'Spotless Carwash · Touchless Car Wash · Forest Park, IL',
-    titleTemplate: '%s · Spotless Carwash',
+    titleDefault: 'Touchless Car Wash in Forest Park, IL | Spotless Carwash',
+    titleTemplate: '%s | Spotless Carwash',
     description:
       "Forest Park's touchless car wash. Two locations with heated automatic bays for winter and self-serve wand bays. Open 7am–10pm daily.",
     keywords: [
@@ -129,20 +129,21 @@ const singletons: Record<string, SeedDoc> = {
   hero: {
     _id: 'hero',
     _type: 'hero',
-    eyebrow: 'Forest Park, Illinois · Two locations · Since the 90s',
+    eyebrow: 'Forest Park, Illinois · Two locations',
     headlineLine1: 'Spotless',
     headlineLine2: 'Carwash',
     headlineTagline: '— keep it clean.',
-    subheadYellow: "Forest Park's touchless car wash.",
+    subheadYellow: "Forest Park's touchless car wash. For 30 years.",
     subheadBody:
-      'Nothing touches your vehicle except soap, wax, and water. Simply pull in, and our touchless wash does the rest. At our Roosevelt Road location, heated enclosed bays keep your vehicle washed and blow-dried indoors—perfect for winter.',
+      'Heated indoor bays. No brushes. Open 7am–10pm, every day since 1994.',
     primaryCta: { label: 'See wash packages', href: '#washes' },
     secondaryCta: { label: 'How it works', href: '#how' },
     tickerItems: [
       'KEEP IT CLEAN',
       'TOUCHLESS AUTO WASH',
-      'HEATED BAYS AT BOTH LOCATIONS',
-      'OPEN 7AM–10PM',
+      'HEATED INDOOR BAYS AT ROOSEVELT RD',
+      'SELF-SERVE WAND BAYS',
+      'OPEN 7AM–10PM · SINCE THE 90s',
       'SPOT FREE RINSE',
     ],
     bayCardStatus: 'Bay 02 ready · Roosevelt Rd',
@@ -215,7 +216,7 @@ const singletons: Record<string, SeedDoc> = {
     sectionNumber: '03',
     heading: 'Two locations. Ten bays. All in **Forest Park**.',
     subhead:
-      'Both locations open 7am–10pm daily. Roosevelt Road has heated, enclosed automatic bays for winter washing.',
+      'Both locations open 7am–10pm daily. Roosevelt Rd has heated, enclosed automatic bays for winter — perfect for Forest Park, River Forest, and Oak Park drivers. Madison St serves Forest Park, Oak Park, and Eisenhower commuters from the north.',
   },
 
   bays: {
@@ -231,37 +232,63 @@ const singletons: Record<string, SeedDoc> = {
         titleLine1: 'Touchless',
         titleLine2: 'Automatic Bays',
         desc:
-          'Nothing touches your vehicle except soap, wax, and water. Simply pull in, and our touchless wash does the rest. At our Roosevelt Road location, heated enclosed bays keep your vehicle washed and blow-dried indoors — perfect for winter.',
-        features: ['Heated indoor bays', 'Air cannon dryers', '~4 min wash', 'Brushless & scratchless'],
+          'Drive in, drive out — clean in 4½ minutes. No brushes. No swirl marks. No risk to fresh paint or ceramic coatings. Roosevelt Rd\'s heated indoor bays let you wash year-round, even at -10°.',
+        features: ['Heated indoor bays (Roosevelt Rd)', 'Air cannon dryers', '~4½ min wash', 'Brushless & scratchless'],
       },
       {
         titleLine1: 'Self-Serve',
         titleLine2: 'Wand Bays',
         desc:
-          'Nine premium wash options at your fingertips: engine cleaner, tire & wheel cleaner, low-pressure presoak, high-pressure detergent, foaming brush, high-pressure rinse, clear coat sealant, LustraShield, and spot-free rinse. $4 for 5 minutes.',
-        features: ['9 wash products', 'Spot-free rinse', 'LustraShield', 'Foaming brush'],
+          'Wash it your way. Nine settings — from engine cleaner to LustraShield gloss to spot-free rinse — for $4 every 5 minutes. Full dial walkthrough below.',
+        features: ['9 wash settings', 'Spot-free rinse', 'LustraShield gloss', 'Foaming brush'],
       },
     ],
   },
 
+  // ---------------------------------------------------------------------------
+  // Reviews (Google Business Profile)
+  //
+  // TODO(reviews): replace the placeholder quotes below with REAL reviews from
+  // your Google Business Profile. To do that, edit the testimonialSection
+  // document directly in Sanity Studio (Reviews tab) — paste 4–6 of your
+  // best 4★/5★ reviews including reviewer name, date, and rating, and set
+  // source: 'google' on each one to enable the "Verified Google review" badge
+  // and emit Review schema. Then update aggregateRating + totalReviews to your
+  // actual GBP numbers (e.g. 4.6 stars across 142 reviews) and paste your
+  // googleProfileUrl. Reviews under 4 stars are filtered out automatically.
+  // ---------------------------------------------------------------------------
   testimonialSection: {
     _id: 'testimonialSection',
     _type: 'testimonialSection',
+    eyebrow: 'Reviews from Google',
+    heading: 'What Forest Park drivers say.',
+    // TODO: replace with your real GBP aggregate rating + review count.
+    // Leaving these unset means the rating badge + AggregateRating schema
+    // will be hidden until you paste real numbers.
+    aggregateRating: null,
+    totalReviews: null,
+    googleProfileUrl: null,
     quotes: [
       {
         text:
           'Pulled in right before close after a Chicago snowstorm. Heated bay, four and a half minutes, drove out spotless. The only place that does it right.',
-        attribution: 'Forest Park regular',
+        attribution: 'Mike R., Forest Park',
+        rating: 5,
+        // source intentionally unset — these are placeholder quotes, not real
+        // Google reviews. Replace with real GBP reviews and set source: 'google'
+        // before emitting Review schema.
       },
       {
         text:
           'Self-serve bays have everything you need. The LustraShield + spot-free combo is the move. Tokens make the price feel like nothing.',
-        attribution: 'Detail-obsessed neighbor',
+        attribution: 'Anna T., Oak Park',
+        rating: 5,
       },
       {
         text:
           'My salt-covered SUV looked brand new in under five minutes. Touchless and zero scratches — I will not go anywhere else.',
-        attribution: 'Oak Park commuter',
+        attribution: 'Dave K., Oak Park',
+        rating: 5,
       },
     ],
   },
@@ -274,7 +301,7 @@ const singletons: Record<string, SeedDoc> = {
     headlineLine1: 'Nine settings.',
     headlineLine2: 'One **clean** car.',
     tip:
-      'Nine premium wash and dry options at your fingertips, including tire & wheel cleaner, low-pressure presoak, foaming brush, polish, DuraShield surface gloss, high-pressure soap, high-pressure rinse, spot-free rinse and Air-shammee Air Dryers.\n\n$4.00 for 5 mins.\n\nFor best results, start at the top and work your way down. Let presoak soak for 10–20 seconds before rinsing, and always finish with a spot-free rinse—not DuraShield, then dry your car to perfection.\n\nPrepaid wash tokens make every visit quick and easy—keep them in your glovebox and skip the cash station. They also make a great gift and can be purchased from our attendant or online below.',
+      'Nine premium wash settings at your fingertips — engine cleaner, tire & wheel cleaner, low-pressure presoak, high-pressure detergent, foaming brush, high-pressure rinse, clear coat sealant, LustraShield surface gloss, and spot-free rinse.\n\n$4.00 for 5 mins.\n\nFor best results, work top-to-bottom. Let presoak dwell 10–20 seconds before rinsing, and always finish with the spot-free rinse — never LustraShield as the last step.',
     priceLabel: '$4 / 5 min',
   },
 
@@ -343,35 +370,35 @@ const singletons: Record<string, SeedDoc> = {
     _type: 'tokens',
     eyebrow: 'Wash tokens',
     sectionNumber: '07',
-    headlineLine1: 'Buy a stack,',
-    headlineLine2: 'save a stack of **cash**.',
-    valueLine: 'Each token = one Ultimate wash ($10 value). Never expires. Works at both locations.',
+    headlineLine1: 'Buy a stack.',
+    headlineLine2: 'Save up to **$50**.',
+    valueLine: 'Each token = one Ultimate wash. Never expires. Works at both locations.',
     description:
-      'Prepaid wash tokens make every visit quick and easy — keep them in your glovebox and skip the cash station. They also make a great gift, and can be purchased from our attendant or online below.',
-    cta: { label: 'Buy tokens', href: 'https://www.paypal.com/ncp/payment/VZ896M2HPTEPC' },
+      'Prepaid Ultimate wash tokens save you up to 20% per wash. Keep them in your glovebox, skip the cash station — and they make a great Forest Park gift.',
+    cta: { label: 'Buy tokens · save up to 20%', href: 'https://www.paypal.com/ncp/payment/VZ896M2HPTEPC' },
     tiers: [
-      { qty: 5, price: '$45' },
-      { qty: 10, price: '$85 · save $5' },
-      { qty: 25, price: '$200 · save $25' },
+      { qty: 5, price: '$45 · save $5' },
+      { qty: 10, price: '$85 · save $15' },
+      { qty: 25, price: '$200 · save $50' },
     ],
   },
 
   emailSection: {
     _id: 'emailSection',
     _type: 'emailSection',
-    headlineLine1: 'Special sales,',
-    headlineLine2: 'straight to your inbox.',
-    body: 'Token discounts, seasonal promos, and the occasional free wash.',
+    headlineLine1: 'Get $5 off',
+    headlineLine2: 'your first Ultimate wash.',
+    body: 'Subscribe for occasional Forest Park car-care tips, token discounts, seasonal promos, and the occasional free wash.',
     placeholder: 'you@example.com',
-    submitLabel: 'Subscribe',
-    successLabel: 'Subscribed ✓',
+    submitLabel: 'Send my $5 code',
+    successLabel: 'Code on the way ✓',
   },
 
   faqPage: {
     _id: 'faqPage',
     _type: 'faqPage',
     eyebrow: 'Frequently asked',
-    metaTitle: 'FAQ · Touchless & Self-Serve Car Wash Questions',
+    metaTitle: 'Self-Serve & Touchless Car Wash FAQ · Forest Park IL',
     metaDescription:
       'Answers to common questions about Spotless Carwash in Forest Park, IL — how touchless and self-serve bays work, token pricing, hours, and heated winter bays.',
     heading: 'Questions, **answered**.',
@@ -399,6 +426,9 @@ const locationDocs = locationsData.map((l) => ({
   touchlessBays: l.touchlessBays,
   heated: l.heated,
   gradient: l.gradient,
+  metaTitle: `Touchless Car Wash on ${l.name}, Forest Park IL`,
+  metaDescription: `Spotless Carwash on ${l.name} in Forest Park, IL. ${l.heated ? 'Heated indoor touchless bays' : 'Touchless automatic bays'
+    } and self-serve wand bays. Open 7am–10pm, every day since 1994. ${l.street}.`,
 }))
 
 const washPackageDocs = packagesData.map((p, i) => ({

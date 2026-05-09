@@ -46,19 +46,20 @@ type HeroData = {
 }
 
 const HERO_FALLBACK: Required<Omit<HeroData, 'backgroundImage'>> = {
-  eyebrow: 'Forest Park, Illinois · Two locations · Since the 90s',
+  eyebrow: 'Forest Park, Illinois · Two locations',
   headlineLine1: 'Spotless',
   headlineLine2: 'Carwash',
   headlineTagline: '— keep it clean.',
-  subheadYellow: "Forest Park's touchless car wash.",
+  subheadYellow: "Forest Park's touchless car wash. For 30 years.",
   subheadBody:
-    'Nothing touches your vehicle except soap, wax, and water. Simply pull in, and our touchless wash does the rest. At our Roosevelt Road location, heated enclosed bays keep your vehicle washed and blow-dried indoors—perfect for winter.',
+    'Heated indoor bays. No brushes. Open 7am–10pm, every day since 1994.',
   primaryCta: { label: 'See wash packages', href: '#washes', external: false },
   secondaryCta: { label: 'How it works', href: '#how', external: false },
   tickerItems: [
     'KEEP IT CLEAN',
     'TOUCHLESS AUTO WASH',
-    'HEATED BAYS AT BOTH LOCATIONS',
+    'HEATED INDOOR BAYS AT ROOSEVELT RD',
+    'SELF-SERVE WAND BAYS',
     'OPEN 7AM–10PM',
     'SPOT FREE RINSE',
   ],

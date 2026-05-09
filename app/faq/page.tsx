@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { faqs as fallbackFaqs, type FAQ } from '@/src/data/faq'
 import FAQPageSchema from '@/src/components/seo/FAQPageSchema'
+import BreadcrumbSchema from '@/src/components/seo/BreadcrumbSchema'
 import { sanityFetch } from '@/lib/sanityFetch'
 
 const FAQ_QUERY = `{
@@ -31,7 +32,11 @@ async function loadFaq() {
 
 export async function generateMetadata(): Promise<Metadata> {
   const { page } = await loadFaq()
-  return { title: page.metaTitle, description: page.metaDescription }
+  return {
+    title: page.metaTitle,
+    description: page.metaDescription,
+    alternates: { canonical: '/faq' },
+  }
 }
 
 export default async function Page() {
@@ -44,6 +49,12 @@ export default async function Page() {
   return (
     <>
       <FAQPageSchema />
+      <BreadcrumbSchema
+        items={[
+          { name: 'Home', path: '/' },
+          { name: 'FAQ' },
+        ]}
+      />
 
       <header
         className="text-white pt-14 md:pt-20 pb-12 md:pb-16"

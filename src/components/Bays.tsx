@@ -47,16 +47,16 @@ const BAYS_FALLBACK: BaysData = {
       titleLine1: 'Touchless',
       titleLine2: 'Automatic Bays',
       desc:
-        'Nothing touches your vehicle except soap, wax, and water. Simply pull in, and our touchless wash does the rest. At our Roosevelt Road location, heated enclosed bays keep your vehicle washed and blow-dried indoors — perfect for winter.',
-      features: ['Heated indoor bays', 'Air cannon dryers', '~4 min wash', 'Brushless & scratchless'],
+        'Drive in, drive out — clean in 4½ minutes. No brushes. No swirl marks. No risk to fresh paint or ceramic coatings. Roosevelt Rd\'s heated indoor bays let you wash year-round, even at -10°.',
+      features: ['Heated indoor bays (Roosevelt Rd)', 'Air cannon dryers', '~4½ min wash', 'Brushless & scratchless'],
       kind: 'automatic',
     },
     {
       titleLine1: 'Self-Serve',
       titleLine2: 'Wand Bays',
       desc:
-        'Nine premium wash options at your fingertips: engine cleaner, tire & wheel cleaner, low-pressure presoak, high-pressure detergent, foaming brush, high-pressure rinse, clear coat sealant, LustraShield, and spot-free rinse. $4 for 5 minutes.',
-      features: ['9 wash products', 'Spot-free rinse', 'LustraShield', 'Foaming brush'],
+        'Wash it your way. Nine settings — from engine cleaner to LustraShield gloss to spot-free rinse — for $4 every 5 minutes. Full dial walkthrough below.',
+      features: ['9 wash settings', 'Spot-free rinse', 'LustraShield gloss', 'Foaming brush'],
       kind: 'self-serve',
     },
   ],
@@ -86,13 +86,13 @@ const ICON_BY_KIND: Record<BayKind, React.ReactNode> = {
 const LOCAL_PHOTO_BY_KIND: Record<BayKind, { src: string; alt: string; caption: string; objectPosition: string }> = {
   automatic: {
     src: '/images/roosevelt-bay.jpg',
-    alt: 'Touchless automatic bay interior',
+    alt: 'Heated touchless automatic car wash bay interior at Spotless Carwash Roosevelt Rd, Forest Park IL',
     caption: '// touchless-bay',
     objectPosition: '50% 55%',
   },
   'self-serve': {
     src: '/images/self-serve-bay.jpg',
-    alt: 'Self-serve wand bays exterior',
+    alt: 'Self-serve wand car wash bays at Spotless Carwash, Forest Park IL — nine wash settings for $4',
     caption: '// self-serve-bays',
     objectPosition: '50% 60%',
   },

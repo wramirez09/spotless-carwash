@@ -26,7 +26,7 @@ const FALLBACK: Omit<InstructionsData, 'steps'> = {
   headlineLine1: 'Nine settings.',
   headlineLine2: 'One **clean** car.',
   tip:
-    'Nine premium wash and dry options at your fingertips, including tire & wheel cleaner, low-pressure presoak, foaming brush, polish, DuraShield surface gloss, high-pressure soap, high-pressure rinse, spot-free rinse and Air-shammee Air Dryers.\n\n$4.00 for 5 mins.\n\nFor best results, start at the top and work your way down. Let presoak soak for 10–20 seconds before rinsing, and always finish with a spot-free rinse—not DuraShield, then dry your car to perfection.\n\nPrepaid wash tokens make every visit quick and easy—keep them in your glovebox and skip the cash station. They also make a great gift and can be purchased from our attendant or online below.',
+    'Nine premium wash settings at your fingertips — engine cleaner, tire & wheel cleaner, low-pressure presoak, high-pressure detergent, foaming brush, high-pressure rinse, clear coat sealant, LustraShield surface gloss, and spot-free rinse.\n\n$4.00 for 5 mins.\n\nFor best results, work top-to-bottom. Let presoak dwell 10–20 seconds before rinsing, and always finish with the spot-free rinse — never LustraShield as the last step.',
   priceLabel: '$4 / 5 min',
 }
 
@@ -78,16 +78,17 @@ export default async function Instructions() {
             })}
           </div>
         </div>
-        <div className="bg-white/5 border border-white/10 rounded-[20px] overflow-hidden">
+        <ol className="list-none p-0 m-0 bg-white/5 border border-white/10 rounded-[20px] overflow-hidden">
           {steps.map((s, i) => (
-            <div
+            <li
               key={s.n}
+              value={s.n}
               className={
                 'grid grid-cols-[60px_1fr_auto] sm:grid-cols-[80px_1fr_120px] items-center px-5 sm:px-6 py-4 gap-5' +
                 (i < steps.length - 1 ? ' border-b border-white/10' : '')
               }
             >
-              <div className="display text-[28px] text-yellow-400 leading-none">{s.n}</div>
+              <div aria-hidden className="display text-[28px] text-yellow-400 leading-none">{s.n}</div>
               <div>
                 <h3 className="m-0 mb-0.5 text-base font-extrabold tracking-tight">{s.title}</h3>
                 <p className="m-0 text-[13px] text-blue-100 leading-snug">{s.description}</p>
@@ -95,9 +96,9 @@ export default async function Instructions() {
               <div className="mono text-[13px] font-semibold bg-yellow-400/10 text-yellow-400 px-2.5 py-1.5 rounded-lg text-center">
                 {section.priceLabel}
               </div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ol>
       </div>
     </section>
   )

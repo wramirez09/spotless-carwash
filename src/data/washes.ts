@@ -13,7 +13,7 @@ export type Pkg = {
 export const packages: Pkg[] = [
   {
     num: '08',
-    name: 'Deluxe (No Dryer)',
+    name: 'Quick',
     price: '$8',
     priceNumber: 8,
     color: 'red',

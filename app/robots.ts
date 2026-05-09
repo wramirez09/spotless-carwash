@@ -8,10 +8,8 @@ export default function robots(): MetadataRoute.Robots {
       rules: { userAgent: '*', disallow: '/' },
     }
   }
-  // TODO(domain): once production domain is set, add `sitemap: 'https://<domain>/sitemap.xml'`.
-  // Until then we omit the field — sitemap protocol requires absolute URLs and Lighthouse
-  // (correctly) rejects relative ones. Crawlers will still find /sitemap.xml by convention.
   return {
     rules: { userAgent: '*', allow: '/', disallow: ['/marketing-audit', '/competitor-report', '/seo-audit'] },
+    sitemap: 'https://spotlesscarwash.com/sitemap.xml',
   }
 }
