@@ -89,14 +89,12 @@ export default function NavClient({ data, ribbonText }: { data: NavData; ribbonT
           })}
         </div>
 
-        <a
+        <Link
           href={data.paypalUrl}
-          target="_blank"
-          rel="noopener noreferrer"
           className="ml-auto md:ml-0 bg-yellow-400 text-blue-700 px-4 py-2.5 rounded-full font-extrabold text-sm hover:bg-white transition"
         >
           {data.buyTokensLabel}
-        </a>
+        </Link>
 
         <button
           type="button"
@@ -230,15 +228,13 @@ export default function NavClient({ data, ribbonText }: { data: NavData; ribbonT
             <div className="text-blue-200 text-sm">{data.hoursLine}</div>
           </div>
 
-          <a
+          <Link
             href={data.paypalUrl}
-            target="_blank"
-            rel="noopener noreferrer"
             onClick={close}
             className="bg-yellow-400 text-blue-700 text-center py-3.5 rounded-full font-extrabold text-sm hover:bg-white transition"
           >
             {data.buyTokensLabel}
-          </a>
+          </Link>
         </div>
       </div>
     </nav>

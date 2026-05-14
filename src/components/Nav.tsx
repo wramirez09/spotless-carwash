@@ -26,7 +26,7 @@ const NAV_FALLBACK: NavData = {
     { label: 'Madison St', href: '/locations/madison-st' },
     { label: 'FAQ', href: '/faq' },
   ],
-  paypalUrl: 'https://www.paypal.com/ncp/payment/VZ896M2HPTEPC',
+  paypalUrl: '/buy-tokens',
   buyTokensLabel: 'Buy tokens →',
   phone: '(708) 771-2945',
   phoneHref: 'tel:7087712945',

@@ -75,7 +75,7 @@ function Card({ pkg }: { pkg: Pkg }) {
           ))}
         </ul>
         <a
-          href="#tokens"
+          href="/buy-tokens"
           className="mt-auto bg-yellow-400 text-blue-700 text-center py-3 rounded-xl font-bold text-sm border border-yellow-400 hover:bg-white transition"
         >
           Pick {pkg.name} · {pkg.price}

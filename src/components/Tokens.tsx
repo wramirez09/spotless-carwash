@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { sanityFetch } from '@/lib/sanityFetch'
 import { renderHighlight } from '@/lib/renderHighlight'
 
@@ -29,7 +30,7 @@ const FALLBACK: TokensData = {
   valueLine: 'Each token = one Ultimate wash. Never expires. Works at both locations.',
   description:
     'Prepaid Ultimate wash tokens save you up to 20% per wash. Keep them in your glovebox, skip the cash station — and they make a great Forest Park gift.',
-  cta: { label: 'Buy tokens · save up to 20%', href: 'https://www.paypal.com/ncp/payment/VZ896M2HPTEPC' },
+  cta: { label: 'Buy tokens · save up to 20%', href: '/buy-tokens' },
   tiers: [
     { qty: 5, price: '$45 · save $5' },
     { qty: 10, price: '$85 · save $15' },
@@ -72,17 +73,15 @@ export default async function Tokens() {
               {t.valueLine}
             </p>
             <p className="text-blue-100 leading-relaxed max-w-[440px] mb-7">{t.description}</p>
-            <a
+            <Link
               href={t.cta.href}
-              target="_blank"
-              rel="noopener noreferrer"
               className="self-start inline-flex items-center gap-2.5 px-5 py-3.5 rounded-full font-bold text-[15px] bg-yellow-400 text-blue-700 hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(255,217,61,.35)] transition"
             >
               {t.cta.label}
               <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M5 12h14M13 6l6 6-6 6" />
               </svg>
-            </a>
+            </Link>
           </div>
           <div className="relative flex flex-col gap-3.5 items-end justify-center">
             {t.tiers.map((tier) => (

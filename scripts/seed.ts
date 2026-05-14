@@ -82,7 +82,7 @@ const singletons: Record<string, SeedDoc> = {
       { label: 'Madison St', href: '/locations/madison-st' },
       { label: 'FAQ', href: '/faq' },
     ],
-    paypalUrl: 'https://www.paypal.com/ncp/payment/VZ896M2HPTEPC',
+    paypalUrl: '/buy-tokens',
     buyTokensLabel: 'Buy tokens →',
     phone: '(708) 771-2945',
     phoneHref: 'tel:7087712945',
@@ -375,7 +375,7 @@ const singletons: Record<string, SeedDoc> = {
     valueLine: 'Each token = one Ultimate wash. Never expires. Works at both locations.',
     description:
       'Prepaid Ultimate wash tokens save you up to 20% per wash. Keep them in your glovebox, skip the cash station — and they make a great Forest Park gift.',
-    cta: { label: 'Buy tokens · save up to 20%', href: 'https://www.paypal.com/ncp/payment/VZ896M2HPTEPC' },
+    cta: { label: 'Buy tokens · save up to 20%', href: '/buy-tokens' },
     tiers: [
       { qty: 5, price: '$45 · save $5' },
       { qty: 10, price: '$85 · save $15' },
