@@ -21,7 +21,7 @@ export type NavData = {
   buyTokensLabel: string
 }
 
-export default function NavClient({ data }: { data: NavData }) {
+export default function NavClient({ data, ribbonText }: { data: NavData; ribbonText?: string }) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname() ?? ''
   const isActive = (href: string) => {
@@ -39,7 +39,8 @@ export default function NavClient({ data }: { data: NavData }) {
   const close = () => setOpen(false)
 
   return (
-    <nav className="sticky top-0 z-50 bg-blue-500 text-white border-b-[3px] border-blue-700">
+    <nav className="sticky top-0 z-50 text-white">
+      <div className="bg-blue-500 border-b-[3px] border-blue-700">
       <div className="max-w-[1240px] mx-auto flex items-center gap-4 md:gap-6 px-5 md:px-7 py-3.5">
         <Link href="/" onClick={close} className="leading-none">
           {data.logo?.asset?._ref ? (
@@ -116,6 +117,15 @@ export default function NavClient({ data }: { data: NavData }) {
           )}
         </button>
       </div>
+      </div>
+
+      {ribbonText && (
+        <div className="bg-yellow-400 text-blue-700 border-b-[3px] border-blue-700">
+          <div className="max-w-[1240px] mx-auto px-5 md:px-7 py-2 text-center text-[12px] sm:text-[13px] font-extrabold tracking-[0.14em] uppercase">
+            {ribbonText}
+          </div>
+        </div>
+      )}
 
       {open && (
         <div

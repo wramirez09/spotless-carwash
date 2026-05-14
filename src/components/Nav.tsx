@@ -42,14 +42,5 @@ export default async function Nav() {
     sectionLinks: data?.sectionLinks ?? NAV_FALLBACK.sectionLinks,
     pageLinks: data?.pageLinks ?? NAV_FALLBACK.pageLinks,
   }
-  return (
-    <>
-      <NavClient data={nav} />
-      <div className="bg-yellow-400 text-blue-700 border-b-[3px] border-blue-700">
-        <div className="max-w-[1240px] mx-auto px-5 md:px-7 py-2 text-center text-[12px] sm:text-[13px] font-extrabold tracking-[0.14em] uppercase">
-          Since 1994 · Forest Park's car wash for 30 years
-        </div>
-      </div>
-    </>
-  )
+  return <NavClient data={nav} ribbonText="Since 1994 · Forest Park's car wash for 30 years" />
 }
