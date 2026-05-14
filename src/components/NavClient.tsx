@@ -53,7 +53,7 @@ export default function NavClient({ data }: { data: NavData }) {
           ) : (
             <span className="display italic uppercase text-white text-[22px] [text-shadow:-0.035em_0.05em_0_#0a2a6b]">
               <span className="text-[35px]">S</span>POTLESS
-              <div className="pl-[1em]">CARWASH</div>
+              <div className="pl-[.5em]">CARWASH</div>
             </span>
           )}
         </Link>

@@ -135,7 +135,7 @@ export default async function Hero() {
           <h1 className="display italic uppercase text-[64px] sm:text-[96px] md:text-[140px] lg:text-[168px] [text-shadow:-0.035em_0.05em_0_#0a2a6b]">
             <span className="text-[1.75em]">{headline1.charAt(0)}</span>
             {headline1.slice(1)}
-            <span className="block pl-[1em]">{hero.headlineLine2}</span>
+            <span className="block pl-[.5em]">{hero.headlineLine2}</span>
             <span className="block normal-case text-blue-100 text-[0.62em] mt-2">{hero.headlineTagline}</span>
           </h1>
           <p className="mt-5 text-xl md:text-2xl font-bold text-yellow-400 max-w-[640px]">
