@@ -144,7 +144,7 @@ export default function BuyTokensClient() {
                       />
                       {pkg.featured && (
                         <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-yellow-400 text-blue-700 text-[10px] font-extrabold tracking-[0.16em] uppercase px-2.5 py-1 rounded-full border border-blue-700 whitespace-nowrap">
-                          Most picked
+                          Most Popular
                         </span>
                       )}
                       <div className="flex items-start justify-between gap-2">

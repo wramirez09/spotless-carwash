@@ -58,7 +58,7 @@ function Card({ pkg }: { pkg: Pkg }) {
         <div className="flex items-center justify-between">
           <span className="mono text-xs font-semibold text-blue-100">WASH / {pkg.num}</span>
           <span className={`text-[10px] tracking-[0.16em] font-extrabold px-2.5 py-1 rounded-full uppercase ${colorBadge[pkg.color]}`}>
-            Most picked
+            Most Popular
           </span>
         </div>
         <h3 className="display text-[32px] m-0">{pkg.name}</h3>
