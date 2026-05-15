@@ -1,6 +1,6 @@
 import { sanityFetch } from '@/lib/sanityFetch'
 import { renderHighlight } from '@/lib/renderHighlight'
-import { dialSteps as fallbackDial, type DialStep } from '@/src/data/dial'
+import DialChart from './DialChart'
 
 type InstructionsData = {
   eyebrow: string
@@ -9,18 +9,14 @@ type InstructionsData = {
   headlineLine2: string
   tip: string
   priceLabel: string
-  steps: DialStep[]
 }
 
-const INSTRUCTIONS_QUERY = `{
-  "section": *[_type == "instructions"][0]{
-    eyebrow, sectionNumber,
-    headlineLine1, headlineLine2, tip, priceLabel
-  },
-  "steps": *[_type == "dialStep"] | order(n asc){ n, title, description }
+const INSTRUCTIONS_QUERY = `*[_type == "instructions"][0]{
+  eyebrow, sectionNumber,
+  headlineLine1, headlineLine2, tip, priceLabel
 }`
 
-const FALLBACK: Omit<InstructionsData, 'steps'> = {
+const FALLBACK: InstructionsData = {
   eyebrow: 'Self-serve dial',
   sectionNumber: '05',
   headlineLine1: 'Ten settings.',
@@ -31,13 +27,8 @@ const FALLBACK: Omit<InstructionsData, 'steps'> = {
 }
 
 export default async function Instructions() {
-  const data = await sanityFetch<{
-    section?: Partial<InstructionsData>
-    steps?: DialStep[]
-  }>(INSTRUCTIONS_QUERY)
-
-  const section = { ...FALLBACK, ...(data?.section ?? {}) }
-  const steps: DialStep[] = data?.steps?.length ? data.steps : fallbackDial
+  const data = await sanityFetch<Partial<InstructionsData>>(INSTRUCTIONS_QUERY)
+  const section = { ...FALLBACK, ...(data ?? {}) }
 
   return (
     <section className="bg-[#0a1b3f] text-white py-16 md:py-24">
@@ -78,27 +69,7 @@ export default async function Instructions() {
             })}
           </div>
         </div>
-        <ol className="list-none p-0 m-0 bg-white/5 border border-white/10 rounded-[20px] overflow-hidden">
-          {steps.map((s, i) => (
-            <li
-              key={s.n}
-              value={s.n}
-              className={
-                'grid grid-cols-[60px_1fr_auto] sm:grid-cols-[80px_1fr_120px] items-center px-5 sm:px-6 py-4 gap-5' +
-                (i < steps.length - 1 ? ' border-b border-white/10' : '')
-              }
-            >
-              <div aria-hidden className="display text-[28px] text-yellow-400 leading-none">{s.n}</div>
-              <div>
-                <h3 className="m-0 mb-0.5 text-base font-extrabold tracking-tight">{s.title}</h3>
-                <p className="m-0 text-[13px] text-blue-100 leading-snug">{s.description}</p>
-              </div>
-              <div className="mono text-[13px] font-semibold bg-yellow-400/10 text-yellow-400 px-2.5 py-1.5 rounded-lg text-center">
-                {section.priceLabel}
-              </div>
-            </li>
-          ))}
-        </ol>
+        <DialChart />
       </div>
     </section>
   )
