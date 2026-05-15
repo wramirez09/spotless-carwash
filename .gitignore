@@ -18,6 +18,10 @@ package-lock.json
 next-env.d.ts
 *.tsbuildinfo
 
+# Sanity dataset backups + working snapshots
+sanity-backup-*.tar.gz
+.sanity-snapshot/
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

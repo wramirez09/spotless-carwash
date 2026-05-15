@@ -2408,6 +2408,14 @@
     "@portabletext/toolkit" "^2.0.18"
     "@portabletext/types" "^2.0.15"
 
+"@portabletext/react@^6.2.0":
+  version "6.2.0"
+  resolved "https://registry.yarnpkg.com/@portabletext/react/-/react-6.2.0.tgz#8e90d54fef244efcf41af5c64fe9eedccec7b40d"
+  integrity sha512-Z0J/AWrvg7GyDfEBQRRhi6ZpxLOsN4/QbU8KhTwfa6r2ELiRaMa4gkHE9wfs3V1ozNDrTG4IRr+8yBnHNDnAqA==
+  dependencies:
+    "@portabletext/toolkit" "^5.0.2"
+    "@portabletext/types" "^4.0.2"
+
 "@portabletext/to-html@^2.0.14":
   version "2.0.17"
   resolved "https://registry.yarnpkg.com/@portabletext/to-html/-/to-html-2.0.17.tgz#62ae77d2f16ae22693459c26dcc604020354f357"
@@ -2423,10 +2431,22 @@
   dependencies:
     "@portabletext/types" "^2.0.13"
 
+"@portabletext/toolkit@^5.0.2":
+  version "5.0.2"
+  resolved "https://registry.yarnpkg.com/@portabletext/toolkit/-/toolkit-5.0.2.tgz#e2c124623d68ce6ea551160960c7a1b98b7cafdb"
+  integrity sha512-Njc1LE1PMJkTx/wEPqZ6sOWGgFgX2B47fxpOQ/Ia4ByhsZoA5Sq8dNvvV5F052j/xE8TbOLiBEjS848FkKADDQ==
+  dependencies:
+    "@portabletext/types" "^4.0.2"
+
 "@portabletext/types@^2.0.13", "@portabletext/types@^2.0.15":
   version "2.0.15"
   resolved "https://registry.yarnpkg.com/@portabletext/types/-/types-2.0.15.tgz#afc1231fd66965d777c6233aea79abfaf8716351"
   integrity sha512-2e6i2gSQsrA/5OL5Gm4/9bxB9MNO73Fa47zj+0mT93xkoQUCGCWX5fZh1YBJ86hszaRYlqvqG08oULxvvPPp/Q==
+
+"@portabletext/types@^4.0.2":
+  version "4.0.2"
+  resolved "https://registry.yarnpkg.com/@portabletext/types/-/types-4.0.2.tgz#a4665eb8ac56ec216e93b7aed867840813c083de"
+  integrity sha512-djfIGU9n6DRrunlvj2nIDAp17URo/nA4jSXGvf+Gupx8NLLy9fmJBZ3GL8yhqn9lSVc+cKCharjOa3aOBnWbRw==
 
 "@rexxars/react-json-inspector@^9.0.1":
   version "9.0.1"

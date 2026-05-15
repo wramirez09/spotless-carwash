@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { sanityFetch } from '@/lib/sanityFetch'
 import { renderHighlight } from '@/lib/renderHighlight'
 
-type TokenTier = { qty: number; price: string }
+type TokenTier = { qty: number; price: string; unitLabel?: string }
 type TokensData = {
   eyebrow: string
   sectionNumber: string
@@ -19,22 +19,23 @@ const TOKENS_QUERY = `*[_type == "tokens"][0]{
   headlineLine1, headlineLine2,
   valueLine, description,
   cta{ label, href },
-  tiers[]{ qty, price }
+  tiers[]{ qty, unitLabel, price }
 }`
 
 const FALLBACK: TokensData = {
   eyebrow: 'Wash tokens',
   sectionNumber: '07',
-  headlineLine1: 'Buy a stack.',
-  headlineLine2: 'Save up to **$50**.',
-  valueLine: 'Each token = one Ultimate wash. Never expires. Works at both locations.',
+  headlineLine1: 'Buy a 4-pack.',
+  headlineLine2: 'Save **$5** every wash.',
+  valueLine: '4 tokens per pack. Never expires. Works at both locations.',
   description:
-    'Prepaid Ultimate wash tokens save you up to 20% per wash. Keep them in your glovebox, skip the cash station — and they make a great Forest Park gift.',
-  cta: { label: 'Buy tokens · save up to 20%', href: '/buy-tokens' },
+    'Prepaid wash tokens save you $5 per 4-pack. Keep them in your glovebox, skip the cash station — and they make a great Forest Park gift.',
+  cta: { label: 'Buy tokens', href: '/buy-tokens' },
   tiers: [
-    { qty: 5, price: '$45 · save $5' },
-    { qty: 10, price: '$85 · save $15' },
-    { qty: 25, price: '$200 · save $50' },
+    { qty: 12, unitLabel: '/ wash · 4-pack', price: '$43 · save $5' },
+    { qty: 10, unitLabel: '/ wash · 4-pack', price: '$35 · save $5' },
+    { qty: 9, unitLabel: '/ wash · 4-pack', price: '$31 · save $5' },
+    { qty: 8, unitLabel: '/ wash · 4-pack', price: '$27 · save $5' },
   ],
 }
 
@@ -84,16 +85,16 @@ export default async function Tokens() {
             </Link>
           </div>
           <div className="relative flex flex-col gap-3.5 items-end justify-center">
-            {t.tiers.map((tier) => (
+            {t.tiers.map((tier, i) => (
               <div
-                key={tier.qty}
+                key={`${tier.qty}-${i}`}
                 className="bg-yellow-400 text-blue-700 rounded-full px-7 py-[18px] flex items-center gap-[18px] display shadow-[0_12px_30px_rgba(0,0,0,.3)] w-fit"
               >
                 <span className="text-[38px] leading-none pr-[18px] border-r-2 border-blue-700">
-                  {tier.qty}
+                  ${tier.qty}
                 </span>
                 <span className="text-sm not-italic font-sans font-extrabold tracking-[0.08em] uppercase">
-                  Tokens
+                  {tier.unitLabel ?? '/ wash · 4-pack'}
                 </span>
                 <span className="bg-blue-700 text-yellow-400 text-[11px] not-italic font-sans font-extrabold px-2.5 py-1 rounded-full tracking-[0.1em]">
                   {tier.price}

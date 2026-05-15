@@ -23,7 +23,7 @@ const INSTRUCTIONS_QUERY = `{
 const FALLBACK: Omit<InstructionsData, 'steps'> = {
   eyebrow: 'Self-serve dial',
   sectionNumber: '05',
-  headlineLine1: 'Nine settings.',
+  headlineLine1: 'Ten settings.',
   headlineLine2: 'One **clean** car.',
   tip:
     'Ten premium wash settings at your fingertips — tire & wheel cleaner, low-pressure presoak, high-pressure detergent, foaming brush, high-pressure rinse, clear coat sealant, Durashield surface gloss, spot-free rinse and air shammee dryer.\n\n$4.00 for 5 mins.\n\nFor best results, work top-to-bottom. Let presoak dwell 10–20 seconds before rinsing, and always finish with the spot-free rinse — never Durashield as the last step.',

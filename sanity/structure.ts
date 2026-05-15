@@ -17,6 +17,13 @@ const SINGLETON_LABELS: Record<string, string> = {
   tokens: 'Wash tokens',
   emailSection: 'Email signup',
   faqPage: 'FAQ page',
+  buyTokensPage: 'Buy tokens page',
+  buyTokensSuccessPage: 'Buy tokens — success',
+  privacyPage: 'Privacy page',
+  termsPage: 'Terms page',
+  seoAuditPage: 'SEO Audit page',
+  marketingAuditPage: 'Marketing Audit page',
+  competitorReportPage: 'Competitor Report page',
 }
 
 function singletonItem(S: StructureBuilder, type: string) {

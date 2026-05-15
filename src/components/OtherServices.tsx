@@ -86,7 +86,7 @@ const FALLBACK: OtherServicesData = {
     {
       code: 'SVC / 05',
       title: 'Wash hours',
-      body: '7AM – 10PM daily, every day of the week.',
+      body: 'Daily — every day of the week.',
       icon: 'clock',
       hoursStart: '7AM',
       hoursEnd: '10PM',

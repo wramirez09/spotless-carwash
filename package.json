@@ -11,6 +11,7 @@
     "seed": "tsx --env-file=.env.local scripts/seed.ts"
   },
   "dependencies": {
+    "@portabletext/react": "^6.2.0",
     "@sanity/image-url": "^2.1.1",
     "@sanity/visual-editing": "^2",
     "@stripe/stripe-js": "^9.5.0",

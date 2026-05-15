@@ -21,8 +21,23 @@ export default defineType({
           type: 'object',
           name: 'tokenTier',
           fields: [
-            defineField({ name: 'qty', type: 'number', validation: (r) => r.required() }),
-            defineField({ name: 'price', type: 'string', description: 'e.g. "$85 · save $5"' }),
+            defineField({
+              name: 'qty',
+              type: 'number',
+              title: 'Big number',
+              description: 'Number shown big on the pill (e.g. 12 → renders as "$12").',
+              validation: (r) => r.required(),
+            }),
+            defineField({
+              name: 'unitLabel',
+              type: 'string',
+              description: 'Small label next to the big number, e.g. "/ wash · 4-pack".',
+            }),
+            defineField({
+              name: 'price',
+              type: 'string',
+              description: 'Pill text on the right, e.g. "$43 · save $5".',
+            }),
           ],
         }),
       ],

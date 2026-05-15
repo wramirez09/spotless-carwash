@@ -60,14 +60,14 @@ const HERO_FALLBACK: Required<Omit<HeroData, 'backgroundImage'>> = {
     'TOUCHLESS AUTO WASH',
     'HEATED INDOOR BAYS AT ROOSEVELT RD',
     'SELF-SERVE WAND BAYS',
-    'OPEN 7AM–10PM',
+    'OPEN 7AM–10PM · SINCE THE 90s',
     'SPOT FREE RINSE',
   ],
   bayCardStatus: 'Bay 02 ready · Roosevelt Rd',
   bayCardHeading: 'Pull up & watch the lights.',
   bayCardBody:
     "Don't enter unless the light is green. Pull forward slowly, let the message guide you.",
-  avgWashTime: '4 min 30s',
+  avgWashTime: '4 min',
   paymentLine: 'Visa · MC · Amex · Apple Pay · Cash · Tokens',
 }
 

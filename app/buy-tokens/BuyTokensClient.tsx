@@ -3,8 +3,9 @@
 import Link from 'next/link'
 import { useMemo, useState, type FormEvent } from 'react'
 
+type PkgId = '8' | '9' | '10' | '12'
 type Pkg = {
-  id: '5' | '10' | '25'
+  id: PkgId
   tokens: number
   price: number // cents
   save: number // cents
@@ -13,16 +14,81 @@ type Pkg = {
   featured?: boolean
 }
 
+export type BuyTokensCopy = {
+  metaTitle: string
+  metaDescription: string
+  ribbonText: string
+  breadcrumbHome: string
+  breadcrumbCurrent: string
+  headingPrefix: string
+  headingHighlight: string
+  headingSuffix: string
+  subhead: string
+  step1Number: string
+  step1Kicker: string
+  step1Title: string
+  mostPopularLabel: string
+  packCodePrefix: string
+  packTokensSuffix: string
+  savePrefix: string
+  eachSuffix: string
+  quantityHeading: string
+  quantitySubtext: string
+  quantityDecreaseLabel: string
+  quantityIncreaseLabel: string
+  quantityInputLabel: string
+  step2Number: string
+  step2Kicker: string
+  step2Title: string
+  emailLabel: string
+  emailPlaceholder: string
+  emailHelper: string
+  nameLabel: string
+  namePlaceholder: string
+  phoneLabel: string
+  phoneOptionalLabel: string
+  phonePlaceholder: string
+  requiredMark: string
+  step3Number: string
+  step3Kicker: string
+  step3Title: string
+  deliveryHeading: string
+  deliveryBody: string
+  deliveryChips: string[]
+  summaryHeading: string
+  summaryBadge: string
+  perTokenSuffix: string
+  packSingular: string
+  packPlural: string
+  savingsLabel: string
+  taxLabel: string
+  taxValue: string
+  totalLabel: string
+  submitLabel: string
+  submittingLabel: string
+  erroredLabel: string
+  submitDisclaimer: string
+  trustItems: { line1: string; line2: string }[]
+  contactPrefix: string
+  contactConnector: string
+  contactPhoneDisplay: string
+  contactEmail: string
+  checkoutErrorMessage: string
+}
+
+// NOTE: pack ids 8/9/10/12 don't map to Stripe envs yet. Checkout will 400 until
+// STRIPE_PRICE_8 / 9 / 10 / 12 are added in app/api/checkout/route.ts + Vercel env.
 const PACKAGES: Pkg[] = [
-  { id: '5', tokens: 5, price: 4500, save: 0, label: '5 Tokens', perToken: 900 },
-  { id: '10', tokens: 10, price: 8500, save: 500, label: '10 Tokens', perToken: 850, featured: true },
-  { id: '25', tokens: 25, price: 20000, save: 2500, label: '25 Tokens', perToken: 800 },
+  { id: '8', tokens: 4, price: 2700, save: 500, label: '$8 wash · 4-pack', perToken: 675 },
+  { id: '9', tokens: 4, price: 3100, save: 500, label: '$9 wash · 4-pack', perToken: 775 },
+  { id: '10', tokens: 4, price: 3500, save: 500, label: '$10 wash · 4-pack', perToken: 875, featured: true },
+  { id: '12', tokens: 4, price: 4300, save: 500, label: '$12 wash · 4-pack', perToken: 1075 },
 ]
 
 const fmt = (cents: number) => `$${(cents / 100).toFixed(2)}`
 const fmtWhole = (cents: number) => `$${Math.round(cents / 100)}`
 
-export default function BuyTokensClient() {
+export default function BuyTokensClient({ copy }: { copy: BuyTokensCopy }) {
   const [selectedId, setSelectedId] = useState<Pkg['id']>('10')
   const [quantity, setQuantity] = useState<number>(1)
   const [email, setEmail] = useState('')
@@ -36,10 +102,10 @@ export default function BuyTokensClient() {
   const savings = selected.save * quantity
 
   const buttonLabel = useMemo(() => {
-    if (submitting) return 'Redirecting to Stripe…'
-    if (errored) return 'Try again'
-    return 'Pay with Stripe'
-  }, [submitting, errored])
+    if (submitting) return copy.submittingLabel
+    if (errored) return copy.erroredLabel
+    return copy.submitLabel
+  }, [submitting, errored, copy.submittingLabel, copy.erroredLabel, copy.submitLabel])
 
   const clampQty = (n: number) => Math.max(1, Math.min(20, n))
 
@@ -67,7 +133,7 @@ export default function BuyTokensClient() {
     } catch {
       setSubmitting(false)
       setErrored(true)
-      alert('Something went wrong. Please try again or call (708) 771-2945.')
+      alert(copy.checkoutErrorMessage)
     }
   }
 
@@ -77,7 +143,7 @@ export default function BuyTokensClient() {
       <div className="bg-yellow-400 text-blue-700 border-b-[3px] border-blue-700">
         <div className="max-w-[1240px] mx-auto px-5 md:px-7 py-3 flex items-center justify-center gap-3 text-[12px] sm:text-[13px] font-extrabold tracking-[0.16em] uppercase">
           <LockIcon className="hidden sm:block" />
-          <span>Secure checkout · Encrypted · Powered by Stripe</span>
+          <span>{copy.ribbonText}</span>
           <LockIcon className="hidden sm:block" />
         </div>
       </div>
@@ -87,17 +153,16 @@ export default function BuyTokensClient() {
         <div className="max-w-[1240px] mx-auto px-5 md:px-7 py-12 md:py-16">
           <div className="flex items-center gap-2 text-[11px] font-bold tracking-[0.22em] uppercase text-blue-100 mb-5">
             <Link href="/" className="hover:text-yellow-400 transition">
-              Home
+              {copy.breadcrumbHome}
             </Link>
             <span className="text-blue-200">/</span>
-            <span className="text-yellow-400">Buy tokens</span>
+            <span className="text-yellow-400">{copy.breadcrumbCurrent}</span>
           </div>
           <h1 className="display m-0 text-[52px] sm:text-[72px] md:text-[96px] leading-[0.92]">
-            Buy wash <em className="text-yellow-400">tokens</em>.
+            {copy.headingPrefix}{copy.headingPrefix ? ' ' : ''}<em className="text-yellow-400">{copy.headingHighlight}</em>{copy.headingSuffix}
           </h1>
           <p className="mt-5 max-w-[560px] text-blue-100 text-base sm:text-lg leading-relaxed">
-            Pre-paid tokens for the automatic bays. Works at both Forest Park locations — Roosevelt
-            Rd and Madison St. Stash &apos;em in the glovebox and skip the cash station.
+            {copy.subhead}
           </p>
         </div>
       </header>
@@ -112,9 +177,9 @@ export default function BuyTokensClient() {
           <div className="space-y-8">
             {/* STEP 1 — PACKAGE */}
             <section>
-              <StepHead num="01" kicker="Step one" title="Pick a token pack." />
+              <StepHead num={copy.step1Number} kicker={copy.step1Kicker} title={copy.step1Title} />
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {PACKAGES.map((pkg, idx) => {
                   const checked = pkg.id === selectedId
                   return (
@@ -144,12 +209,12 @@ export default function BuyTokensClient() {
                       />
                       {pkg.featured && (
                         <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-yellow-400 text-blue-700 text-[10px] font-extrabold tracking-[0.16em] uppercase px-2.5 py-1 rounded-full border border-blue-700 whitespace-nowrap">
-                          Most Popular
+                          {copy.mostPopularLabel}
                         </span>
                       )}
                       <div className="flex items-start justify-between gap-2">
                         <span className="mono text-[10px] font-semibold tracking-[0.22em] uppercase text-[#9aa9c9]">
-                          Pack / {String(idx + 1).padStart(2, '0')}
+                          {copy.packCodePrefix} / {String(idx + 1).padStart(2, '0')}
                         </span>
                         <span
                           className={
@@ -171,10 +236,10 @@ export default function BuyTokensClient() {
                         </span>
                       </div>
                       <div className="display text-[44px] text-ink mt-2 leading-none">
-                        {pkg.tokens}
+                        ${pkg.id}
                       </div>
                       <div className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#5b6987] -mt-1">
-                        Tokens
+                        {copy.packTokensSuffix}
                       </div>
                       <div className="mt-4 pt-4 border-t border-dashed border-line flex items-baseline gap-1.5">
                         <span className="display text-[28px] text-blue-500 leading-none">
@@ -182,11 +247,11 @@ export default function BuyTokensClient() {
                         </span>
                         {pkg.save > 0 ? (
                           <span className="ml-auto bg-blue-700 text-yellow-400 text-[11px] font-extrabold tracking-[0.1em] px-2.5 py-1 rounded-full">
-                            SAVE {fmtWhole(pkg.save)}
+                            {copy.savePrefix} {fmtWhole(pkg.save)}
                           </span>
                         ) : (
                           <span className="ml-auto text-[12px] font-semibold text-[#5b6987]">
-                            {fmtWhole(pkg.perToken)} ea.
+                            {fmtWhole(pkg.perToken)} {copy.eachSuffix}
                           </span>
                         )}
                       </div>
@@ -197,15 +262,15 @@ export default function BuyTokensClient() {
 
               <div className="mt-5 bg-white border border-line rounded-2xl p-4 flex items-center justify-between gap-4">
                 <div>
-                  <div className="font-extrabold text-[15px]">Number of packs</div>
+                  <div className="font-extrabold text-[15px]">{copy.quantityHeading}</div>
                   <div className="text-[13px] text-[#5b6987] mt-0.5">
-                    Buy multiple packs of the same size.
+                    {copy.quantitySubtext}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    aria-label="Decrease quantity"
+                    aria-label={copy.quantityDecreaseLabel}
                     disabled={quantity <= 1}
                     onClick={() => setQuantity((q) => clampQty(q - 1))}
                     className="w-10 h-10 rounded-xl border-2 border-line bg-white text-xl font-extrabold leading-none hover:border-blue-500 hover:text-blue-500 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-line disabled:hover:text-ink"
@@ -218,12 +283,12 @@ export default function BuyTokensClient() {
                     max={20}
                     value={quantity}
                     onChange={(e) => setQuantity(clampQty(parseInt(e.target.value, 10) || 1))}
-                    aria-label="Number of packs"
+                    aria-label={copy.quantityInputLabel}
                     className="w-16 px-2 py-2 text-center text-[16px] font-extrabold border-[1.5px] border-line rounded-xl text-ink [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <button
                     type="button"
-                    aria-label="Increase quantity"
+                    aria-label={copy.quantityIncreaseLabel}
                     disabled={quantity >= 20}
                     onClick={() => setQuantity((q) => clampQty(q + 1))}
                     className="w-10 h-10 rounded-xl border-2 border-line bg-white text-xl font-extrabold leading-none hover:border-blue-500 hover:text-blue-500 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-line disabled:hover:text-ink"
@@ -236,33 +301,33 @@ export default function BuyTokensClient() {
 
             {/* STEP 2 — CONTACT */}
             <section>
-              <StepHead num="02" kicker="Step two" title="Your details." />
+              <StepHead num={copy.step2Number} kicker={copy.step2Kicker} title={copy.step2Title} />
               <div className="bg-white border border-line rounded-2xl p-5 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <label className="block sm:col-span-2">
                   <div className="text-[12px] font-bold tracking-[0.14em] uppercase text-[#5b6987] mb-1.5">
-                    Email <span className="text-blue-500">*</span>
+                    {copy.emailLabel} <span className="text-blue-500">{copy.requiredMark}</span>
                   </div>
                   <input
                     type="email"
                     required
-                    placeholder="you@example.com"
+                    placeholder={copy.emailPlaceholder}
                     autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full border-[1.5px] border-line rounded-xl px-4 py-3.5 text-[15px] text-ink bg-white placeholder:text-[#9aa9c9] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(27,79,217,0.12)] transition"
                   />
                   <div className="text-[12px] text-[#5b6987] mt-1.5">
-                    Receipt and token codes will be sent here.
+                    {copy.emailHelper}
                   </div>
                 </label>
                 <label className="block">
                   <div className="text-[12px] font-bold tracking-[0.14em] uppercase text-[#5b6987] mb-1.5">
-                    Full name <span className="text-blue-500">*</span>
+                    {copy.nameLabel} <span className="text-blue-500">{copy.requiredMark}</span>
                   </div>
                   <input
                     type="text"
                     required
-                    placeholder="Pat Driver"
+                    placeholder={copy.namePlaceholder}
                     autoComplete="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -271,14 +336,14 @@ export default function BuyTokensClient() {
                 </label>
                 <label className="block">
                   <div className="text-[12px] font-bold tracking-[0.14em] uppercase text-[#5b6987] mb-1.5">
-                    Phone{' '}
+                    {copy.phoneLabel}{' '}
                     <span className="text-[#9aa9c9] font-normal tracking-normal normal-case">
-                      (optional)
+                      {copy.phoneOptionalLabel}
                     </span>
                   </div>
                   <input
                     type="tel"
-                    placeholder="(708) 555-0100"
+                    placeholder={copy.phonePlaceholder}
                     autoComplete="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -290,7 +355,7 @@ export default function BuyTokensClient() {
 
             {/* STEP 3 — DELIVERY */}
             <section>
-              <StepHead num="03" kicker="Step three" title="How to get your tokens." />
+              <StepHead num={copy.step3Number} kicker={copy.step3Kicker} title={copy.step3Title} />
               <div className="bg-white border border-line rounded-2xl p-5 sm:p-6 grid grid-cols-[auto_1fr] gap-4 items-start">
                 <div className="w-10 h-10 bg-yellow-400 text-blue-700 rounded-xl flex items-center justify-center shrink-0">
                   <svg
@@ -306,18 +371,19 @@ export default function BuyTokensClient() {
                   </svg>
                 </div>
                 <div>
-                  <div className="font-extrabold">Email delivery</div>
+                  <div className="font-extrabold">{copy.deliveryHeading}</div>
                   <p className="mt-1 mb-0 text-[14px] leading-relaxed text-[#445273]">
-                    Token codes are emailed within 1 minute of payment. Bring the email to either
-                    location or pick up physical tokens at the cash station during attendant hours.
+                    {copy.deliveryBody}
                   </p>
                   <div className="flex flex-wrap gap-2 mt-3">
-                    <span className="bg-paper text-[#1c2c52] text-[12px] font-bold px-2.5 py-1.5 rounded-full">
-                      Roosevelt Rd · 24h
-                    </span>
-                    <span className="bg-paper text-[#1c2c52] text-[12px] font-bold px-2.5 py-1.5 rounded-full">
-                      Madison St · 7am–10pm
-                    </span>
+                    {copy.deliveryChips.map((chip, i) => (
+                      <span
+                        key={i}
+                        className="bg-paper text-[#1c2c52] text-[12px] font-bold px-2.5 py-1.5 rounded-full"
+                      >
+                        {chip}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -328,9 +394,9 @@ export default function BuyTokensClient() {
           <aside className="self-start lg:sticky lg:top-[120px]">
             <div className="bg-blue-700 text-white rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(8,24,63,0.35)]">
               <div className="bg-blue-500 px-6 py-5 border-b-2 border-blue-700 flex items-center justify-between">
-                <span className="display text-[22px]">Order summary</span>
+                <span className="display text-[22px]">{copy.summaryHeading}</span>
                 <span className="mono text-[10px] font-extrabold tracking-[0.22em] uppercase bg-yellow-400 text-blue-700 px-2.5 py-1 rounded-full">
-                  Order
+                  {copy.summaryBadge}
                 </span>
               </div>
               <div className="p-6">
@@ -338,8 +404,8 @@ export default function BuyTokensClient() {
                   <div>
                     <div className="font-extrabold text-[16px]">{selected.label}</div>
                     <div className="text-[13px] text-blue-200 mt-0.5">
-                      {fmt(selected.perToken)} per token · ×{quantity}{' '}
-                      {quantity === 1 ? 'pack' : 'packs'}
+                      {fmt(selected.perToken)} {copy.perTokenSuffix} · ×{quantity}{' '}
+                      {quantity === 1 ? copy.packSingular : copy.packPlural}
                     </div>
                   </div>
                   <div className="display text-[26px] text-yellow-400 leading-none">
@@ -349,18 +415,18 @@ export default function BuyTokensClient() {
 
                 {savings > 0 && (
                   <div className="flex items-center justify-between py-3 border-b border-white/15 text-[14px]">
-                    <span className="text-blue-100">You save</span>
+                    <span className="text-blue-100">{copy.savingsLabel}</span>
                     <span className="font-extrabold text-yellow-400">{fmt(savings)}</span>
                   </div>
                 )}
 
                 <div className="flex items-center justify-between py-3 text-[14px]">
-                  <span className="text-blue-100">Tax</span>
-                  <span className="mono text-blue-200">Calculated at checkout</span>
+                  <span className="text-blue-100">{copy.taxLabel}</span>
+                  <span className="mono text-blue-200">{copy.taxValue}</span>
                 </div>
 
                 <div className="mt-2 pt-4 border-t-2 border-yellow-400 flex items-baseline justify-between">
-                  <span className="display text-[20px]">Total</span>
+                  <span className="display text-[20px]">{copy.totalLabel}</span>
                   <span className="display text-[40px] text-yellow-400 leading-none">
                     {fmt(subtotal)}
                   </span>
@@ -388,49 +454,36 @@ export default function BuyTokensClient() {
                 </button>
 
                 <p className="text-center text-[12px] text-blue-200 mt-3 leading-relaxed">
-                  You&apos;ll be redirected to Stripe to complete payment. No card details are
-                  stored on our site.
+                  {copy.submitDisclaimer}
                 </p>
               </div>
             </div>
 
             {/* Trust strip */}
             <div className="mt-4 bg-white border border-line rounded-2xl p-4 grid grid-cols-3 gap-2 text-center">
-              <TrustItem
-                lines={['PCI-DSS', 'encrypted']}
-                icon={
-                  <path d="M12 2l9 4v6c0 5-3.8 9.7-9 10-5.2-.3-9-5-9-10V6l9-4z M9 12l2 2 4-4" />
-                }
-              />
-              <TrustItem
-                lines={['Works at', 'both locations']}
-                icon={
-                  <>
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1118 0z" />
-                    <circle cx="12" cy="10" r="3" />
-                  </>
-                }
-              />
-              <TrustItem
-                lines={['Never', 'expire']}
-                icon={<path d="M12 22s8-4 8-12V5l-8-3-8 3v5c0 8 8 12 8 12z" />}
-              />
+              {copy.trustItems.map((item, i) => (
+                <TrustItem
+                  key={i}
+                  lines={[item.line1, item.line2]}
+                  icon={TRUST_ICONS[i] ?? TRUST_ICONS[0]}
+                />
+              ))}
             </div>
 
             <p className="text-center text-[12px] text-[#5b6987] mt-4 leading-relaxed">
-              Questions? Call{' '}
+              {copy.contactPrefix}{' '}
               <a
                 href="tel:7087712945"
                 className="font-bold text-blue-500 hover:text-blue-700 transition"
               >
-                (708) 771-2945
+                {copy.contactPhoneDisplay}
               </a>{' '}
-              or email{' '}
+              {copy.contactConnector}{' '}
               <a
-                href="mailto:info@spotlessautowash.com"
+                href={`mailto:${copy.contactEmail}`}
                 className="font-bold text-blue-500 hover:text-blue-700 transition"
               >
-                info@spotlessautowash.com
+                {copy.contactEmail}
               </a>
             </p>
           </aside>
@@ -439,6 +492,15 @@ export default function BuyTokensClient() {
     </>
   )
 }
+
+const TRUST_ICONS: React.ReactNode[] = [
+  <path key="shield" d="M12 2l9 4v6c0 5-3.8 9.7-9 10-5.2-.3-9-5-9-10V6l9-4z M9 12l2 2 4-4" />,
+  <g key="pin">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1118 0z" />
+    <circle cx="12" cy="10" r="3" />
+  </g>,
+  <path key="badge" d="M12 22s8-4 8-12V5l-8-3-8 3v5c0 8 8 12 8 12z" />,
+]
 
 function StepHead({ num, kicker, title }: { num: string; kicker: string; title: string }) {
   return (

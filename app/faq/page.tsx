@@ -13,7 +13,7 @@ const FAQ_QUERY = `{
 
 const FALLBACK = {
   eyebrow: 'Frequently asked',
-  metaTitle: 'FAQ · Touchless & Self-Serve Car Wash Questions',
+  metaTitle: 'Self-Serve & Touchless Car Wash FAQ · Forest Park IL',
   metaDescription:
     'Answers to common questions about Spotless Carwash in Forest Park, IL — how touchless and self-serve bays work, token pricing, hours, and heated winter bays.',
   heading: 'Questions, **answered**.',

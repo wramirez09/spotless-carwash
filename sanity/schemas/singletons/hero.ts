@@ -22,7 +22,7 @@ export default defineType({
     defineField({ name: 'bayCardStatus', type: 'string', description: 'e.g. "Bay 02 ready · Roosevelt Rd"' }),
     defineField({ name: 'bayCardHeading', type: 'string' }),
     defineField({ name: 'bayCardBody', type: 'text', rows: 2 }),
-    defineField({ name: 'avgWashTime', type: 'string', description: 'e.g. "4 min 30s"' }),
+    defineField({ name: 'avgWashTime', type: 'string', description: 'e.g. "4 min"' }),
     defineField({ name: 'paymentLine', type: 'string', description: 'e.g. "Visa · MC · Amex · Apple Pay · Cash · Tokens"' }),
     defineField({
       name: 'backgroundImage',

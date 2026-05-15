@@ -24,7 +24,7 @@ const COPY_FALLBACK: Required<LocationCopy> = {
   unheatedHeroBlurb:
     'Touchless automatic bays and self-serve wand bays. Open 7am–10pm every day.',
   touchlessBlurb:
-    'Brushless, scratchless, ~4 min 30s. Air cannon dryers on the top three packages.',
+    'Brushless, scratchless, ~4 min. Air cannon dryers on the top three packages.',
   selfServeBlurb:
     'Nine-setting dial: presoak through spot-free rinse. $4.00 for 5 minutes.',
   paymentBlurb:
