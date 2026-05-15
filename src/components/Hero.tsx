@@ -52,7 +52,7 @@ const HERO_FALLBACK: Required<Omit<HeroData, 'backgroundImage'>> = {
   headlineTagline: '— keep it clean.',
   subheadYellow: "Forest Park's touchless car wash. For 30 years.",
   subheadBody:
-    'Heated indoor bays. No brushes. Open 7am–10pm, every day since 1994.',
+    'Heated indoor bays. No brushes. Open 7am–10pm, every day since 1995.',
   primaryCta: { label: 'See wash packages', href: '#washes', external: false },
   secondaryCta: { label: 'How it works', href: '#how', external: false },
   tickerItems: [

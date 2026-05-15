@@ -15,6 +15,6 @@ export const dialSteps: DialStep[] = [
   { n: 5, title: 'Foaming brush detergent', description: 'Scrub vehicle, top to bottom. High-pressure rinse.' },
   { n: 6, title: 'High-pressure rinse', description: 'Rinse entire vehicle from top down.' },
   { n: 7, title: 'Clear coat sealant', description: 'Apply to entire vehicle. Finish with final rinse.' },
-  { n: 8, title: 'LustraShield', description: 'Apply to entire vehicle. Finish with final rinse.' },
+  { n: 8, title: 'Durashield', description: 'Apply to entire vehicle. Finish with final rinse.' },
   { n: 9, title: 'Spot-free rinse', description: 'Apply spot-free rinse to entire vehicle.' },
 ]

@@ -427,10 +427,10 @@ export default function BuyTokensClient() {
               </a>{' '}
               or email{' '}
               <a
-                href="mailto:hello@spotlesscarwash.com"
+                href="mailto:info@spotlessautowash.com"
                 className="font-bold text-blue-500 hover:text-blue-700 transition"
               >
-                hello@spotlesscarwash.com
+                info@spotlessautowash.com
               </a>
             </p>
           </aside>

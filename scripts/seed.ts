@@ -86,9 +86,9 @@ const singletons: Record<string, SeedDoc> = {
     buyTokensLabel: 'Buy tokens →',
     phone: '(708) 771-2945',
     phoneHref: 'tel:7087712945',
-    email: 'hello@spotlesscarwash.com',
+    email: 'info@spotlessautowash.com',
     hoursLine: 'Open 7am–10pm, every day',
-    ribbonText: "Since 1994 · Forest Park's car wash for 30 years",
+    ribbonText: "Since 1995 · Forest Park's car wash for 30 years",
   },
 
   footer: {
@@ -118,7 +118,7 @@ const singletons: Record<string, SeedDoc> = {
         title: 'Contact',
         items: [
           { label: '(708) 771-2945', href: 'tel:7087712945', external: true },
-          { label: 'hello@spotlesscarwash.com', href: 'mailto:hello@spotlesscarwash.com', external: true },
+          { label: 'info@spotlessautowash.com', href: 'mailto:info@spotlessautowash.com', external: true },
           { label: 'Open 7am–10pm', href: '/faq' },
         ],
       },
@@ -136,7 +136,7 @@ const singletons: Record<string, SeedDoc> = {
     headlineTagline: '— keep it clean.',
     subheadYellow: "Forest Park's touchless car wash. For 30 years.",
     subheadBody:
-      'Heated indoor bays. No brushes. Open 7am–10pm, every day since 1994.',
+      'Heated indoor bays. No brushes. Open 7am–10pm, every day since 1995.',
     primaryCta: { label: 'See wash packages', href: '#washes' },
     secondaryCta: { label: 'How it works', href: '#how' },
     tickerItems: [
@@ -246,8 +246,8 @@ const singletons: Record<string, SeedDoc> = {
         titleLine1: 'Self-Serve',
         titleLine2: 'Wand Bays',
         desc:
-          'Wash it your way. Nine settings — from engine cleaner to LustraShield gloss to spot-free rinse — for $4 every 5 minutes. Full dial walkthrough below.',
-        features: ['9 wash settings', 'Spot-free rinse', 'LustraShield gloss', 'Foaming brush'],
+          'Wash it your way. Nine settings — from engine cleaner to Durashield gloss to spot-free rinse — for $4 every 5 minutes. Full dial walkthrough below.',
+        features: ['9 wash settings', 'Spot-free rinse', 'Durashield gloss', 'Foaming brush'],
       },
     ],
   },
@@ -287,7 +287,7 @@ const singletons: Record<string, SeedDoc> = {
       },
       {
         text:
-          'Self-serve bays have everything you need. The LustraShield + spot-free combo is the move. Tokens make the price feel like nothing.',
+          'Self-serve bays have everything you need. The Durashield + spot-free combo is the move. Tokens make the price feel like nothing.',
         attribution: 'Anna T., Oak Park',
         rating: 5,
       },
@@ -308,7 +308,7 @@ const singletons: Record<string, SeedDoc> = {
     headlineLine1: 'Nine settings.',
     headlineLine2: 'One **clean** car.',
     tip:
-      'Nine premium wash settings at your fingertips — engine cleaner, tire & wheel cleaner, low-pressure presoak, high-pressure detergent, foaming brush, high-pressure rinse, clear coat sealant, LustraShield surface gloss, and spot-free rinse.\n\n$4.00 for 5 mins.\n\nFor best results, work top-to-bottom. Let presoak dwell 10–20 seconds before rinsing, and always finish with the spot-free rinse — never LustraShield as the last step.',
+      'Ten premium wash settings at your fingertips — tire & wheel cleaner, low-pressure presoak, high-pressure detergent, foaming brush, high-pressure rinse, clear coat sealant, Durashield surface gloss, spot-free rinse and air shammee dryer.\n\n$4.00 for 5 mins.\n\nFor best results, work top-to-bottom. Let presoak dwell 10–20 seconds before rinsing, and always finish with the spot-free rinse — never Durashield as the last step.',
     priceLabel: '$4 / 5 min',
   },
 
@@ -344,7 +344,7 @@ const singletons: Record<string, SeedDoc> = {
       },
       {
         code: 'SVC / 04',
-        title: 'Get glossy with **LustraShield**.',
+        title: 'Get glossy with **Durashield**.',
         body:
           'A surface gloss enhancer that beads water and leaves a deep shine. Available in **every bay** — automatic and self-serve. Apply before the spot-free rinse for best results.',
         chips: ['All auto bays', 'All self-serve bays', 'Water-beading shine'],
@@ -435,7 +435,7 @@ const locationDocs = locationsData.map((l) => ({
   gradient: l.gradient,
   metaTitle: `Touchless Car Wash on ${l.name}, Forest Park IL`,
   metaDescription: `Spotless Carwash on ${l.name} in Forest Park, IL. ${l.heated ? 'Heated indoor touchless bays' : 'Touchless automatic bays'
-    } and self-serve wand bays. Open 7am–10pm, every day since 1994. ${l.street}.`,
+    } and self-serve wand bays. Open 7am–10pm, every day since 1995. ${l.street}.`,
 }))
 
 const washPackageDocs = packagesData.map((p, i) => ({

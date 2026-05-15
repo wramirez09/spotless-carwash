@@ -5,7 +5,7 @@ import Washes from '@/src/components/Washes'
 import Bays from '@/src/components/Bays'
 import OtherServices from '@/src/components/OtherServices'
 import Tokens from '@/src/components/Tokens'
-import Email from '@/src/components/Email'
+// import Email from '@/src/components/Email'
 import LocalBusinessSchema from '@/src/components/seo/LocalBusinessSchema'
 import BreadcrumbSchema from '@/src/components/seo/BreadcrumbSchema'
 import SanityImage from '@/src/components/SanityImage'
@@ -40,7 +40,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: data?.metaTitle ?? `Touchless Car Wash on Roosevelt Rd, Forest Park IL`,
     description:
       data?.metaDescription ??
-      `Spotless Carwash on Roosevelt Rd in Forest Park, IL. Heated indoor touchless bays and self-serve wand bays. Open 7am–10pm, every day since 1994. ${loc.street}.`,
+      `Spotless Carwash on Roosevelt Rd in Forest Park, IL. Heated indoor touchless bays and self-serve wand bays. Open 7am–10pm, every day since 1995. ${loc.street}.`,
     alternates: { canonical: `/locations/${loc.slug}` },
   }
 }
@@ -209,7 +209,7 @@ export default async function Page() {
               </h2>
             </div>
             <p className="max-w-[360px] text-[#445273] leading-relaxed">
-              On Roosevelt Road just east of Harlem Avenue. Heated indoor bays mean you can wash year-round, even at -10°.
+              On Roosevelt Road just east of Harlem Avenue. Heated indoor bays - you can wash year-round.
             </p>
           </div>
 
@@ -242,7 +242,7 @@ export default async function Page() {
                 </div>
                 <div className="font-extrabold text-ink">7am–10pm, every day</div>
                 <div className="text-[#5b6987] text-sm mt-1 leading-snug">
-                  Bays open all hours. Attendants Mon–Fri 12–5pm, Sat/Sun 9–11am &amp; 12–4pm.
+                  Bays open all hours. Attendants Mon–Fri, 9am -11am & 12pm–5pm, Sat/Sun 9–11am &amp; 12–4pm.
                 </div>
               </div>
               <div className="border-t border-dashed border-line pt-5">
@@ -293,7 +293,7 @@ export default async function Page() {
             </div>
             <h2 className="display text-[36px] sm:text-[48px] md:text-[56px] m-0 leading-[1.05]">
               The car wash South Forest Park has trusted{' '}
-              <span className="text-blue-500 yellow-hl">since 1994</span>.
+              <span className="text-blue-500 yellow-hl">since 1995</span>.
             </h2>
           </div>
           <div className="text-[#445273] leading-relaxed text-[17px] space-y-5 max-w-[640px]">
@@ -321,7 +321,7 @@ export default async function Page() {
             </p>
             <p>
               Bays are open 7am–10pm, every day. Attendants are on site Monday
-              through Friday from noon to 5pm, and weekends &amp; holidays from
+              through Friday from 9am - 11am and noon to 5pm, and weekends &amp; holidays from
               9–11am and noon–4pm — they can help with tokens, change, and any
               equipment questions. Closer to north Forest Park? See our{' '}
               <a
@@ -340,7 +340,7 @@ export default async function Page() {
       <Bays photoOverrides={bayOverrides} />
       <OtherServices />
       <Tokens />
-      <Email />
+      {/* <Email /> */}
     </>
   )
 }

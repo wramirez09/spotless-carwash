@@ -26,7 +26,7 @@ const FALLBACK: Omit<InstructionsData, 'steps'> = {
   headlineLine1: 'Nine settings.',
   headlineLine2: 'One **clean** car.',
   tip:
-    'Nine premium wash settings at your fingertips — engine cleaner, tire & wheel cleaner, low-pressure presoak, high-pressure detergent, foaming brush, high-pressure rinse, clear coat sealant, LustraShield surface gloss, and spot-free rinse.\n\n$4.00 for 5 mins.\n\nFor best results, work top-to-bottom. Let presoak dwell 10–20 seconds before rinsing, and always finish with the spot-free rinse — never LustraShield as the last step.',
+    'Ten premium wash settings at your fingertips — tire & wheel cleaner, low-pressure presoak, high-pressure detergent, foaming brush, high-pressure rinse, clear coat sealant, Durashield surface gloss, spot-free rinse and air shammee dryer.\n\n$4.00 for 5 mins.\n\nFor best results, work top-to-bottom. Let presoak dwell 10–20 seconds before rinsing, and always finish with the spot-free rinse — never Durashield as the last step.',
   priceLabel: '$4 / 5 min',
 }
 

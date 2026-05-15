@@ -70,7 +70,7 @@ export default function MarketingAuditPage() {
       <section className="mb-12">
         <h2 className="text-2xl font-bold mb-4">Quick Wins (This Week)</h2>
         <ol className="list-decimal pl-6 space-y-3">
-          <li><strong>Add a subhead under &ldquo;Forest Park&apos;s touchless car wash&rdquo;</strong> that names the differentiators directly: <em>&ldquo;Heated indoor bays. No brushes. Open 7am–10pm, every day since 1994.&rdquo;</em> Currently the homepage hero leans on category, not differentiation.</li>
+          <li><strong>Add a subhead under &ldquo;Forest Park&apos;s touchless car wash&rdquo;</strong> that names the differentiators directly: <em>&ldquo;Heated indoor bays. No brushes. Open 7am–10pm, every day since 1995.&rdquo;</em> Currently the homepage hero leans on category, not differentiation.</li>
           <li><strong>Add &ldquo;Since 199X — Forest Park&apos;s car wash for 30 years&rdquo; as a header trust badge</strong> (single line, under the nav or above the fold). Three decades of operation is the single strongest local trust signal you have and it&apos;s currently invisible until the user reads body copy.</li>
           <li><strong>Add LocalBusiness JSON-LD schema</strong> to homepage and both location pages (name, address, phone, hours, geo, priceRange, image, sameAs for GBP). This alone typically improves local-pack visibility within 2–4 weeks of recrawl.</li>
           <li><strong>Add a Google Business Profile review badge / star rating block</strong> to both location pages and homepage. Three on-site testimonials is too few; pulling 4.X-star Google reviews dynamically (or even static screenshots of recent ones) is far more credible.</li>

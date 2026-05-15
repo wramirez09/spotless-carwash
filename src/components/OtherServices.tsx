@@ -76,7 +76,7 @@ const FALLBACK: OtherServicesData = {
     },
     {
       code: 'SVC / 04',
-      title: 'Get glossy with **LustraShield**.',
+      title: 'Get glossy with **Durashield**.',
       body:
         'A surface gloss enhancer that beads water and leaves a deep shine. Available in **every bay** — automatic and self-serve. Apply before the spot-free rinse for best results.',
       chips: ['All auto bays', 'All self-serve bays', 'Water-beading shine'],
@@ -189,7 +189,7 @@ function ServiceCardEl({ s }: { s: ServiceCard }) {
     )
   }
 
-  // LustraShield wide / featured card
+  // Durashield wide / featured card
   if (s.theme === 'wide') {
     return (
       <article className="bg-white border border-line rounded-2xl p-7 flex flex-col gap-3.5 sm:col-span-2">

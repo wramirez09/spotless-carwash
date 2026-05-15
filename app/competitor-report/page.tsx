@@ -231,7 +231,7 @@ export default function CompetitorReportPage() {
               <tr className="border-b border-ink/10"><td className="py-2 pr-3"><strong>Free vacuums</strong></td><td className="py-2 pr-3">❌ No ($1)</td><td className="py-2 pr-3">✅ <strong>Yes</strong></td><td className="py-2 pr-3">❌ No ($1)</td><td className="py-2 pr-3">N/A</td><td className="py-2">Member-only</td></tr>
               <tr className="border-b border-ink/10"><td className="py-2 pr-3"><strong>Ceramic coating</strong></td><td className="py-2 pr-3">❌ No</td><td className="py-2 pr-3">✅ Yes</td><td className="py-2 pr-3">❌ No</td><td className="py-2 pr-3">✅ Likely</td><td className="py-2">✅ Yes</td></tr>
               <tr className="border-b border-ink/10"><td className="py-2 pr-3"><strong>Graphene coating</strong></td><td className="py-2 pr-3">❌ No</td><td className="py-2 pr-3">✅ Yes</td><td className="py-2 pr-3">❌ No</td><td className="py-2 pr-3">❌ Unlikely</td><td className="py-2">❌ No</td></tr>
-              <tr className="border-b border-ink/10"><td className="py-2 pr-3"><strong>LustraShield surface gloss</strong></td><td className="py-2 pr-3">✅ Yes</td><td className="py-2 pr-3">❌ No</td><td className="py-2 pr-3">❌ No</td><td className="py-2 pr-3">❌ No</td><td className="py-2">Equivalent (HotShine)</td></tr>
+              <tr className="border-b border-ink/10"><td className="py-2 pr-3"><strong>Durashield surface gloss</strong></td><td className="py-2 pr-3">✅ Yes</td><td className="py-2 pr-3">❌ No</td><td className="py-2 pr-3">❌ No</td><td className="py-2 pr-3">❌ No</td><td className="py-2">Equivalent (HotShine)</td></tr>
               <tr className="border-b border-ink/10"><td className="py-2 pr-3"><strong>Two+ locations in Forest Park</strong></td><td className="py-2 pr-3">✅ <strong>Yes (2)</strong></td><td className="py-2 pr-3">❌ No (1)</td><td className="py-2 pr-3">❌ No (1)</td><td className="py-2 pr-3">❌ No (1)</td><td className="py-2">N/A</td></tr>
               <tr className="border-b border-ink/10"><td className="py-2 pr-3"><strong>Hours</strong></td><td className="py-2 pr-3">7am–10pm</td><td className="py-2 pr-3">7am–9pm</td><td className="py-2 pr-3">Unknown</td><td className="py-2 pr-3">Unknown</td><td className="py-2">Varies</td></tr>
               <tr className="border-b border-ink/10"><td className="py-2 pr-3"><strong>30+ year heritage</strong></td><td className="py-2 pr-3">✅ Yes</td><td className="py-2 pr-3">❌ No</td><td className="py-2 pr-3">❌ No</td><td className="py-2 pr-3">❌ No</td><td className="py-2">N/A</td></tr>
@@ -338,7 +338,7 @@ TOUCHLESS / SELF────────────────┼────�
           <li><em>&ldquo;car wash near me oak park / river forest / forest park&rdquo;</em> — local pack queries</li>
           <li><em>&ldquo;self-serve car wash how to use&rdquo;</em> — high informational-to-commercial intent</li>
           <li><em>&ldquo;are car wash brushes bad for paint&rdquo;</em> — fear-based query that maps directly to touchless positioning</li>
-          <li><em>&ldquo;ceramic coating vs LustraShield&rdquo;</em> — comparison to Crystal&apos;s premium tier (defensive content)</li>
+          <li><em>&ldquo;ceramic coating vs Durashield&rdquo;</em> — comparison to Crystal&apos;s premium tier (defensive content)</li>
           <li><em>&ldquo;unlimited car wash near me forest park&rdquo;</em> — Crystal currently owns this; Spotless should compete after launching membership</li>
           <li><em>&ldquo;can you wash a Tesla in a car wash&rdquo;</em> — touchless wins this conversation; high SEO value</li>
         </ol>
@@ -424,7 +424,7 @@ TOUCHLESS / SELF────────────────┼────�
         </blockquote>
         <p className="mb-2"><strong>Tertiary angle for premium-curious customers:</strong></p>
         <blockquote className="border-l-4 border-ink/30 pl-4 italic font-semibold text-ink mb-8">
-          &ldquo;LustraShield + spot-free finish. Same shine as ceramic, every wash, no $200 add-on.&rdquo;
+          &ldquo;Durashield + spot-free finish. Same shine as ceramic, every wash, no $200 add-on.&rdquo;
         </blockquote>
 
         <h3 className="text-xl font-bold mb-3">Alternative Pages to Create</h3>

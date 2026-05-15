@@ -5,7 +5,7 @@ import Washes from '@/src/components/Washes'
 import Bays from '@/src/components/Bays'
 import OtherServices from '@/src/components/OtherServices'
 import Tokens from '@/src/components/Tokens'
-import Email from '@/src/components/Email'
+// import Email from '@/src/components/Email'
 import LocalBusinessSchema from '@/src/components/seo/LocalBusinessSchema'
 import BreadcrumbSchema from '@/src/components/seo/BreadcrumbSchema'
 import SanityImage from '@/src/components/SanityImage'
@@ -40,7 +40,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: data?.metaTitle ?? `Touchless Car Wash on Madison St, Forest Park IL`,
     description:
       data?.metaDescription ??
-      `Spotless Carwash on Madison Street in Forest Park, IL. Touchless automatic bays and self-serve wand bays. Open 7am–10pm, every day since 1994. ${loc.street}.`,
+      `Spotless Carwash on Madison Street in Forest Park, IL. Touchless automatic bays and self-serve wand bays. Open 7am–10pm, every day since 1995. ${loc.street}.`,
     alternates: { canonical: `/locations/${loc.slug}` },
   }
 }
@@ -207,7 +207,7 @@ export default async function Page() {
               </h2>
             </div>
             <p className="max-w-[360px] text-[#445273] leading-relaxed">
-              On Madison Street between Des Plaines Ave and Hannah Ave — Concordia Cemetery and the Forest Park Public Library are right nearby.
+              On Madison Street just west of Jacksom blvd., Concordia Cemetery and the Forest Park Public Library are right nearby.
             </p>
           </div>
 
@@ -240,7 +240,7 @@ export default async function Page() {
                 </div>
                 <div className="font-extrabold text-ink">7am–10pm, every day</div>
                 <div className="text-[#5b6987] text-sm mt-1 leading-snug">
-                  Bays open all hours. Attendants Mon–Fri 12–5pm, Sat/Sun 9–11am &amp; 12–4pm.
+                  Bays open all hours. Attendants Mon–Fri, 9am -11am & 12pm–5pm, Sat/Sun 9–11am &amp; 12–4pm.
                 </div>
               </div>
               <div className="border-t border-dashed border-line pt-5">
@@ -297,8 +297,8 @@ export default async function Page() {
           <div className="text-[#445273] leading-relaxed text-[17px] space-y-5 max-w-[640px]">
             <p>
               Spotless Carwash on Madison Street has been part of Forest Park for
-              over 30 years. We sit on Madison between Des Plaines Ave and Hannah
-              Ave — easy reach for drivers from Forest Park, Oak Park, River
+              over 30 years. We sit on Madison just west of Jackson blvd.
+              easy reach for drivers from Forest Park, Oak Park, River
               Forest, and Berwyn, with quick Eisenhower (I-290) access just to the
               north. Concordia Cemetery and the Forest Park Public Library are
               right around the corner.
@@ -322,7 +322,7 @@ export default async function Page() {
             </p>
             <p>
               Bays are open 7am–10pm, every day. Attendants are on site Monday
-              through Friday from noon to 5pm, and weekends &amp; holidays from
+              through Friday from 9am - 11am and noon to 5pm, and weekends &amp; holidays from
               9–11am and noon–4pm — they can help with tokens, change, and any
               equipment questions. Looking for heated indoor bays for winter?
               Head to our{' '}
@@ -359,7 +359,7 @@ export default async function Page() {
       />
       <OtherServices />
       <Tokens />
-      <Email />
+      {/* <Email /> */}
     </>
   )
 }

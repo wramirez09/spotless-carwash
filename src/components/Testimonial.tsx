@@ -31,7 +31,7 @@ const FALLBACK: Required<Pick<SectionData, 'eyebrow' | 'heading'>> & {
     },
     {
       text:
-        'Self-serve bays have everything you need. The LustraShield + spot-free combo is the move. Tokens make the price feel like nothing.',
+        'Self-serve bays have everything you need. The Durashield + spot-free combo is the move. Tokens make the price feel like nothing.',
       attribution: 'Anna T., Oak Park',
       rating: 5,
     },

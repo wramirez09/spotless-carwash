@@ -308,7 +308,7 @@ Cannot measure Core Web Vitals from a server-side fetch. Initial signals are pos
 | `how to use a self-serve car wash` | Medium informational | Low | Blog post + video | **2** |
 | `unlimited car wash forest park` | Medium (Crystal owns this currently) | Medium | Membership LP — only after membership exists | **3** |
 | `Spotless car wash review` / `…hours` / `…directions` | Brand queries — already capture these | Low | Already covered | — |
-| `LustraShield vs ceramic coating` | Low-medium | Low | Blog post (defensive) | **3** |
+| `Durashield vs ceramic coating` | Low-medium | Low | Blog post (defensive) | **3** |
 | `car wash gift card forest park` | Low-medium seasonal | Low | Add to tokens page | **3** |
 
 The single biggest content opportunity: **a `/touchless-vs-brush` page**. It serves the highest-intent informational query in the category, captures the "is touchless really better" decision-stage searcher, and positions Spotless as the authoritative answer in the Forest Park area.
@@ -385,7 +385,7 @@ Cannot measure from raw HTML. Indicators:
 2. **"Forest Park car wash guide: how to use Spotless's self-serve bay like a pro"** — long-tail "how to" + brand presence.
 3. **"How often should you wash your car in winter in Chicago?"** — drives token sales + heated bay positioning.
 4. **"Can you wash a Tesla in a car wash? (And other EV/repaint questions)"** — high-search, high-intent, touchless wins decisively.
-5. **"LustraShield vs. ceramic coating: what's the difference, and what should you actually buy?"** — defensive content vs. Crystal's ceramic/graphene tier.
+5. **"Durashield vs. ceramic coating: what's the difference, and what should you actually buy?"** — defensive content vs. Crystal's ceramic/graphene tier.
 6. **"What's a wash token, and is it worth it? (Yes — here's the math)"** — drives token sales.
 
 ### Content Update Strategy

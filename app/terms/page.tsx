@@ -72,10 +72,10 @@ export default function TermsPage() {
           <p>
             Questions about these terms? Email{' '}
             <a
-              href="mailto:hello@spotlesscarwash.com"
+              href="mailto:info@spotlessautowash.com"
               className="text-blue-500 font-semibold underline"
             >
-              hello@spotlesscarwash.com
+              info@spotlessautowash.com
             </a>{' '}
             or call <a href="tel:7087712945" className="text-blue-500 font-semibold underline">(708) 771-2945</a>.
           </p>

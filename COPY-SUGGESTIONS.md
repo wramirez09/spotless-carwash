@@ -39,7 +39,7 @@ This voice is **right for the business and worth preserving**. The improvements 
 
 | Dimension | Score | Justification |
 |-----------|-------|---------------|
-| **Clarity** | 8/10 | A 12-year-old understands what's offered. Loses points for "Lustre" (vague), and the "LustraShield" / "LustraShield" inconsistency in the dial-section sub-text. |
+| **Clarity** | 8/10 | A 12-year-old understands what's offered. Loses points for "Lustre" (vague), and the "Durashield" / "Durashield" inconsistency in the dial-section sub-text. |
 | **Persuasion** | 5/10 | Lots of features described; little persuasion. No urgency, no primary-CTA hierarchy, social proof buried below the fold, no objection handling, no scarcity. |
 | **Specificity** | 7/10 | Strong: "$4 / 5 min", "$8–$12", "9 settings", "10 bays", "4½ minutes", "7am–10pm". Weak: outcome language ("clean car" → no quantifiable promise like "spot-free finish in under 5 minutes"). |
 | **Emotion** | 5/10 | Testimonials carry most of the emotion; body copy is mostly transactional. Heated bays in a Chicago snowstorm is the most emotionally resonant moment and it's only in a testimonial. |
@@ -131,23 +131,23 @@ This voice is **right for the business and worth preserving**. The improvements 
 | Name | Price | Description |
 |------|-------|-------------|
 | Deluxe (No Dryer) | $8 | Pre-soak, High-pressure rinse, Foaming brush polish, Air cannon dryer |
-| Deluxe | $9 | Pre-soak & foam, High-pressure rinse, Air cannon dryer, LustraShield surface gloss |
+| Deluxe | $9 | Pre-soak & foam, High-pressure rinse, Air cannon dryer, Durashield surface gloss |
 | Ultimate | $10 | Undercarriage spray, Foaming brush polish, Air cannon dryer, Spot-free rinse |
-| Lustre | $12 | Triple-foam wax, LustraShield surface gloss, Hot wax overhead, Air cannon dryer |
+| Lustre | $12 | Triple-foam wax, Durashield surface gloss, Hot wax overhead, Air cannon dryer |
 
 **Issues:**
 - "Deluxe (No Dryer)" is awkward — the parenthetical is a negative attribute leading the name.
 - "Deluxe" *includes* a dryer, but the cheaper "Deluxe (No Dryer)" feature list also says "Air cannon dryer." Contradiction (or copy bug worth verifying — if Deluxe No-Dryer truly has a dryer, the name lies; if it doesn't, the feature list lies).
-- "Lustre" doesn't tell you what it does — visitors may not connect it to "LustraShield."
+- "Lustre" doesn't tell you what it does — visitors may not connect it to "Durashield."
 - No "Most popular" or "Recommended" anchor on a tier.
 
 **Recommended:**
 | Name | Price | Description |
 |------|-------|-------------|
 | **Quick** | $8 | Pre-soak · high-pressure rinse · foaming brush polish · *(no dryer)* |
-| **Deluxe** *(most popular)* | $9 | Pre-soak & foam · high-pressure rinse · air cannon dryer · LustraShield gloss |
+| **Deluxe** *(most popular)* | $9 | Pre-soak & foam · high-pressure rinse · air cannon dryer · Durashield gloss |
 | **Ultimate** | $10 | Undercarriage spray · foaming brush polish · air cannon dryer · spot-free rinse |
-| **Lustre** | $12 | Triple-foam wax · LustraShield gloss · hot wax overhead · air cannon dryer |
+| **Lustre** | $12 | Triple-foam wax · Durashield gloss · hot wax overhead · air cannon dryer |
 
 **Why:**
 - "Quick" is honest, directional, and benefit-led (it's the fast option). "Deluxe (No Dryer)" is a name made of an absence.
@@ -202,28 +202,28 @@ This voice is **right for the business and worth preserving**. The improvements 
 
 **Current H2:** *Nine settings. One clean car.*
 **Current sub-text (post-recent edit):**
-> *Nine premium wash and dry options at your fingertips, including tire & wheel cleaner, low-pressure presoak, foaming brush, polish, LustraShield surface gloss, high-pressure soap, high-pressure rinse, spot-free rinse and Air-shammee Air Dryers.*
+> *Nine premium wash and dry options at your fingertips, including tire & wheel cleaner, low-pressure presoak, foaming brush, polish, Durashield surface gloss, high-pressure soap, high-pressure rinse, spot-free rinse and Air-shammee Air Dryers.*
 >
 > *$4.00 for 5 mins.*
 >
-> *For best results, start at the top and work your way down. Let presoak soak for 10–20 seconds before rinsing, and always finish with a spot-free rinse—not LustraShield, then dry your car to perfection.*
+> *For best results, start at the top and work your way down. Let presoak soak for 10–20 seconds before rinsing, and always finish with a spot-free rinse—not Durashield, then dry your car to perfection.*
 >
 > *Prepaid wash tokens make every visit quick and easy—keep them in your glovebox and skip the cash station. They also make a great gift and can be purchased from our attendant or online below.*
 
 **Issues:**
-- **Brand inconsistency: "LustraShield" appears here twice, but the brand product is "LustraShield" everywhere else on the site** (homepage features, FAQ, dial labels, OtherServices section, location pages, schema). This is the single most jarring copy bug on the page and breaks trust.
-- The list of 9 products in this paragraph (tire & wheel, presoak, foaming brush, polish, LustraShield, high-pressure soap, etc.) doesn't match the actual 9 dial settings shown right next to it on the page.
+- **Brand inconsistency: "Durashield" appears here twice, but the brand product is "Durashield" everywhere else on the site** (homepage features, FAQ, dial labels, OtherServices section, location pages, schema). This is the single most jarring copy bug on the page and breaks trust.
+- The list of 9 products in this paragraph (tire & wheel, presoak, foaming brush, polish, Durashield, high-pressure soap, etc.) doesn't match the actual 9 dial settings shown right next to it on the page.
 - The tokens paragraph is duplicated verbatim further down in the dedicated tokens section.
 
 **Recommended:**
-1. **Replace every instance of "LustraShield" with "LustraShield"** to restore brand consistency.
+1. **Replace every instance of "Durashield" with "Durashield"** to restore brand consistency.
 2. **Remove the duplicated tokens paragraph from this section** — let the tokens section own that copy.
 3. **Align the 9 products listed with the 9 dial settings** beside the paragraph (or reference the dial directly: "all nine settings are listed on the right").
 
 **Replacement copy:**
-> *Nine premium wash settings at $4 for 5 minutes — engine cleaner, tire & wheel cleaner, low-pressure presoak, high-pressure detergent, foaming brush, high-pressure rinse, clear coat sealant, LustraShield surface gloss, and spot-free rinse.*
+> *Nine premium wash settings at $4 for 5 minutes — engine cleaner, tire & wheel cleaner, low-pressure presoak, high-pressure detergent, foaming brush, high-pressure rinse, clear coat sealant, Durashield surface gloss, and spot-free rinse.*
 >
-> *For best results, work top-to-bottom, let presoak dwell 10–20 seconds, and finish with the spot-free rinse — never LustraShield as the last step.*
+> *For best results, work top-to-bottom, let presoak dwell 10–20 seconds, and finish with the spot-free rinse — never Durashield as the last step.*
 
 ---
 
@@ -267,7 +267,7 @@ If/when free-vacuum upgrade ships (recommended in `MARKETING-AUDIT.md` and `COMP
 
 **Current testimonials:**
 1. *"Pulled in right before close after a Chicago snowstorm. Heated bay, four and a half minutes, drove out spotless. The only place that does it right."* — **Forest Park regular**
-2. *"Self-serve bays have everything you need. The LustraShield + spot-free combo is the move. Tokens make the price feel like nothing."* — **Detail-obsessed neighbor**
+2. *"Self-serve bays have everything you need. The Durashield + spot-free combo is the move. Tokens make the price feel like nothing."* — **Detail-obsessed neighbor**
 3. *"My salt-covered SUV looked brand new in under five minutes. Touchless and zero scratches — I will not go anywhere else."* — **Oak Park commuter**
 
 **The testimonial *copy* is excellent** — concrete, varied, hits all three customer segments (winter regular, detail enthusiast, switcher).
@@ -459,7 +459,7 @@ Same length. Vastly higher credibility. Only do this if the testimonials are rea
 ## Implementation Priority
 
 ### Critical (this week — small effort, immediate effect)
-1. **Fix the "LustraShield" typo to "LustraShield"** in the self-serve dial section sub-text. Brand consistency bug that breaks trust on every visit.
+1. **Fix the "Durashield" typo to "Durashield"** in the self-serve dial section sub-text. Brand consistency bug that breaks trust on every visit.
 2. **Eliminate the duplicate "Nothing touches your vehicle…" sentence** between hero and bays section. Pick one location.
 3. **Verify the Deluxe (No Dryer) feature list** — the description currently says "Air cannon dryer" which contradicts the name. Fix one or the other.
 4. **Add "30 years" or "since the '90s"** somewhere above the fold. The single highest-impact missing word on the page.
@@ -480,7 +480,7 @@ Same length. Vastly higher credibility. Only do this if the testimonials are rea
 
 ### Low Priority (when resources allow)
 15. **Trust band under hero** (years, locations, review rating) — pending review pipeline.
-16. **A/B test "30 years" vs. specific year ("since 1994" or actual founding year)** — specificity usually wins; depends on what's true.
+16. **A/B test "30 years" vs. specific year ("since 1995" or actual founding year)** — specificity usually wins; depends on what's true.
 
 ---
 

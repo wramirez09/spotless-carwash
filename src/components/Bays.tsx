@@ -55,8 +55,8 @@ const BAYS_FALLBACK: BaysData = {
       titleLine1: 'Self-Serve',
       titleLine2: 'Wand Bays',
       desc:
-        'Wash it your way. Nine settings — from engine cleaner to LustraShield gloss to spot-free rinse — for $4 every 5 minutes. Full dial walkthrough below.',
-      features: ['9 wash settings', 'Spot-free rinse', 'LustraShield gloss', 'Foaming brush'],
+        'Wash it your way. Nine settings — from engine cleaner to Durashield gloss to spot-free rinse — for $4 every 5 minutes. Full dial walkthrough below.',
+      features: ['9 wash settings', 'Spot-free rinse', 'Durashield gloss', 'Foaming brush'],
       kind: 'self-serve',
     },
   ],

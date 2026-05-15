@@ -109,7 +109,7 @@ export default async function SuccessPage({ searchParams }: Params) {
                   <span className="mono text-[12px] font-semibold tracking-[0.18em] uppercase text-blue-500 mr-2">
                     01
                   </span>
-                  Check your inbox for token codes (look for hello@spotlesscarwash.com).
+                  Check your inbox for token codes (look for info@spotlessautowash.com).
                 </li>
                 <li>
                   <span className="mono text-[12px] font-semibold tracking-[0.18em] uppercase text-blue-500 mr-2">

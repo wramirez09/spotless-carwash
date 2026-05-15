@@ -7,7 +7,7 @@ import Testimonial from '@/src/components/Testimonial'
 import Instructions from '@/src/components/Instructions'
 import OtherServices from '@/src/components/OtherServices'
 import Tokens from '@/src/components/Tokens'
-import Email from '@/src/components/Email'
+// import Email from '@/src/components/Email'
 import OrganizationSchema from '@/src/components/seo/OrganizationSchema'
 import LocalBusinessSchema from '@/src/components/seo/LocalBusinessSchema'
 import OfferCatalogSchema from '@/src/components/seo/OfferCatalogSchema'
@@ -33,7 +33,7 @@ export default function HomePage() {
       <Instructions />
       <OtherServices />
       <Tokens />
-      <Email />
+      {/* <Email /> */}
     </>
   )
 }

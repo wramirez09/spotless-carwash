@@ -388,7 +388,7 @@ Sitemap: https://spotlesscarwash.com/sitemap.xml`}</code></pre>
               <tr className="border-b border-ink/10"><td className="py-2 pr-3"><code>how to use a self-serve car wash</code></td><td className="py-2 pr-3">Medium informational</td><td className="py-2 pr-3">Low</td><td className="py-2 pr-3">Blog post + video</td><td className="py-2"><strong>2</strong></td></tr>
               <tr className="border-b border-ink/10"><td className="py-2 pr-3"><code>unlimited car wash forest park</code></td><td className="py-2 pr-3">Medium (Crystal owns this currently)</td><td className="py-2 pr-3">Medium</td><td className="py-2 pr-3">Membership LP — only after membership exists</td><td className="py-2"><strong>3</strong></td></tr>
               <tr className="border-b border-ink/10"><td className="py-2 pr-3"><code>Spotless car wash review</code> / <code>…hours</code> / <code>…directions</code></td><td className="py-2 pr-3">Brand queries — already capture these</td><td className="py-2 pr-3">Low</td><td className="py-2 pr-3">Already covered</td><td className="py-2">—</td></tr>
-              <tr className="border-b border-ink/10"><td className="py-2 pr-3"><code>LustraShield vs ceramic coating</code></td><td className="py-2 pr-3">Low-medium</td><td className="py-2 pr-3">Low</td><td className="py-2 pr-3">Blog post (defensive)</td><td className="py-2"><strong>3</strong></td></tr>
+              <tr className="border-b border-ink/10"><td className="py-2 pr-3"><code>Durashield vs ceramic coating</code></td><td className="py-2 pr-3">Low-medium</td><td className="py-2 pr-3">Low</td><td className="py-2 pr-3">Blog post (defensive)</td><td className="py-2"><strong>3</strong></td></tr>
               <tr className="border-b border-ink/10"><td className="py-2 pr-3"><code>car wash gift card forest park</code></td><td className="py-2 pr-3">Low-medium seasonal</td><td className="py-2 pr-3">Low</td><td className="py-2 pr-3">Add to tokens page</td><td className="py-2"><strong>3</strong></td></tr>
             </tbody>
           </table>
@@ -469,7 +469,7 @@ Sitemap: https://spotlesscarwash.com/sitemap.xml`}</code></pre>
           <li><strong>&ldquo;Forest Park car wash guide: how to use Spotless&apos;s self-serve bay like a pro&rdquo;</strong> — long-tail &ldquo;how to&rdquo; + brand presence.</li>
           <li><strong>&ldquo;How often should you wash your car in winter in Chicago?&rdquo;</strong> — drives token sales + heated bay positioning.</li>
           <li><strong>&ldquo;Can you wash a Tesla in a car wash? (And other EV/repaint questions)&rdquo;</strong> — high-search, high-intent, touchless wins decisively.</li>
-          <li><strong>&ldquo;LustraShield vs. ceramic coating: what&apos;s the difference, and what should you actually buy?&rdquo;</strong> — defensive content vs. Crystal&apos;s ceramic/graphene tier.</li>
+          <li><strong>&ldquo;Durashield vs. ceramic coating: what&apos;s the difference, and what should you actually buy?&rdquo;</strong> — defensive content vs. Crystal&apos;s ceramic/graphene tier.</li>
           <li><strong>&ldquo;What&apos;s a wash token, and is it worth it? (Yes — here&apos;s the math)&rdquo;</strong> — drives token sales.</li>
         </ol>
 

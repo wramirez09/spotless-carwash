@@ -47,7 +47,7 @@ const FOOTER_FALLBACK: FooterData = {
       title: 'Contact',
       items: [
         { href: 'tel:7087712945', label: '(708) 771-2945', external: true },
-        { href: 'mailto:hello@spotlesscarwash.com', label: 'hello@spotlesscarwash.com', external: true },
+        { href: 'mailto:info@spotlessautowash.com', label: 'info@spotlessautowash.com', external: true },
         { href: '/faq', label: 'Open 7am–10pm' },
       ],
     },
@@ -76,8 +76,8 @@ export default async function Footer() {
             <Link href="/locations/roosevelt-rd" className="text-white font-semibold hover:text-yellow-400">
               Forest Park
             </Link>
-            , Oak Park, River Forest, Berwyn, Maywood, Cicero, and Oak Park-River Forest
-            commuters across western Cook County. Two locations, open 7am–10pm every day since 1994.
+            , Oak Park, River Forest, Berwyn, Maywood, Cicero, and North Riverside
+            commuters across western Cook County. Two locations, open 7am–10pm every day since 1995.
           </p>
         </div>
         <div className="grid md:grid-cols-[1.4fr_1fr_1fr_1fr] gap-10 mb-12">

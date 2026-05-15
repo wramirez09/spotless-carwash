@@ -7,7 +7,7 @@ export const faqs: FAQ[] = [
   },
   {
     q: 'How do I use a self-serve car wash bay?',
-    a: 'Pull in and pay at the meter ($4.00 for 5 minutes — cash, card, tap, or Apple Pay), then dial through the nine settings: engine cleaner, tire & wheel cleaner, low-pressure presoak, high-pressure detergent, foaming brush, high-pressure rinse, clear coat sealant, LustraShield, and spot-free rinse. Always work top-down, let the presoak dwell 10–20 seconds, and finish on spot-free rinse — never LustraShield as the last step.',
+    a: 'Pull in and pay at the meter ($4.00 for 5 minutes — cash, card, tap, or Apple Pay), then dial through the nine settings: engine cleaner, tire & wheel cleaner, low-pressure presoak, high-pressure detergent, foaming brush, high-pressure rinse, clear coat sealant, Durashield, and spot-free rinse. Always work top-down, let the presoak dwell 10–20 seconds, and finish on spot-free rinse — never Durashield as the last step.',
   },
   {
     q: 'Are car wash tokens worth it?',

@@ -39,7 +39,7 @@ Implementing the full recommendation set could realistically lift monthly revenu
 
 ## Quick Wins (This Week)
 
-1. **Add a subhead under "Forest Park's touchless car wash"** that names the differentiators directly: *"Heated indoor bays. No brushes. Open 7am–10pm, every day since 1994."* Currently the homepage hero leans on category, not differentiation.
+1. **Add a subhead under "Forest Park's touchless car wash"** that names the differentiators directly: *"Heated indoor bays. No brushes. Open 7am–10pm, every day since 1995."* Currently the homepage hero leans on category, not differentiation.
 
 2. **Add "Since 199X — Forest Park's car wash for 30 years" as a header trust badge** (single line, under the nav or above the fold). Three decades of operation is the single strongest local trust signal you have and it's currently invisible until the user reads body copy.
 

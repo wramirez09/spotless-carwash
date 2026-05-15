@@ -14,7 +14,7 @@ const NAV_QUERY = `*[_type == "navbar"][0]{
   ribbonText
 }`
 
-const RIBBON_FALLBACK = "Since 1994 · Forest Park's car wash for 30 years"
+const RIBBON_FALLBACK = "Since 1995 · Forest Park's car wash for 30 years"
 
 const NAV_FALLBACK: NavData = {
   sectionLinks: [
@@ -33,7 +33,7 @@ const NAV_FALLBACK: NavData = {
   buyTokensLabel: 'Buy tokens →',
   phone: '(708) 771-2945',
   phoneHref: 'tel:7087712945',
-  email: 'hello@spotlesscarwash.com',
+  email: 'info@spotlessautowash.com',
   hoursLine: 'Open 7am–10pm, every day',
 }
 

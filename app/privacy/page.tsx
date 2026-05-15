@@ -64,10 +64,10 @@ export default function PrivacyPage() {
             You can ask us to delete the email address and any other information
             we hold about you at any time. Email{' '}
             <a
-              href="mailto:hello@spotlesscarwash.com"
+              href="mailto:info@spotlessautowash.com"
               className="text-blue-500 font-semibold underline"
             >
-              hello@spotlesscarwash.com
+              info@spotlessautowash.com
             </a>{' '}
             and we&apos;ll take care of it within a reasonable timeframe.
           </p>
@@ -82,10 +82,10 @@ export default function PrivacyPage() {
           <p>
             Questions? Email{' '}
             <a
-              href="mailto:hello@spotlesscarwash.com"
+              href="mailto:info@spotlessautowash.com"
               className="text-blue-500 font-semibold underline"
             >
-              hello@spotlesscarwash.com
+              info@spotlessautowash.com
             </a>{' '}
             or call <a href="tel:7087712945" className="text-blue-500 font-semibold underline">(708) 771-2945</a>.
           </p>

@@ -34,7 +34,7 @@ Mostly utilitarian, but with consistent small bursts of wit. The tagline "Keep i
 
 ### Technical ←—————→ Simple: **7/10** (Mostly Simple)
 
-Industry terms (LustraShield, spot-free rinse, presoak) are used freely but always grounded in plain explanation ("Let presoak dwell 10–20 seconds before rinsing"). The dial walkthrough teaches without condescending. Numbers replace jargon: "$4.00 for 5 mins" beats "competitively priced."
+Industry terms (Durashield, spot-free rinse, presoak) are used freely but always grounded in plain explanation ("Let presoak dwell 10–20 seconds before rinsing"). The dial walkthrough teaches without condescending. Numbers replace jargon: "$4.00 for 5 mins" beats "competitively priced."
 
 **Evidence:**
 - "A surface gloss enhancer that beads water and leaves a deep shine."
@@ -127,7 +127,7 @@ The brand is **not** an Innovator (no future-of-car-wash language), not a Rebel 
 - **Recurring fragments:** "Drive in, drive out." · "Two locations." · "Open 7am–10pm, every day." · "Watch the lights." · "Wash it your way."
 - **Linguistic patterns:**
   - Three-beat sentences ("No brushes. No swirl marks. No risk to fresh paint.")
-  - Em-dashes for casual asides ("— Apple Pay too", "— never LustraShield as the last step")
+  - Em-dashes for casual asides ("— Apple Pay too", "— never Durashield as the last step")
   - Sentence fragments used for rhythm and emphasis ("Two locations. Heated indoor bays.")
   - Section eyebrows in numbered code-style: "01 / Wash packages"
 
@@ -144,7 +144,7 @@ The brand is **not** an Innovator (no future-of-car-wash language), not a Rebel 
 | **Lightly playful** — wordplay, rhythm, wit | **Goofy** — no emoji, no exclamation marks, no jokes that land flat |
 | **Specific** — $4 / 5 min, 4½ min, 9 settings | **Vague** — never "competitive pricing" or "great value" |
 | **Functional first** — copy serves the customer flow | **Salesy** — no urgency tactics, no false scarcity |
-| **Plainspoken** — everyday words | **Dumbed down** — uses LustraShield, spot-free, presoak freely |
+| **Plainspoken** — everyday words | **Dumbed down** — uses Durashield, spot-free, presoak freely |
 
 ---
 
@@ -158,7 +158,7 @@ The brand is **not** an Innovator (no future-of-car-wash language), not a Rebel 
 - **Write in three-beat fragments for emphasis.** "No brushes. No swirl marks. No risk." This is a signature pattern.
 - **Anchor every benefit to Forest Park, Roosevelt Rd, or Madison St** when it's geographically relevant. Local proof is the moat.
 - **Use em-dashes for casual asides.** "Tap, card, cash, or token — Apple Pay too."
-- **Name the proprietary product.** LustraShield, spot-free rinse, air cannon dryers — these are brand assets.
+- **Name the proprietary product.** Durashield, spot-free rinse, air cannon dryers — these are brand assets.
 - **Bold one or two words per heading for visual rhythm.** "Four ways to make your car **shine**."
 - **Lead instructional copy with a verb.** "Pull in." "Watch the lights." "Tap to pay."
 - **Mention the 30-year heritage when there's room.** It's the strongest single proof point in the brand.
@@ -189,7 +189,7 @@ Doubles as a wash promise and a behavioral nudge ("keep our lot clean"). Already
 
 1. **Touchless that protects your paint.** No brushes, no swirl marks, no risk to fresh paint or ceramic coatings — clean in 4½ minutes.
 2. **Heated indoor bays at Roosevelt Rd.** The only car wash in Forest Park you can use at -10° without your locks freezing on the way out.
-3. **Self-serve when you want control.** Nine pro settings — engine cleaner to LustraShield to spot-free rinse — for $4 every five minutes.
+3. **Self-serve when you want control.** Nine pro settings — engine cleaner to Durashield to spot-free rinse — for $4 every five minutes.
 4. **Two locations, 7am–10pm, every day.** Roosevelt Rd and Madison St, open 105 hours a week, since the '90s.
 5. **Tokens save you up to 20%.** Each one is an Ultimate wash, never expires, works at both locations.
 
@@ -199,7 +199,7 @@ Doubles as a wash promise and a behavioral nudge ("keep our lot clean"). Already
 
 ### Boilerplate (≈130 words)
 
-> Spotless Carwash is a family-operated, two-location car wash in Forest Park, Illinois, serving Forest Park, Oak Park, River Forest, and Eisenhower-corridor commuters since the 1990s. Both sites — 7343 Roosevelt Road and 7802 Madison Street — combine touchless automatic bays with self-serve wand bays, giving drivers a choice between hands-free convenience and hands-on control. The Roosevelt Road location features heated, enclosed automatic bays for year-round winter washing in Chicago weather. Wash packages run $8 to $12 with prepaid token bundles that save up to 20%, and the self-serve bays offer nine professional settings — including LustraShield surface gloss and spot-free rinse — for $4 per five minutes. Open every day, 7am to 10pm.
+> Spotless Carwash is a family-operated, two-location car wash in Forest Park, Illinois, serving Forest Park, Oak Park, River Forest, and Eisenhower-corridor commuters since the 1990s. Both sites — 7343 Roosevelt Road and 7802 Madison Street — combine touchless automatic bays with self-serve wand bays, giving drivers a choice between hands-free convenience and hands-on control. The Roosevelt Road location features heated, enclosed automatic bays for year-round winter washing in Chicago weather. Wash packages run $8 to $12 with prepaid token bundles that save up to 20%, and the self-serve bays offer nine professional settings — including Durashield surface gloss and spot-free rinse — for $4 per five minutes. Open every day, 7am to 10pm.
 
 ### Full Brand Story (300–500 words)
 
@@ -216,7 +216,7 @@ Reference examples written in the identified Spotless voice. Use these as templa
 > Two locations. Heated bays at Roosevelt for winter. Open 7am–10pm, every day.
 
 ### 2. Product Description Paragraph (Lustre tier)
-> The full treatment. Triple-foam wax, LustraShield surface gloss, hot wax overhead, and the air cannon dryer to finish. Twelve dollars. Four and a half minutes. Drive out beading.
+> The full treatment. Triple-foam wax, Durashield surface gloss, hot wax overhead, and the air cannon dryer to finish. Twelve dollars. Four and a half minutes. Drive out beading.
 
 ### 3. Blog Post Opening
 > Salt season hits Forest Park hard. By February, the bottom of your car is carrying a winter's worth of brine, and brushless is no longer a preference — it's the only way to wash without grinding grit into your clear coat. Here's what 30 years of touchless has taught us about washing in Chicago winter.
@@ -296,7 +296,7 @@ The voice is unusually consistent for a small-business site. The main weaknesses
 
 ### Immediate Actions
 
-1. **Standardize the heritage reference.** Pick one — "Since 1994" (if accurate) or "For 30 years" — and use it consistently in hero, footer, and meta descriptions. "Since the '90s" is the weakest of the three and should be retired.
+1. **Standardize the heritage reference.** Pick one — "Since 1995" (if accurate) or "For 30 years" — and use it consistently in hero, footer, and meta descriptions. "Since the '90s" is the weakest of the three and should be retired.
 2. **Rewrite the email signup CTA in voice.** "Subscribe" → "Get the token sale alerts" or "Send me the deals." Pair it with a value exchange ("$5 off your next wash").
 3. **Replace generic testimonial attributions** with first name + neighborhood ("Marcus, River Forest" instead of "Forest Park regular"). The current format reads as fabricated.
 4. **De-duplicate the hero/bays "nothing touches" copy.** Pick one location for the touchless promise; vary the other.
@@ -314,4 +314,4 @@ The voice is unusually consistent for a small-business site. The main weaknesses
 1. **Document the signature patterns** (em-dashes, three-beat fragments, no exclamation marks) in a one-page style sheet. New writers won't know these are intentional unless told.
 2. **Audit every CTA across the site** — most are on-brand ("See wash packages", "Buy tokens"), but any future "Sign up", "Learn more", or "Submit" buttons would break the pattern.
 3. **Define social media voice rules.** The website has no social copy yet — when it launches, the temptation to use emoji and exclamation marks will be strong. Decide now whether social gets a slightly looser dialect or matches the site exactly.
-4. **Lock the brand vocabulary list** (LustraShield, spot-free rinse, air cannon dryer, touchless automatic, self-serve wand) so capitalization, hyphenation, and product naming stays uniform across all future copy.
+4. **Lock the brand vocabulary list** (Durashield, spot-free rinse, air cannon dryer, touchless automatic, self-serve wand) so capitalization, hyphenation, and product naming stays uniform across all future copy.

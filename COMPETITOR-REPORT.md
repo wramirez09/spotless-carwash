@@ -149,7 +149,7 @@ Membership pitch: *"The price of just two washes covers an entire month of daily
 | **Free vacuums** | ❌ No ($1) | ✅ **Yes** | ❌ No ($1) | N/A | Member-only |
 | **Ceramic coating** | ❌ No | ✅ Yes | ❌ No | ✅ Likely | ✅ Yes |
 | **Graphene coating** | ❌ No | ✅ Yes | ❌ No | ❌ Unlikely | ❌ No |
-| **LustraShield surface gloss** | ✅ Yes | ❌ No | ❌ No | ❌ No | Equivalent (HotShine) |
+| **Durashield surface gloss** | ✅ Yes | ❌ No | ❌ No | ❌ No | Equivalent (HotShine) |
 | **Two+ locations in Forest Park** | ✅ **Yes (2)** | ❌ No (1) | ❌ No (1) | ❌ No (1) | N/A |
 | **Hours** | 7am–10pm | 7am–9pm | Unknown | Unknown | Varies |
 | **30+ year heritage** | ✅ Yes | ❌ No | ❌ No | ❌ No | N/A |
@@ -232,7 +232,7 @@ Spotless's site has zero blog/educational content. Crystal's content is also thi
 3. *"car wash near me oak park / river forest / forest park"* — local pack queries
 4. *"self-serve car wash how to use"* — high informational-to-commercial intent
 5. *"are car wash brushes bad for paint"* — fear-based query that maps directly to touchless positioning
-6. *"ceramic coating vs LustraShield"* — comparison to Crystal's premium tier (defensive content)
+6. *"ceramic coating vs Durashield"* — comparison to Crystal's premium tier (defensive content)
 7. *"unlimited car wash near me forest park"* — Crystal currently owns this; Spotless should compete after launching membership
 8. *"can you wash a Tesla in a car wash"* — touchless wins this conversation; high SEO value
 
@@ -313,7 +313,7 @@ The dominant positioning angle Spotless should claim:
 > **"The only heated indoor car wash in Forest Park. Wash your car at -10°F without freezing your hands."**
 
 **Tertiary angle for premium-curious customers:**
-> **"LustraShield + spot-free finish. Same shine as ceramic, every wash, no $200 add-on."**
+> **"Durashield + spot-free finish. Same shine as ceramic, every wash, no $200 add-on."**
 
 ### Alternative Pages to Create
 
