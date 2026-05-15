@@ -230,6 +230,9 @@ const singletons: Record<string, SeedDoc> = {
       'Hands-free touchless automatic washes, or self-serve bays with foaming brushes when you want to do it yourself.',
     bays: [
       {
+        _key: 'bay-automatic',
+        _type: 'bayCard',
+        kind: 'automatic',
         titleLine1: 'Touchless',
         titleLine2: 'Automatic Bays',
         desc:
@@ -237,6 +240,9 @@ const singletons: Record<string, SeedDoc> = {
         features: ['Heated indoor bays (Roosevelt Rd)', 'Air cannon dryers', '~4½ min wash', 'Brushless & scratchless'],
       },
       {
+        _key: 'bay-self-serve',
+        _type: 'bayCard',
+        kind: 'self-serve',
         titleLine1: 'Self-Serve',
         titleLine2: 'Wand Bays',
         desc:
