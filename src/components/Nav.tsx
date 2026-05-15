@@ -10,8 +10,11 @@ const NAV_QUERY = `*[_type == "navbar"][0]{
   phone,
   phoneHref,
   email,
-  hoursLine
+  hoursLine,
+  ribbonText
 }`
+
+const RIBBON_FALLBACK = "Since 1994 · Forest Park's car wash for 30 years"
 
 const NAV_FALLBACK: NavData = {
   sectionLinks: [
@@ -35,12 +38,12 @@ const NAV_FALLBACK: NavData = {
 }
 
 export default async function Nav() {
-  const data = await sanityFetch<Partial<NavData>>(NAV_QUERY)
+  const data = await sanityFetch<Partial<NavData> & { ribbonText?: string }>(NAV_QUERY)
   const nav: NavData = {
     ...NAV_FALLBACK,
     ...(data ?? {}),
     sectionLinks: data?.sectionLinks ?? NAV_FALLBACK.sectionLinks,
     pageLinks: data?.pageLinks ?? NAV_FALLBACK.pageLinks,
   }
-  return <NavClient data={nav} ribbonText="Since 1994 · Forest Park's car wash for 30 years" />
+  return <NavClient data={nav} ribbonText={data?.ribbonText || RIBBON_FALLBACK} />
 }

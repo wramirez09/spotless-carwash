@@ -72,9 +72,9 @@ export default function HowClient({ data }: { data: HowData }) {
           >
             <div className="display text-white text-lg">{data.bayLabel}</div>
             <div className="flex flex-col items-center gap-4">
-              <div className={'lamp' + (s.r ? ' on-r' : '')}></div>
-              <div className={'lamp' + (s.y ? ' on-y' : '')}></div>
               <div className={'lamp' + (s.g ? ' on-g' : '')}></div>
+              <div className={'lamp' + (s.y ? ' on-y' : '')}></div>
+              <div className={'lamp' + (s.r ? ' on-r' : '')}></div>
             </div>
             <div className="mono text-[11px] tracking-[0.18em] uppercase text-blue-200">
               // status: {s.t}

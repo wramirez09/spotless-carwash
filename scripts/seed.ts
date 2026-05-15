@@ -88,6 +88,7 @@ const singletons: Record<string, SeedDoc> = {
     phoneHref: 'tel:7087712945',
     email: 'hello@spotlesscarwash.com',
     hoursLine: 'Open 7am–10pm, every day',
+    ribbonText: "Since 1994 · Forest Park's car wash for 30 years",
   },
 
   footer: {

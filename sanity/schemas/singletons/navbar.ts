@@ -29,5 +29,11 @@ export default defineType({
     defineField({ name: 'phoneHref', type: 'string' }),
     defineField({ name: 'email', type: 'string' }),
     defineField({ name: 'hoursLine', type: 'string' }),
+    defineField({
+      name: 'ribbonText',
+      title: 'Ribbon text',
+      type: 'string',
+      description: 'Yellow ribbon text shown directly under the nav bar.',
+    }),
   ],
 })

@@ -48,7 +48,7 @@ export default function HeroLights({ labels = {} }: { labels?: HeroLightsLabels 
 
   return (
     <div className="grid grid-cols-3 gap-2.5 mt-4">
-      {(['wait', 'slow', 'go'] as Light[]).map((light) => {
+      {(['go', 'slow', 'wait'] as Light[]).map((light) => {
         const isActive = active === light
         const style = isActive ? on[light] : off[light]
         return (
