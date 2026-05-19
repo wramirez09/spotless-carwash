@@ -28,12 +28,18 @@ const VALID_WASH: Set<WashValue> = new Set(['8', '9', '10', '12'])
 
 export async function POST(req: Request) {
   const secret = process.env.STRIPE_SECRET_KEY
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
   if (!secret) {
     return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 })
   }
+  // Prefer the request's own origin so the redirect always returns to the
+  // site the user came from, regardless of how NEXT_PUBLIC_SITE_URL is set
+  // in the deploy env. Fall back to the env var, then to the Vercel URL.
+  const originHeader = req.headers.get('origin')
+  const envSite = process.env.NEXT_PUBLIC_SITE_URL
+  const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined
+  const siteUrl = (originHeader || envSite || vercelUrl || '').replace(/\/$/, '')
   if (!siteUrl) {
-    return NextResponse.json({ error: 'NEXT_PUBLIC_SITE_URL missing' }, { status: 500 })
+    return NextResponse.json({ error: 'Site URL missing' }, { status: 500 })
   }
 
   let body: Body
@@ -67,6 +73,12 @@ export async function POST(req: Request) {
   if (!name) {
     return NextResponse.json({ error: 'Name required' }, { status: 400 })
   }
+  if (!phone) {
+    return NextResponse.json({ error: 'Phone required' }, { status: 400 })
+  }
+  if (!street || !city || !state || !zip) {
+    return NextResponse.json({ error: 'Full billing address required' }, { status: 400 })
+  }
 
   const stripe = new Stripe(secret)
 
@@ -74,22 +86,17 @@ export async function POST(req: Request) {
     purchaseMode === 'single' ? SINGLE_PRICES[washValue] : PACK_PRICES[pkg]
   const skuWash = purchaseMode === 'single' ? washValue : pkg
 
-  // Build a Stripe Customer with billing address pre-populated so the address
-  // is captured natively (not only in session metadata) and tax is calculated
-  // from it.
   const customer = await stripe.customers.create({
     email,
     name,
-    phone: phone || undefined,
-    address: street || city || state || zip
-      ? {
-          line1: street || undefined,
-          city: city || undefined,
-          state: state || undefined,
-          postal_code: zip || undefined,
-          country: 'US',
-        }
-      : undefined,
+    phone,
+    address: {
+      line1: street,
+      city,
+      state,
+      postal_code: zip,
+      country: 'US',
+    },
     metadata: {
       source: 'buy-tokens',
     },
@@ -117,8 +124,15 @@ export async function POST(req: Request) {
       // session.create call to throw and surfaces as the generic checkout
       // error in the browser.
       automatic_tax: { enabled: false },
-      billing_address_collection: 'auto',
-      phone_number_collection: { enabled: !phone },
+      // Show the address pre-filled from the customer and persist any edits
+      // the buyer makes in Checkout back to the Customer record.
+      billing_address_collection: 'required',
+      customer_update: { address: 'auto', name: 'auto' },
+      // Phone is already on the Customer (set at creation above) and is
+      // shown/prefilled on the hosted page. `customer_update` doesn't accept
+      // `phone`, so any in-Checkout edit lands on the Session, not the
+      // Customer — handle that in the webhook if you need it persisted.
+      phone_number_collection: { enabled: true },
       metadata: {
         customer_name: name,
         customer_phone: phone,

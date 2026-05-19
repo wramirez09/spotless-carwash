@@ -451,6 +451,7 @@ export default function BuyTokensClient({
                   </div>
                   <input
                     type="tel"
+                    required
                     placeholder={copy.phonePlaceholder}
                     autoComplete="tel"
                     value={phone}
@@ -465,6 +466,7 @@ export default function BuyTokensClient({
                   </div>
                   <input
                     type="text"
+                    required
                     placeholder="123 Roosevelt Rd"
                     autoComplete="street-address"
                     value={street}
@@ -480,6 +482,7 @@ export default function BuyTokensClient({
                   <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr] gap-4">
                     <input
                       type="text"
+                      required
                       placeholder="Forest Park"
                       autoComplete="address-level2"
                       value={city}
@@ -489,6 +492,7 @@ export default function BuyTokensClient({
                     />
                     <input
                       type="text"
+                      required
                       placeholder="IL"
                       autoComplete="address-level1"
                       maxLength={2}
@@ -499,6 +503,7 @@ export default function BuyTokensClient({
                     />
                     <input
                       type="text"
+                      required
                       placeholder="60130"
                       autoComplete="postal-code"
                       inputMode="numeric"
