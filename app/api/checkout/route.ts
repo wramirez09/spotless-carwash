@@ -112,7 +112,11 @@ export async function POST(req: Request) {
       ...(applyPackDiscount
         ? { discounts: [{ coupon: packCoupon }] }
         : { allow_promotion_codes: true }),
-      automatic_tax: { enabled: true },
+      // Re-enable once Stripe Tax is configured in the sandbox (origin address,
+      // registrations, product tax codes). Until then, leaving it on causes the
+      // session.create call to throw and surfaces as the generic checkout
+      // error in the browser.
+      automatic_tax: { enabled: false },
       billing_address_collection: 'auto',
       phone_number_collection: { enabled: !phone },
       metadata: {
@@ -136,6 +140,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ url: session.url })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
+    console.error('[api/checkout] stripe session.create failed:', message, err)
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

@@ -168,14 +168,16 @@ export default function BuyTokensClient({
           zip: zip.trim(),
         }),
       })
-      if (!res.ok) throw new Error('Checkout failed')
-      const data: { url?: string } = await res.json()
-      if (!data.url) throw new Error('No URL returned')
+      const data: { url?: string; error?: string } = await res.json()
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || 'Checkout failed')
+      }
       window.location.href = data.url
-    } catch {
+    } catch (err) {
       setSubmitting(false)
       setErrored(true)
-      alert(copy.checkoutErrorMessage)
+      const detail = err instanceof Error ? err.message : ''
+      alert(detail ? `${copy.checkoutErrorMessage}\n\n${detail}` : copy.checkoutErrorMessage)
     }
   }
 

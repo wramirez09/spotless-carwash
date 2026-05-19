@@ -39,7 +39,7 @@ export default function NavClient({ data, ribbonText }: { data: NavData; ribbonT
   const close = () => setOpen(false)
 
   return (
-    <nav className="sticky top-0 z-50 text-white">
+    <nav className="relative z-50 text-white">
       <div className="bg-blue-500 border-b-[3px] border-blue-700">
       <div className="max-w-[1240px] mx-auto flex items-center gap-4 md:gap-6 px-5 md:px-7 py-3.5">
         <Link href="/" onClick={close} className="leading-none">

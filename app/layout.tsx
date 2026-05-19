@@ -3,6 +3,7 @@ import { Archivo, Archivo_Black, Barlow_Condensed, JetBrains_Mono } from 'next/f
 import { draftMode, headers } from 'next/headers'
 import VisualEditing from 'next-sanity/visual-editing/client-component'
 import Nav from '@/src/components/Nav'
+import SalesBanner from '@/src/components/SalesBanner'
 import Footer from '@/src/components/Footer'
 import ExitPreviewButton from '@/src/components/ExitPreviewButton'
 import { sanityFetch } from '@/lib/sanityFetch'
@@ -119,7 +120,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       className={`${archivo.variable} ${archivoBlack.variable} ${barlowCondensed.variable} ${jetbrains.variable}`}
     >
       <body className="bg-paper text-ink font-sans">
-        {!isStudio && <Nav />}
+        {!isStudio && (
+          <div className="sticky top-0 z-50">
+            <SalesBanner />
+            <Nav />
+          </div>
+        )}
         <main>{children}</main>
         {!isStudio && <Footer />}
         {isDraft && (
