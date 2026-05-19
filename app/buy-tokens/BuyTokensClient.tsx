@@ -148,6 +148,11 @@ export default function BuyTokensClient({
   const [suggestions, setSuggestions] = useState<PhotonFeature[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [suppressFetch, setSuppressFetch] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
+
+  useEffect(() => {
+    setActiveIndex(-1)
+  }, [suggestions])
 
   useEffect(() => {
     if (suppressFetch) {
@@ -164,17 +169,15 @@ export default function BuyTokensClient({
       try {
         const url = new URL('https://photon.komoot.io/api/')
         url.searchParams.set('q', q)
-        url.searchParams.set('limit', '6')
+        url.searchParams.set('limit', '8')
         url.searchParams.set('lang', 'en')
-        url.searchParams.set('layer', 'house')
-        url.searchParams.set('layer', 'street')
         const res = await fetch(url.toString(), { signal: controller.signal })
         if (!res.ok) throw new Error('Photon error')
         const data = (await res.json()) as { features: PhotonFeature[] }
         const filtered = (data.features ?? []).filter(
-          (f) => f.properties.countrycode === 'US' && f.properties.street,
+          (f) => f.properties.countrycode === 'US',
         )
-        setSuggestions(filtered)
+        setSuggestions(filtered.slice(0, 6))
       } catch {
         // ignore — user can still type manually
       }
@@ -561,6 +564,30 @@ export default function BuyTokensClient({
                     }}
                     onFocus={() => setShowSuggestions(true)}
                     onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                    onKeyDown={(e) => {
+                      if (!showSuggestions || suggestions.length === 0) return
+                      if (e.key === 'ArrowDown') {
+                        e.preventDefault()
+                        setActiveIndex((i) => (i + 1) % suggestions.length)
+                      } else if (e.key === 'ArrowUp') {
+                        e.preventDefault()
+                        setActiveIndex((i) =>
+                          i <= 0 ? suggestions.length - 1 : i - 1,
+                        )
+                      } else if (e.key === 'Enter') {
+                        if (activeIndex >= 0 && activeIndex < suggestions.length) {
+                          e.preventDefault()
+                          pickSuggestion(suggestions[activeIndex])
+                        }
+                      } else if (e.key === 'Escape') {
+                        setShowSuggestions(false)
+                      }
+                    }}
+                    aria-autocomplete="list"
+                    aria-expanded={showSuggestions && suggestions.length > 0}
+                    aria-activedescendant={
+                      activeIndex >= 0 ? `addr-opt-${activeIndex}` : undefined
+                    }
                     className="w-full border-[1.5px] border-line rounded-xl px-4 py-3.5 text-[15px] text-ink bg-white placeholder:text-[#9aa9c9] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(27,79,217,0.12)] transition"
                   />
                   {showSuggestions && suggestions.length > 0 && (
@@ -581,16 +608,23 @@ export default function BuyTokensClient({
                         ]
                           .filter(Boolean)
                           .join(', ')
+                        const active = i === activeIndex
                         return (
                           <li
                             key={`${p.osm_type ?? ''}${p.osm_id}-${i}`}
+                            id={`addr-opt-${i}`}
                             role="option"
+                            aria-selected={active}
                             tabIndex={-1}
+                            onMouseEnter={() => setActiveIndex(i)}
                             onMouseDown={(e) => {
                               e.preventDefault()
                               pickSuggestion(f)
                             }}
-                            className="px-4 py-2.5 text-[14px] text-ink cursor-pointer hover:bg-paper border-b border-line last:border-b-0"
+                            className={
+                              'px-4 py-2.5 text-[14px] text-ink cursor-pointer border-b border-line last:border-b-0 ' +
+                              (active ? 'bg-paper' : 'hover:bg-paper')
+                            }
                           >
                             <div className="font-bold">{primary || p.name}</div>
                             {secondary && (
