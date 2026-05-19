@@ -17,6 +17,8 @@ async function persistAndEmailTokens(args: {
   name: string
   quantity: number
   packageSize: string
+  mode: string
+  washValue: string
   codes: string[]
   sessionId: string
 }) {
@@ -29,6 +31,8 @@ async function persistAndEmailTokens(args: {
     name: args.name,
     quantity: args.quantity,
     packageSize: args.packageSize,
+    mode: args.mode,
+    washValue: args.washValue,
     sessionId: args.sessionId,
     codes: args.codes,
   })
@@ -73,6 +77,8 @@ export async function POST(req: Request) {
     const email = expanded.customer_details?.email ?? expanded.customer_email ?? ''
     const name = expanded.metadata?.customer_name ?? ''
     const packageSize = expanded.metadata?.package_size ?? ''
+    const purchaseMode = expanded.metadata?.mode ?? 'pack'
+    const washValue = expanded.metadata?.wash_value ?? ''
     const quantity = Number(expanded.metadata?.quantity ?? 1)
 
     if (email && codes.length > 0) {
@@ -81,6 +87,8 @@ export async function POST(req: Request) {
         name,
         quantity,
         packageSize,
+        mode: purchaseMode,
+        washValue,
         codes,
         sessionId: expanded.id,
       })

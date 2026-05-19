@@ -1,21 +1,30 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import {
+  PACK_PRICES,
+  SINGLE_PRICES,
+  activePackCouponId,
+  isFathersDaySaleActive,
+  type WashValue,
+} from '@/lib/stripePricing'
 
 export const runtime = 'nodejs'
 
-const PRICES: Record<string, string | undefined> = {
-  '5': process.env.STRIPE_PRICE_5,
-  '10': process.env.STRIPE_PRICE_10,
-  '25': process.env.STRIPE_PRICE_25,
-}
-
 type Body = {
-  package?: '5' | '10' | '25'
+  package?: string
   quantity?: number
+  mode?: 'single' | 'pack'
+  washValue?: number
   email?: string
   name?: string
   phone?: string
+  street?: string
+  city?: string
+  state?: string
+  zip?: string
 }
+
+const VALID_WASH: Set<WashValue> = new Set(['8', '9', '10', '12'])
 
 export async function POST(req: Request) {
   const secret = process.env.STRIPE_SECRET_KEY
@@ -34,14 +43,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const pkg = body.package
+  const pkg = (body.package ?? '') as WashValue
   const quantity = Math.max(1, Math.min(20, Number(body.quantity) || 1))
+  const purchaseMode: 'single' | 'pack' = body.mode === 'single' ? 'single' : 'pack'
+  const washValue = String(Number(body.washValue)) as WashValue
   const email = (body.email ?? '').trim()
   const name = (body.name ?? '').trim()
   const phone = (body.phone ?? '').trim()
+  const street = (body.street ?? '').trim()
+  const city = (body.city ?? '').trim()
+  const state = (body.state ?? '').trim()
+  const zip = (body.zip ?? '').trim()
 
-  if (!pkg || !PRICES[pkg]) {
+  if (purchaseMode === 'pack' && !VALID_WASH.has(pkg)) {
     return NextResponse.json({ error: 'Bad package' }, { status: 400 })
+  }
+  if (purchaseMode === 'single' && !VALID_WASH.has(washValue)) {
+    return NextResponse.json({ error: 'Bad wash value' }, { status: 400 })
   }
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return NextResponse.json({ error: 'Valid email required' }, { status: 400 })
@@ -52,21 +70,67 @@ export async function POST(req: Request) {
 
   const stripe = new Stripe(secret)
 
+  const priceId =
+    purchaseMode === 'single' ? SINGLE_PRICES[washValue] : PACK_PRICES[pkg]
+  const skuWash = purchaseMode === 'single' ? washValue : pkg
+
+  // Build a Stripe Customer with billing address pre-populated so the address
+  // is captured natively (not only in session metadata) and tax is calculated
+  // from it.
+  const customer = await stripe.customers.create({
+    email,
+    name,
+    phone: phone || undefined,
+    address: street || city || state || zip
+      ? {
+          line1: street || undefined,
+          city: city || undefined,
+          state: state || undefined,
+          postal_code: zip || undefined,
+          country: 'US',
+        }
+      : undefined,
+    metadata: {
+      source: 'buy-tokens',
+    },
+  })
+
+  const applyPackDiscount = purchaseMode === 'pack'
+  const fathersDayActive = applyPackDiscount && isFathersDaySaleActive()
+  const packCoupon = activePackCouponId()
+
   try {
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
-      customer_email: email,
-      line_items: [{ price: PRICES[pkg]!, quantity }],
+      customer: customer.id,
+      line_items: [{ price: priceId, quantity }],
       success_url: `${siteUrl}/buy-tokens/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/buy-tokens`,
-      allow_promotion_codes: true,
+      // `discounts` and `allow_promotion_codes` are mutually exclusive — packs
+      // get the auto-applied coupon (Father's Day $10 during the sale window,
+      // otherwise the always-on $5), singles fall back to promo codes.
+      ...(applyPackDiscount
+        ? { discounts: [{ coupon: packCoupon }] }
+        : { allow_promotion_codes: true }),
       automatic_tax: { enabled: true },
+      billing_address_collection: 'auto',
       phone_number_collection: { enabled: !phone },
       metadata: {
         customer_name: name,
         customer_phone: phone,
-        package_size: pkg,
+        street,
+        city,
+        state,
+        zip,
+        package_size: purchaseMode === 'single' ? '1' : pkg,
         quantity: String(quantity),
+        mode: purchaseMode,
+        wash_value: skuWash,
+        pack_discount: applyPackDiscount
+          ? fathersDayActive
+            ? '10_off_fathers_day_2026'
+            : '5_off'
+          : '',
       },
     })
     return NextResponse.json({ url: session.url })

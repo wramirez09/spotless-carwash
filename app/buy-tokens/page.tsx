@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import BuyTokensClient, { type BuyTokensCopy } from './BuyTokensClient'
 import { sanityFetch } from '@/lib/sanityFetch'
+import { getCheckoutPricing } from '@/lib/stripePricing'
 
 const BUY_TOKENS_FALLBACK: BuyTokensCopy = {
   metaTitle: 'Buy Wash Tokens',
@@ -27,6 +28,15 @@ const BUY_TOKENS_FALLBACK: BuyTokensCopy = {
   quantityDecreaseLabel: 'Decrease quantity',
   quantityIncreaseLabel: 'Increase quantity',
   quantityInputLabel: 'Number of packs',
+  modeHelper: 'Choose how you want to buy',
+  modeSingleLabel: 'Single tokens',
+  modePackLabel: '4-Pack · Save $5',
+  packTokensSuffixSingle: 'wash · single',
+  quantityHeadingSingle: 'Number of tokens',
+  quantitySubtextSingle: 'Buy any number of individual tokens at the same wash value.',
+  quantityInputLabelSingle: 'Number of tokens',
+  tokenSingular: 'token',
+  tokenPlural: 'tokens',
   step2Number: '02',
   step2Kicker: 'Step two',
   step2Title: 'Your details.',
@@ -79,6 +89,9 @@ const QUERY = `*[_type == "buyTokensPage"][0]{
   step1Number, step1Kicker, step1Title, mostPopularLabel,
   packCodePrefix, packTokensSuffix, savePrefix, eachSuffix,
   quantityHeading, quantitySubtext, quantityDecreaseLabel, quantityIncreaseLabel, quantityInputLabel,
+  modeHelper, modeSingleLabel, modePackLabel,
+  packTokensSuffixSingle, quantityHeadingSingle, quantitySubtextSingle, quantityInputLabelSingle,
+  tokenSingular, tokenPlural,
   step2Number, step2Kicker, step2Title,
   emailLabel, emailPlaceholder, emailHelper,
   nameLabel, namePlaceholder,
@@ -118,6 +131,6 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function BuyTokensPage() {
-  const copy = await loadCopy()
-  return <BuyTokensClient copy={copy} />
+  const [copy, pricing] = await Promise.all([loadCopy(), getCheckoutPricing()])
+  return <BuyTokensClient copy={copy} pricing={pricing} />
 }

@@ -14,6 +14,13 @@ type Pkg = {
   featured?: boolean
 }
 
+export type PricingProp = {
+  packs: Pkg[]
+  singles: { id: PkgId; price: number }[]
+  packCouponAmountOff: number
+  fathersDayActive: boolean
+}
+
 export type BuyTokensCopy = {
   metaTitle: string
   metaDescription: string
@@ -37,6 +44,15 @@ export type BuyTokensCopy = {
   quantityDecreaseLabel: string
   quantityIncreaseLabel: string
   quantityInputLabel: string
+  modeHelper: string
+  modeSingleLabel: string
+  modePackLabel: string
+  packTokensSuffixSingle: string
+  quantityHeadingSingle: string
+  quantitySubtextSingle: string
+  quantityInputLabelSingle: string
+  tokenSingular: string
+  tokenPlural: string
   step2Number: string
   step2Kicker: string
   step2Title: string
@@ -76,30 +92,50 @@ export type BuyTokensCopy = {
   checkoutErrorMessage: string
 }
 
-// NOTE: pack ids 8/9/10/12 don't map to Stripe envs yet. Checkout will 400 until
-// STRIPE_PRICE_8 / 9 / 10 / 12 are added in app/api/checkout/route.ts + Vercel env.
-const PACKAGES: Pkg[] = [
-  { id: '8', tokens: 4, price: 2700, save: 500, label: '$8 wash · 4-pack', perToken: 675 },
-  { id: '9', tokens: 4, price: 3100, save: 500, label: '$9 wash · 4-pack', perToken: 775 },
-  { id: '10', tokens: 4, price: 3500, save: 500, label: '$10 wash · 4-pack', perToken: 875, featured: true },
-  { id: '12', tokens: 4, price: 4300, save: 500, label: '$12 wash · 4-pack', perToken: 1075 },
-]
-
 const fmt = (cents: number) => `$${(cents / 100).toFixed(2)}`
 const fmtWhole = (cents: number) => `$${Math.round(cents / 100)}`
 
-export default function BuyTokensClient({ copy }: { copy: BuyTokensCopy }) {
-  const [selectedId, setSelectedId] = useState<Pkg['id']>('10')
+type Mode = 'pack' | 'single'
+
+export default function BuyTokensClient({
+  copy,
+  pricing,
+}: {
+  copy: BuyTokensCopy
+  pricing: PricingProp
+}) {
+  const PACKAGES = pricing.packs
+  const SINGLE_PRICES_BY_ID: Record<PkgId, number> = pricing.singles.reduce(
+    (acc, s) => {
+      acc[s.id] = s.price
+      return acc
+    },
+    {} as Record<PkgId, number>,
+  )
+  const [mode, setMode] = useState<Mode>('pack')
+  const [selectedId, setSelectedId] = useState<Pkg['id']>('12')
   const [quantity, setQuantity] = useState<number>(1)
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
+  const [street, setStreet] = useState('')
+  const [city, setCity] = useState('')
+  const [stateRegion, setStateRegion] = useState('')
+  const [zip, setZip] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [errored, setErrored] = useState(false)
 
   const selected = PACKAGES.find((p) => p.id === selectedId)!
-  const subtotal = selected.price * quantity
-  const savings = selected.save * quantity
+  const washValue = parseInt(selected.id, 10)
+  const singlePrice = SINGLE_PRICES_BY_ID[selected.id] ?? washValue * 100
+  const unitPrice = mode === 'single' ? singlePrice : selected.price
+  const unitSavings = mode === 'single' ? 0 : selected.save
+  const tokensPerUnit = mode === 'single' ? 1 : selected.tokens
+  const subtotal = unitPrice * quantity
+  const savings = unitSavings * quantity
+  const unitSingular = mode === 'single' ? copy.tokenSingular : copy.packSingular
+  const unitPlural = mode === 'single' ? copy.tokenPlural : copy.packPlural
+  const perUnitPrice = mode === 'single' ? unitPrice : Math.round(unitPrice / tokensPerUnit)
 
   const buttonLabel = useMemo(() => {
     if (submitting) return copy.submittingLabel
@@ -121,9 +157,15 @@ export default function BuyTokensClient({ copy }: { copy: BuyTokensCopy }) {
         body: JSON.stringify({
           package: selected.id,
           quantity,
+          mode,
+          washValue,
           email: email.trim(),
           name: name.trim(),
           phone: phone.trim(),
+          street: street.trim(),
+          city: city.trim(),
+          state: stateRegion.trim(),
+          zip: zip.trim(),
         }),
       })
       if (!res.ok) throw new Error('Checkout failed')
@@ -178,6 +220,49 @@ export default function BuyTokensClient({ copy }: { copy: BuyTokensCopy }) {
             {/* STEP 1 — PACKAGE */}
             <section>
               <StepHead num={copy.step1Number} kicker={copy.step1Kicker} title={copy.step1Title} />
+
+              {/* Mode toggle */}
+              <div className="mb-6">
+                {copy.modeHelper && (
+                  <div className="text-[11px] font-bold tracking-[0.22em] uppercase text-[#9aa9c9] mb-2.5">
+                    {copy.modeHelper}
+                  </div>
+                )}
+                <div
+                  role="tablist"
+                  aria-label={copy.modeHelper || 'Purchase mode'}
+                  className="flex w-full sm:w-auto sm:inline-flex bg-white border-2 border-line rounded-2xl p-1 gap-1"
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={mode === 'pack'}
+                    onClick={() => setMode('pack')}
+                    className={
+                      'flex-1 sm:flex-none px-4 sm:px-5 py-2.5 rounded-xl text-[13px] font-extrabold tracking-[0.06em] uppercase transition whitespace-nowrap ' +
+                      (mode === 'pack'
+                        ? 'bg-blue-500 text-white shadow-[0_6px_16px_rgba(27,79,217,0.25)]'
+                        : 'text-[#5b6987] hover:text-blue-500')
+                    }
+                  >
+                    {copy.modePackLabel}
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={mode === 'single'}
+                    onClick={() => setMode('single')}
+                    className={
+                      'flex-1 sm:flex-none px-4 sm:px-5 py-2.5 rounded-xl text-[13px] font-extrabold tracking-[0.06em] uppercase transition whitespace-nowrap ' +
+                      (mode === 'single'
+                        ? 'bg-blue-500 text-white shadow-[0_6px_16px_rgba(27,79,217,0.25)]'
+                        : 'text-[#5b6987] hover:text-blue-500')
+                    }
+                  >
+                    {copy.modeSingleLabel}
+                  </button>
+                </div>
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {PACKAGES.map((pkg, idx) => {
@@ -238,22 +323,41 @@ export default function BuyTokensClient({ copy }: { copy: BuyTokensCopy }) {
                       <div className="display text-[44px] text-ink mt-2 leading-none">
                         ${pkg.id}
                       </div>
-                      <div className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#5b6987] -mt-1">
-                        {copy.packTokensSuffix}
+                      <div className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#5b6987] mt-3">
+                        {mode === 'single' ? copy.packTokensSuffixSingle : copy.packTokensSuffix}
                       </div>
-                      <div className="mt-4 pt-4 border-t border-dashed border-line flex items-baseline gap-1.5">
-                        <span className="display text-[28px] text-blue-500 leading-none">
-                          {fmtWhole(pkg.price)}
-                        </span>
-                        {pkg.save > 0 ? (
-                          <span className="ml-auto bg-blue-700 text-yellow-400 text-[11px] font-extrabold tracking-[0.1em] px-2.5 py-1 rounded-full">
-                            {copy.savePrefix} {fmtWhole(pkg.save)}
-                          </span>
-                        ) : (
-                          <span className="ml-auto text-[12px] font-semibold text-[#5b6987]">
-                            {fmtWhole(pkg.perToken)} {copy.eachSuffix}
-                          </span>
-                        )}
+                      <div className="mt-4 pt-4 border-t border-dashed border-line flex flex-col items-start gap-2">
+                        {(() => {
+                          const list =
+                            mode === 'single'
+                              ? SINGLE_PRICES_BY_ID[pkg.id] ?? parseInt(pkg.id, 10) * 100
+                              : pkg.price
+                          const save = mode === 'pack' ? pkg.save : 0
+                          const finalPrice = Math.max(0, list - save)
+                          return (
+                            <>
+                              <div className="flex items-baseline gap-2">
+                                <span className="display text-[28px] text-blue-500 leading-none">
+                                  {fmtWhole(finalPrice)}
+                                </span>
+                                {save > 0 && (
+                                  <span className="text-[14px] font-bold text-[#9aa9c9] line-through leading-none">
+                                    {fmtWhole(list)}
+                                  </span>
+                                )}
+                              </div>
+                              {save > 0 ? (
+                                <span className="inline-flex items-center bg-blue-700 text-yellow-400 text-[11px] font-extrabold tracking-[0.1em] px-2.5 py-1 rounded-full leading-none">
+                                  {copy.savePrefix} {fmtWhole(save)}
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center text-[11px] font-bold tracking-[0.1em] uppercase text-[#5b6987] leading-none">
+                                  {copy.eachSuffix}
+                                </span>
+                              )}
+                            </>
+                          )
+                        })()}
                       </div>
                     </label>
                   )
@@ -262,9 +366,11 @@ export default function BuyTokensClient({ copy }: { copy: BuyTokensCopy }) {
 
               <div className="mt-5 bg-white border border-line rounded-2xl p-4 flex items-center justify-between gap-4">
                 <div>
-                  <div className="font-extrabold text-[15px]">{copy.quantityHeading}</div>
+                  <div className="font-extrabold text-[15px]">
+                    {mode === 'single' ? copy.quantityHeadingSingle : copy.quantityHeading}
+                  </div>
                   <div className="text-[13px] text-[#5b6987] mt-0.5">
-                    {copy.quantitySubtext}
+                    {mode === 'single' ? copy.quantitySubtextSingle : copy.quantitySubtext}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -283,7 +389,7 @@ export default function BuyTokensClient({ copy }: { copy: BuyTokensCopy }) {
                     max={20}
                     value={quantity}
                     onChange={(e) => setQuantity(clampQty(parseInt(e.target.value, 10) || 1))}
-                    aria-label={copy.quantityInputLabel}
+                    aria-label={mode === 'single' ? copy.quantityInputLabelSingle : copy.quantityInputLabel}
                     className="w-16 px-2 py-2 text-center text-[16px] font-extrabold border-[1.5px] border-line rounded-xl text-ink [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <button
@@ -350,6 +456,57 @@ export default function BuyTokensClient({ copy }: { copy: BuyTokensCopy }) {
                     className="w-full border-[1.5px] border-line rounded-xl px-4 py-3.5 text-[15px] text-ink bg-white placeholder:text-[#9aa9c9] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(27,79,217,0.12)] transition"
                   />
                 </label>
+
+                <label className="block sm:col-span-2">
+                  <div className="text-[12px] font-bold tracking-[0.14em] uppercase text-[#5b6987] mb-1.5">
+                    Street address
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="123 Roosevelt Rd"
+                    autoComplete="street-address"
+                    value={street}
+                    onChange={(e) => setStreet(e.target.value)}
+                    className="w-full border-[1.5px] border-line rounded-xl px-4 py-3.5 text-[15px] text-ink bg-white placeholder:text-[#9aa9c9] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(27,79,217,0.12)] transition"
+                  />
+                </label>
+
+                <label className="block sm:col-span-2">
+                  <div className="text-[12px] font-bold tracking-[0.14em] uppercase text-[#5b6987] mb-1.5">
+                    City, state &amp; ZIP
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr] gap-4">
+                    <input
+                      type="text"
+                      placeholder="Forest Park"
+                      autoComplete="address-level2"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      aria-label="City"
+                      className="w-full border-[1.5px] border-line rounded-xl px-4 py-3.5 text-[15px] text-ink bg-white placeholder:text-[#9aa9c9] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(27,79,217,0.12)] transition"
+                    />
+                    <input
+                      type="text"
+                      placeholder="IL"
+                      autoComplete="address-level1"
+                      maxLength={2}
+                      value={stateRegion}
+                      onChange={(e) => setStateRegion(e.target.value.toUpperCase())}
+                      aria-label="State"
+                      className="w-full border-[1.5px] border-line rounded-xl px-4 py-3.5 text-[15px] text-ink bg-white placeholder:text-[#9aa9c9] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(27,79,217,0.12)] transition uppercase"
+                    />
+                    <input
+                      type="text"
+                      placeholder="60130"
+                      autoComplete="postal-code"
+                      inputMode="numeric"
+                      value={zip}
+                      onChange={(e) => setZip(e.target.value)}
+                      aria-label="ZIP"
+                      className="w-full border-[1.5px] border-line rounded-xl px-4 py-3.5 text-[15px] text-ink bg-white placeholder:text-[#9aa9c9] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(27,79,217,0.12)] transition"
+                    />
+                  </div>
+                </label>
               </div>
             </section>
 
@@ -402,10 +559,12 @@ export default function BuyTokensClient({ copy }: { copy: BuyTokensCopy }) {
               <div className="p-6">
                 <div className="flex items-start justify-between gap-3 pb-4 border-b border-white/15">
                   <div>
-                    <div className="font-extrabold text-[16px]">{selected.label}</div>
+                    <div className="font-extrabold text-[16px]">
+                      {mode === 'single' ? `$${selected.id} wash · ${copy.tokenSingular}` : selected.label}
+                    </div>
                     <div className="text-[13px] text-blue-200 mt-0.5">
-                      {fmt(selected.perToken)} {copy.perTokenSuffix} · ×{quantity}{' '}
-                      {quantity === 1 ? copy.packSingular : copy.packPlural}
+                      {fmt(perUnitPrice)} {copy.perTokenSuffix} · ×{quantity}{' '}
+                      {quantity === 1 ? unitSingular : unitPlural}
                     </div>
                   </div>
                   <div className="display text-[26px] text-yellow-400 leading-none">
@@ -428,7 +587,7 @@ export default function BuyTokensClient({ copy }: { copy: BuyTokensCopy }) {
                 <div className="mt-2 pt-4 border-t-2 border-yellow-400 flex items-baseline justify-between">
                   <span className="display text-[20px]">{copy.totalLabel}</span>
                   <span className="display text-[40px] text-yellow-400 leading-none">
-                    {fmt(subtotal)}
+                    {fmt(Math.max(0, subtotal - savings))}
                   </span>
                 </div>
 

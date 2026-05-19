@@ -76,6 +76,62 @@ export default defineType({
     defineField({ name: 'quantityDecreaseLabel', type: 'string', group: 'step1', initialValue: 'Decrease quantity' }),
     defineField({ name: 'quantityIncreaseLabel', type: 'string', group: 'step1', initialValue: 'Increase quantity' }),
     defineField({ name: 'quantityInputLabel', type: 'string', group: 'step1', initialValue: 'Number of packs' }),
+    defineField({
+      name: 'modeHelper',
+      type: 'string',
+      group: 'step1',
+      initialValue: 'Choose how you want to buy',
+      description: 'Small label above the Single/Pack toggle.',
+    }),
+    defineField({
+      name: 'modePackLabel',
+      type: 'string',
+      group: 'step1',
+      initialValue: '4-Pack · Save $5',
+    }),
+    defineField({
+      name: 'modeSingleLabel',
+      type: 'string',
+      group: 'step1',
+      initialValue: 'Single tokens',
+    }),
+    defineField({
+      name: 'packTokensSuffixSingle',
+      type: 'string',
+      group: 'step1',
+      initialValue: 'wash · single',
+      description: 'Subtitle under the dollar amount when in Single mode.',
+    }),
+    defineField({
+      name: 'quantityHeadingSingle',
+      type: 'string',
+      group: 'step1',
+      initialValue: 'Number of tokens',
+    }),
+    defineField({
+      name: 'quantitySubtextSingle',
+      type: 'string',
+      group: 'step1',
+      initialValue: 'Buy any number of individual tokens at the same wash value.',
+    }),
+    defineField({
+      name: 'quantityInputLabelSingle',
+      type: 'string',
+      group: 'step1',
+      initialValue: 'Number of tokens',
+    }),
+    defineField({
+      name: 'tokenSingular',
+      type: 'string',
+      group: 'step1',
+      initialValue: 'token',
+    }),
+    defineField({
+      name: 'tokenPlural',
+      type: 'string',
+      group: 'step1',
+      initialValue: 'tokens',
+    }),
 
     // STEP 2
     defineField({ name: 'step2Number', type: 'string', initialValue: '02', group: 'step2' }),
