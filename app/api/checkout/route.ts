@@ -18,10 +18,6 @@ type Body = {
   email?: string
   name?: string
   phone?: string
-  street?: string
-  city?: string
-  state?: string
-  zip?: string
 }
 
 const VALID_WASH: Set<WashValue> = new Set(['8', '9', '10', '12'])
@@ -56,10 +52,6 @@ export async function POST(req: Request) {
   const email = (body.email ?? '').trim()
   const name = (body.name ?? '').trim()
   const phone = (body.phone ?? '').trim()
-  const street = (body.street ?? '').trim()
-  const city = (body.city ?? '').trim()
-  const state = (body.state ?? '').trim()
-  const zip = (body.zip ?? '').trim()
 
   if (purchaseMode === 'pack' && !VALID_WASH.has(pkg)) {
     return NextResponse.json({ error: 'Bad package' }, { status: 400 })
@@ -76,9 +68,6 @@ export async function POST(req: Request) {
   if (!phone) {
     return NextResponse.json({ error: 'Phone required' }, { status: 400 })
   }
-  if (!street || !city || !state || !zip) {
-    return NextResponse.json({ error: 'Full billing address required' }, { status: 400 })
-  }
 
   const stripe = new Stripe(secret)
 
@@ -86,17 +75,13 @@ export async function POST(req: Request) {
     purchaseMode === 'single' ? SINGLE_PRICES[washValue] : PACK_PRICES[pkg]
   const skuWash = purchaseMode === 'single' ? washValue : pkg
 
+  // Billing address is collected by Stripe Checkout (see
+  // `billing_address_collection` below) and written back to the Customer
+  // via `customer_update.address`.
   const customer = await stripe.customers.create({
     email,
     name,
     phone,
-    address: {
-      line1: street,
-      city,
-      state,
-      postal_code: zip,
-      country: 'US',
-    },
     metadata: {
       source: 'buy-tokens',
     },
@@ -136,10 +121,6 @@ export async function POST(req: Request) {
       metadata: {
         customer_name: name,
         customer_phone: phone,
-        street,
-        city,
-        state,
-        zip,
         package_size: purchaseMode === 'single' ? '1' : pkg,
         quantity: String(quantity),
         mode: purchaseMode,

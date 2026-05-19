@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 
 type PkgId = '8' | '9' | '10' | '12'
 type Pkg = {
@@ -125,6 +125,95 @@ export default function BuyTokensClient({
   const [submitting, setSubmitting] = useState(false)
   const [errored, setErrored] = useState(false)
 
+  type PhotonFeature = {
+    properties: {
+      osm_id: number
+      osm_type?: string
+      name?: string
+      housenumber?: string
+      street?: string
+      city?: string
+      district?: string
+      locality?: string
+      county?: string
+      state?: string
+      postcode?: string
+      country?: string
+      countrycode?: string
+      type?: string
+      osm_key?: string
+      osm_value?: string
+    }
+  }
+  const [suggestions, setSuggestions] = useState<PhotonFeature[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [suppressFetch, setSuppressFetch] = useState(false)
+
+  useEffect(() => {
+    if (suppressFetch) {
+      setSuppressFetch(false)
+      return
+    }
+    const q = street.trim()
+    if (q.length < 3) {
+      setSuggestions([])
+      return
+    }
+    const controller = new AbortController()
+    const handle = setTimeout(async () => {
+      try {
+        const url = new URL('https://photon.komoot.io/api/')
+        url.searchParams.set('q', q)
+        url.searchParams.set('limit', '6')
+        url.searchParams.set('lang', 'en')
+        url.searchParams.set('layer', 'house')
+        url.searchParams.set('layer', 'street')
+        const res = await fetch(url.toString(), { signal: controller.signal })
+        if (!res.ok) throw new Error('Photon error')
+        const data = (await res.json()) as { features: PhotonFeature[] }
+        const filtered = (data.features ?? []).filter(
+          (f) => f.properties.countrycode === 'US' && f.properties.street,
+        )
+        setSuggestions(filtered)
+      } catch {
+        // ignore — user can still type manually
+      }
+    }, 200)
+    return () => {
+      clearTimeout(handle)
+      controller.abort()
+    }
+  }, [street, suppressFetch])
+
+  const US_STATE_ABBR: Record<string, string> = {
+    Alabama: 'AL', Alaska: 'AK', Arizona: 'AZ', Arkansas: 'AR', California: 'CA',
+    Colorado: 'CO', Connecticut: 'CT', Delaware: 'DE', 'District of Columbia': 'DC',
+    Florida: 'FL', Georgia: 'GA', Hawaii: 'HI', Idaho: 'ID', Illinois: 'IL',
+    Indiana: 'IN', Iowa: 'IA', Kansas: 'KS', Kentucky: 'KY', Louisiana: 'LA',
+    Maine: 'ME', Maryland: 'MD', Massachusetts: 'MA', Michigan: 'MI', Minnesota: 'MN',
+    Mississippi: 'MS', Missouri: 'MO', Montana: 'MT', Nebraska: 'NE', Nevada: 'NV',
+    'New Hampshire': 'NH', 'New Jersey': 'NJ', 'New Mexico': 'NM', 'New York': 'NY',
+    'North Carolina': 'NC', 'North Dakota': 'ND', Ohio: 'OH', Oklahoma: 'OK',
+    Oregon: 'OR', Pennsylvania: 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+    'South Dakota': 'SD', Tennessee: 'TN', Texas: 'TX', Utah: 'UT', Vermont: 'VT',
+    Virginia: 'VA', Washington: 'WA', 'West Virginia': 'WV', Wisconsin: 'WI',
+    Wyoming: 'WY',
+  }
+
+  function pickSuggestion(f: PhotonFeature) {
+    const p = f.properties
+    const line1 = [p.housenumber, p.street].filter(Boolean).join(' ').trim()
+    const localityName = p.city ?? p.locality ?? p.district ?? p.county ?? ''
+    const stateAbbr = p.state ? US_STATE_ABBR[p.state] ?? p.state : ''
+    setSuppressFetch(true)
+    if (line1) setStreet(line1)
+    if (localityName) setCity(localityName)
+    if (stateAbbr) setStateRegion(stateAbbr.toUpperCase())
+    if (p.postcode) setZip(p.postcode)
+    setSuggestions([])
+    setShowSuggestions(false)
+  }
+
   const selected = PACKAGES.find((p) => p.id === selectedId)!
   const washValue = parseInt(selected.id, 10)
   const singlePrice = SINGLE_PRICES_BY_ID[selected.id] ?? washValue * 100
@@ -162,10 +251,6 @@ export default function BuyTokensClient({
           email: email.trim(),
           name: name.trim(),
           phone: phone.trim(),
-          street: street.trim(),
-          city: city.trim(),
-          state: stateRegion.trim(),
-          zip: zip.trim(),
         }),
       })
       const data: { url?: string; error?: string } = await res.json()
@@ -460,7 +545,7 @@ export default function BuyTokensClient({
                   />
                 </label>
 
-                <label className="block sm:col-span-2">
+                <label className="block sm:col-span-2 relative">
                   <div className="text-[12px] font-bold tracking-[0.14em] uppercase text-[#5b6987] mb-1.5">
                     Street address
                   </div>
@@ -470,9 +555,52 @@ export default function BuyTokensClient({
                     placeholder="123 Roosevelt Rd"
                     autoComplete="street-address"
                     value={street}
-                    onChange={(e) => setStreet(e.target.value)}
+                    onChange={(e) => {
+                      setStreet(e.target.value)
+                      setShowSuggestions(true)
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                     className="w-full border-[1.5px] border-line rounded-xl px-4 py-3.5 text-[15px] text-ink bg-white placeholder:text-[#9aa9c9] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(27,79,217,0.12)] transition"
                   />
+                  {showSuggestions && suggestions.length > 0 && (
+                    <ul
+                      role="listbox"
+                      className="absolute z-20 left-0 right-0 mt-1.5 bg-white border-[1.5px] border-line rounded-xl shadow-[0_12px_30px_rgba(8,24,63,0.15)] overflow-hidden max-h-72 overflow-y-auto"
+                    >
+                      {suggestions.map((f, i) => {
+                        const p = f.properties
+                        const primary = [p.housenumber, p.street]
+                          .filter(Boolean)
+                          .join(' ')
+                          .trim()
+                        const secondary = [
+                          p.city ?? p.locality ?? p.district ?? p.county,
+                          p.state,
+                          p.postcode,
+                        ]
+                          .filter(Boolean)
+                          .join(', ')
+                        return (
+                          <li
+                            key={`${p.osm_type ?? ''}${p.osm_id}-${i}`}
+                            role="option"
+                            tabIndex={-1}
+                            onMouseDown={(e) => {
+                              e.preventDefault()
+                              pickSuggestion(f)
+                            }}
+                            className="px-4 py-2.5 text-[14px] text-ink cursor-pointer hover:bg-paper border-b border-line last:border-b-0"
+                          >
+                            <div className="font-bold">{primary || p.name}</div>
+                            {secondary && (
+                              <div className="text-[12px] text-[#5b6987]">{secondary}</div>
+                            )}
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  )}
                 </label>
 
                 <label className="block sm:col-span-2">
