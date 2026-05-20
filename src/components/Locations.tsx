@@ -68,14 +68,14 @@ function Card({ loc, hoursShort }: { loc: Location; hoursShort: string }) {
   return (
     <article className="bg-white rounded-[22px] overflow-hidden border border-line flex flex-col">
       <div
-        className={`${headerHeight} relative flex items-end p-6 text-white stripe overflow-hidden`}
+        className={`${headerHeight} shrink-0 relative flex items-end p-6 text-white stripe overflow-hidden`}
         style={{ background: loc.gradient, position: 'relative' }}
       >
         {hasSanityPhoto && (
           <SanityImage
             image={loc.photo!}
             width={1200}
-            height={isRoosevelt ? 800 : 600}
+            height={640}
             sizes="(max-width: 768px) 100vw, 600px"
             className="absolute inset-0 w-full h-full object-cover"
           />

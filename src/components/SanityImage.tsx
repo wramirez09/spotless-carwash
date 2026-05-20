@@ -21,7 +21,9 @@ export default function SanityImage({
   quality = 80,
 }: Props) {
   if (!image?.asset?._ref) return null
-  const src = urlFor(image).width(width).height(height).fit('crop').auto('format').url()
+  // fit('max') downscales to fit but never upscales — prevents pixelation when
+  // the source (after schema crop) is smaller than the requested render size.
+  const src = urlFor(image).width(width).fit('max').auto('format').url()
   return (
     <Image
       src={src}
