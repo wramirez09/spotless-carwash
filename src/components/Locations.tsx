@@ -91,19 +91,9 @@ function Card({ loc, hoursShort }: { loc: Location; hoursShort: string }) {
           />
         )}
         {isRoosevelt && (
-          <>
-            <div
-              aria-hidden
-              className="absolute inset-0 z-[1]"
-              style={{
-                background:
-                  'linear-gradient(180deg, rgba(8,24,63,0) 40%, rgba(8,24,63,.9) 100%)',
-              }}
-            />
-            <span className="absolute top-3.5 left-3.5 inline-block bg-yellow-300 text-[#08183f] text-[11px] font-bold tracking-[0.16em] uppercase px-2.5 py-1 rounded z-[2]">
-              New
-            </span>
-          </>
+          <span className="absolute top-3.5 left-3.5 inline-block bg-yellow-300 text-[#08183f] text-[11px] font-bold tracking-[0.16em] uppercase px-2.5 py-1 rounded z-[2]">
+            New
+          </span>
         )}
         <span className="absolute top-3.5 right-3.5 mono text-[11px] text-white/70 bg-black/40 px-2 py-1 rounded z-[2]">
           {isRoosevelt ? '// roosevelt-rd' : loc.photoCaption}
