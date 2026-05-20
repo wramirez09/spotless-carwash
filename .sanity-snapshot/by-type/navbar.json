@@ -1,0 +1,60 @@
+[
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "navbar",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "navbar",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "buyTokensLabel": "Buy tokens →",
+    "email": "info@spotlessautowash.com",
+    "hoursLine": "Open 7am–10pm, every day",
+    "pageLinks": [
+      {
+        "_key": "_pageLinks_0",
+        "href": "/locations/roosevelt-rd",
+        "label": "Roosevelt Rd"
+      },
+      {
+        "_key": "_pageLinks_1",
+        "href": "/locations/madison-st",
+        "label": "Madison St"
+      },
+      {
+        "_key": "_pageLinks_2",
+        "href": "/faq",
+        "label": "FAQ"
+      }
+    ],
+    "paypalUrl": "/buy-tokens",
+    "phone": "(708) 771-2945",
+    "phoneHref": "tel:7087712945",
+    "ribbonText": "Since 1995 · Forest Park's car wash for 30 years",
+    "sectionLinks": [
+      {
+        "_key": "_sectionLinks_0",
+        "href": "/#washes",
+        "label": "Washes"
+      },
+      {
+        "_key": "_sectionLinks_1",
+        "href": "/#how",
+        "label": "How it works"
+      },
+      {
+        "_key": "_sectionLinks_2",
+        "href": "/#bays",
+        "label": "Bays"
+      },
+      {
+        "_key": "_sectionLinks_3",
+        "href": "/#services",
+        "label": "Services"
+      },
+      {
+        "_key": "_sectionLinks_4",
+        "href": "/#tokens",
+        "label": "Tokens"
+      }
+    ]
+  }
+]

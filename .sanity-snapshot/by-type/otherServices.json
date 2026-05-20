@@ -1,0 +1,86 @@
+[
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "otherServices",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "otherServices",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "attendant": {
+      "body": "Attendants on the lot to walk you through bays, swap bills, or just keep things tidy.",
+      "code": "SVC / 06 — Attendants on duty",
+      "heading": "Friendly faces, ready to help.",
+      "schedule": [
+        {
+          "_key": "_attendant_schedule_0",
+          "hours": "12PM – 5PM",
+          "label": "Mon – Fri"
+        },
+        {
+          "_key": "_attendant_schedule_1",
+          "hours": "9AM – 11AM & 12PM – 4PM",
+          "label": "Sat / Sun / Holidays"
+        }
+      ]
+    },
+    "eyebrow": "Other services",
+    "heading": "Everything else **on the lot**.",
+    "houseRules": {
+      "body": "Help keep Spotless a clean, quiet & safe place to wash your car.",
+      "kicker": "// please note"
+    },
+    "sectionNumber": "06",
+    "services": [
+      {
+        "_key": "_services_0",
+        "body": "All wash bays take all major credit cards, ones, fives & quarters. The automatics also take tens. Tap and Apple Pay accepted too.",
+        "chips": [
+          "Credit cards",
+          "Tap / Apple Pay",
+          "$1 / $5",
+          "$10 (auto only)",
+          "Quarters"
+        ],
+        "code": "SVC / 01",
+        "title": "Payment, your way"
+      },
+      {
+        "_key": "_services_1",
+        "body": "Fragrance trees, blue shammy towels & Armor All pads — stocked on-site whenever you need them.",
+        "chips": [
+          "Fragrance trees",
+          "Shammy towels",
+          "Armor All pads"
+        ],
+        "code": "SVC / 02",
+        "title": "Vending machines"
+      },
+      {
+        "_key": "_services_2",
+        "body": "High-suction vacuums positioned around both lots. Drop a buck and clean out the cabin while your wax cures.",
+        "code": "SVC / 03",
+        "theme": "blue",
+        "title": "Vacuums on the lot"
+      },
+      {
+        "_key": "_services_3",
+        "body": "A surface gloss enhancer that beads water and leaves a deep shine. Available in **every bay** — automatic and self-serve. Apply before the spot-free rinse for best results.",
+        "chips": [
+          "All auto bays",
+          "All self-serve bays",
+          "Water-beading shine"
+        ],
+        "code": "SVC / 04",
+        "featured": true,
+        "theme": "wide",
+        "title": "Get glossy with **Durashield**."
+      },
+      {
+        "_key": "_services_4",
+        "body": "Daily — every day of the week.",
+        "code": "SVC / 05",
+        "title": "Wash hours"
+      }
+    ],
+    "subhead": "Vacuums, vending, attendants on duty, and a few house rules. Wash hours are 7AM–10PM daily — bays are always open, attendants keep set hours."
+  }
+]

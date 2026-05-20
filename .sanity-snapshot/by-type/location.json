@@ -1,0 +1,50 @@
+[
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "location-madison-st",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "location",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "city": "Forest Park",
+    "gradient": "linear-gradient(135deg,#0A2A6B 0%,#1B4FD9 100%)",
+    "heated": false,
+    "metaDescription": "Spotless Carwash on Madison St in Forest Park, IL. Touchless automatic bays and self-serve wand bays. Open 7am–10pm, every day since 1995. 7802 Madison Street.",
+    "metaTitle": "Touchless Car Wash on Madison St, Forest Park IL",
+    "name": "Madison St",
+    "phone": "(708) 771-2945",
+    "phoneHref": "tel:7087712945",
+    "postalCode": "60130",
+    "region": "IL",
+    "selfServeBays": 3,
+    "slug": {
+      "_type": "slug",
+      "current": "madison-st"
+    },
+    "street": "7802 Madison Street",
+    "touchlessBays": 2
+  },
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "location-roosevelt-rd",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "location",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "city": "Forest Park",
+    "gradient": "linear-gradient(135deg,#1B4FD9 0%,#0A2A6B 100%)",
+    "heated": true,
+    "metaDescription": "Spotless Carwash on Roosevelt Rd in Forest Park, IL. Heated indoor touchless bays and self-serve wand bays. Open 7am–10pm, every day since 1995. 7343 Roosevelt Road.",
+    "metaTitle": "Touchless Car Wash on Roosevelt Rd, Forest Park IL",
+    "name": "Roosevelt Rd",
+    "phone": "(708) 771-2945",
+    "phoneHref": "tel:7087712945",
+    "postalCode": "60130",
+    "region": "IL",
+    "selfServeBays": 3,
+    "slug": {
+      "_type": "slug",
+      "current": "roosevelt-rd"
+    },
+    "street": "7343 Roosevelt Road",
+    "touchlessBays": 2
+  }
+]

@@ -1,0 +1,171 @@
+[
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "washPackage-08",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "washPackage",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "color": "red",
+    "featured": false,
+    "features": [
+      {
+        "_key": "_features_0",
+        "included": true,
+        "text": "Single presoak"
+      },
+      {
+        "_key": "_features_1",
+        "included": true,
+        "text": "High-pressure rinse"
+      },
+      {
+        "_key": "_features_2",
+        "included": true,
+        "text": "Polish"
+      }
+    ],
+    "name": "Quick",
+    "num": "08",
+    "order": 0,
+    "price": "$8",
+    "priceNumber": 8
+  },
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "washPackage-09",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "washPackage",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "color": "green",
+    "featured": false,
+    "features": [
+      {
+        "_key": "_features_0",
+        "included": true,
+        "text": "Undercarriage spray"
+      },
+      {
+        "_key": "_features_1",
+        "included": true,
+        "text": "Single presoak"
+      },
+      {
+        "_key": "_features_2",
+        "included": true,
+        "text": "High-pressure rinse"
+      },
+      {
+        "_key": "_features_3",
+        "included": true,
+        "text": "Polish"
+      },
+      {
+        "_key": "_features_4",
+        "included": true,
+        "text": "Spot-free rinse"
+      },
+      {
+        "_key": "_features_5",
+        "included": true,
+        "text": "Air cannon dryer"
+      }
+    ],
+    "name": "Deluxe",
+    "num": "09",
+    "order": 1,
+    "price": "$9",
+    "priceNumber": 9
+  },
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "washPackage-10",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "washPackage",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "color": "purple",
+    "featured": false,
+    "features": [
+      {
+        "_key": "_features_0",
+        "included": true,
+        "text": "Undercarriage spray"
+      },
+      {
+        "_key": "_features_1",
+        "included": true,
+        "text": "Double presoak"
+      },
+      {
+        "_key": "_features_2",
+        "included": true,
+        "text": "Double high-pressure rinse"
+      },
+      {
+        "_key": "_features_3",
+        "included": true,
+        "text": "Polish"
+      },
+      {
+        "_key": "_features_4",
+        "included": true,
+        "text": "Spot-free rinse"
+      },
+      {
+        "_key": "_features_5",
+        "included": true,
+        "text": "Air cannon dryer"
+      }
+    ],
+    "name": "Ultimate",
+    "num": "10",
+    "order": 2,
+    "price": "$10",
+    "priceNumber": 10
+  },
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "washPackage-12",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "washPackage",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "color": "blue",
+    "featured": true,
+    "features": [
+      {
+        "_key": "_features_0",
+        "included": true,
+        "text": "Undercarriage spray"
+      },
+      {
+        "_key": "_features_1",
+        "included": true,
+        "text": "Double presoak"
+      },
+      {
+        "_key": "_features_2",
+        "included": true,
+        "text": "Double high-pressure rinse"
+      },
+      {
+        "_key": "_features_3",
+        "included": true,
+        "text": "Durashield wax"
+      },
+      {
+        "_key": "_features_4",
+        "included": true,
+        "text": "Spot-free rinse"
+      },
+      {
+        "_key": "_features_5",
+        "included": true,
+        "text": "Air cannon dryer"
+      }
+    ],
+    "name": "Lustre",
+    "num": "12",
+    "order": 3,
+    "price": "$12",
+    "priceNumber": 12
+  }
+]

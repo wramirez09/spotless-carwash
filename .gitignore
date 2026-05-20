@@ -7,6 +7,11 @@ dist
 # lighthouse audit outputs
 lighthouse.report.*
 
+# playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
 # we use yarn.lock as the lockfile
 package-lock.json
 

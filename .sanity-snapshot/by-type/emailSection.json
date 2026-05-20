@@ -1,0 +1,15 @@
+[
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "emailSection",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "emailSection",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "body": "Subscribe for occasional Forest Park car-care tips, token discounts, seasonal promos, and the occasional free wash.",
+    "headlineLine1": "Get $5 off",
+    "headlineLine2": "your first Ultimate wash.",
+    "placeholder": "you@example.com",
+    "submitLabel": "Send my $5 code",
+    "successLabel": "Code on the way ✓"
+  }
+]

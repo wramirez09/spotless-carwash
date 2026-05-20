@@ -1,0 +1,92 @@
+[
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "dialStep-1",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "dialStep",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "description": "Apply to entire engine. Spot-free rinse.",
+    "n": 1,
+    "title": "Engine cleaner"
+  },
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "dialStep-2",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "dialStep",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "description": "Apply to wheels or tires. High-pressure rinse.",
+    "n": 2,
+    "title": "Tire & wheel cleaner"
+  },
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "dialStep-3",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "dialStep",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "description": "Apply to entire vehicle from bottom up.",
+    "n": 3,
+    "title": "Low-pressure presoak"
+  },
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "dialStep-4",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "dialStep",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "description": "Apply to entire vehicle from bottom up.",
+    "n": 4,
+    "title": "High-pressure detergent"
+  },
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "dialStep-5",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "dialStep",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "description": "Scrub vehicle, top to bottom. High-pressure rinse.",
+    "n": 5,
+    "title": "Foaming brush detergent"
+  },
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "dialStep-6",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "dialStep",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "description": "Rinse entire vehicle from top down.",
+    "n": 6,
+    "title": "High-pressure rinse"
+  },
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "dialStep-7",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "dialStep",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "description": "Apply to entire vehicle. Finish with final rinse.",
+    "n": 7,
+    "title": "Clear coat sealant"
+  },
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "dialStep-8",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "dialStep",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "description": "Apply to entire vehicle. Finish with final rinse.",
+    "n": 8,
+    "title": "Durashield"
+  },
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "dialStep-9",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "dialStep",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "description": "Apply spot-free rinse to entire vehicle.",
+    "n": 9,
+    "title": "Spot-free rinse"
+  }
+]
