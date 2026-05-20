@@ -151,19 +151,9 @@ function Card({
           </div>
         )}
         {showImage && (
-          <>
-            <div
-              aria-hidden
-              className="absolute inset-0 z-[1]"
-              style={{
-                background:
-                  'linear-gradient(180deg, rgba(8,24,63,.15) 0%, rgba(8,24,63,.4) 100%)',
-              }}
-            />
-            <span className="absolute top-4 left-4 mono text-[11px] text-white/80 bg-black/40 px-2.5 py-1.5 rounded z-[2]">
-              {local?.caption ?? `// photo: bay-${index + 1}.jpg`}
-            </span>
-          </>
+          <span className="absolute top-4 left-4 mono text-[11px] text-white bg-black/60 px-2.5 py-1.5 rounded z-[2] [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]">
+            {local?.caption ?? `// photo: bay-${index + 1}.jpg`}
+          </span>
         )}
         {!showImage && (
           <span className="absolute top-4 left-4 mono text-[11px] text-white/60 bg-black/40 px-2.5 py-1.5 rounded z-10">
