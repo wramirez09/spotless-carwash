@@ -11,6 +11,57 @@ type Row = {
   variant?: Variant
 }
 
+// Shape returned by the instructions.dialRows[] GROQ projection.
+export type SanityDialRow = {
+  label?: string | null
+  spectrumPrefix?: boolean | null
+  instructionLine1?: string | null
+  instructionLine2?: string | null
+  bgColor?: string | null
+  fgColor?: string | null
+  variant?: Variant | null
+}
+
+function toRow(r: SanityDialRow): Row {
+  const variant: Variant = r.variant ?? 'default'
+  const labelText = r.label ?? ''
+  const label =
+    variant === 'lustra' ? (
+      <span className="dial-lustra-wm">{labelText || 'LustraShield'}</span>
+    ) : variant === 'stop' ? (
+      <>
+        <span className="dial-stop-badge">STOP</span>
+        <span>{labelText || 'STOP'}</span>
+      </>
+    ) : r.spectrumPrefix ? (
+      <span>
+        <SpectrumMark /> {labelText}
+      </span>
+    ) : (
+      <span>{labelText}</span>
+    )
+
+  const instruction = (
+    <>
+      {r.instructionLine1}
+      {r.instructionLine2 ? (
+        <>
+          <br />
+          <strong>{r.instructionLine2}</strong>
+        </>
+      ) : null}
+    </>
+  )
+
+  return {
+    bg: r.bgColor ?? undefined,
+    fg: r.fgColor ?? undefined,
+    label,
+    instruction,
+    variant,
+  }
+}
+
 const ROWS: Row[] = [
   {
     bg: '#4a4a52',
@@ -167,7 +218,8 @@ function SpectrumMark() {
   )
 }
 
-export default function DialChart() {
+export default function DialChart({ rows }: { rows?: SanityDialRow[] }) {
+  const finalRows: Row[] = rows && rows.length > 0 ? rows.map(toRow) : ROWS
   return (
     <div
       className="w-full mx-auto rounded-[14px] p-3.5 flex flex-col gap-2.5"
@@ -177,7 +229,7 @@ export default function DialChart() {
         boxShadow: '0 24px 60px rgba(0,0,0,.4)',
       }}
     >
-      {ROWS.map((row, i) => (
+      {finalRows.map((row, i) => (
         <div
           key={i}
           className="grid grid-cols-[1.05fr_1fr] gap-2 bg-white rounded-lg overflow-hidden min-h-[62px]"

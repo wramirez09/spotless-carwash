@@ -1,8 +1,6 @@
 import { sanityFetch } from '@/lib/sanityFetch'
 import { renderHighlight } from '@/lib/renderHighlight'
-import DialChart from './DialChart'
-import SanityImage from './SanityImage'
-import type { ImageWithAlt } from '../../lib/sanityImage'
+import DialChart, { type SanityDialRow } from './DialChart'
 
 type InstructionsData = {
   eyebrow: string
@@ -11,13 +9,13 @@ type InstructionsData = {
   headlineLine2: string
   tip: string
   priceLabel: string
-  chartImage?: ImageWithAlt | null
+  dialRows?: SanityDialRow[] | null
 }
 
 const INSTRUCTIONS_QUERY = `*[_type == "instructions"][0]{
   eyebrow, sectionNumber,
   headlineLine1, headlineLine2, tip, priceLabel,
-  chartImage
+  dialRows[]{ label, spectrumPrefix, instructionLine1, instructionLine2, bgColor, fgColor, variant }
 }`
 
 const FALLBACK: InstructionsData = {
@@ -46,44 +44,9 @@ export default async function Instructions() {
             <br />
             {renderHighlight(section.headlineLine2, 'text-yellow-400')}
           </h2>
-          <div className="max-w-[380px] mt-6">
-            {section.tip.split(/\n\n+/).map((para, i) => {
-              const isPrice = /^\$[\d.]+/.test(para.trim())
-              if (isPrice) {
-                return (
-                  <p
-                    key={i}
-                    className="my-5 inline-block mono text-[13px] font-semibold bg-yellow-400/10 text-yellow-400 px-3 py-1.5 rounded-lg"
-                  >
-                    {para}
-                  </p>
-                )
-              }
-              return (
-                <p
-                  key={i}
-                  className={
-                    'm-0 text-blue-100 leading-relaxed' +
-                    (i > 0 ? ' mt-6 pt-6 border-t border-white/10' : '')
-                  }
-                >
-                  {para}
-                </p>
-              )
-            })}
-          </div>
+          <p className="max-w-[380px] text-blue-100 leading-relaxed mt-6">{section.tip}</p>
         </div>
-        {section.chartImage?.asset?._ref ? (
-          <SanityImage
-            image={section.chartImage}
-            width={1200}
-            height={1280}
-            sizes="(max-width: 768px) 100vw, 640px"
-            className="w-full h-auto rounded-[14px] shadow-[0_24px_60px_rgba(0,0,0,.4)]"
-          />
-        ) : (
-          <DialChart />
-        )}
+        <DialChart rows={section.dialRows ?? undefined} />
       </div>
     </section>
   )

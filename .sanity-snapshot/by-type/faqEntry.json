@@ -1,0 +1,82 @@
+[
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "faqEntry-1",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "faqEntry",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "a": "A touchless automatic wash uses high-pressure water and chemical pre-soaks to lift dirt off your car — no brushes, cloth strips, or rotating tracts ever touch the paint. You drive in, line up on the green light, put it in park, and the system pre-soaks, soaps, rinses, and air-dries your car in about 4 minutes 30 seconds.",
+    "order": 0,
+    "q": "How does a touchless car wash work?"
+  },
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "faqEntry-2",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "faqEntry",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "a": "Pull in and pay at the meter ($4.00 for 5 minutes — cash, card, tap, or Apple Pay), then dial through the nine settings: engine cleaner, tire & wheel cleaner, low-pressure presoak, high-pressure detergent, foaming brush, high-pressure rinse, clear coat sealant, Durashield, and spot-free rinse. Always work top-down, let the presoak dwell 10–20 seconds, and finish on spot-free rinse — never Durashield as the last step.",
+    "order": 1,
+    "q": "How do I use a self-serve car wash bay?"
+  },
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "faqEntry-3",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "faqEntry",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "a": "For regular customers, yes. Each token equals one Ultimate wash (a $10 value). The 10-pack is $85 (save $5) and the 25-pack is $200 (save $25). Tokens never expire, work at both Forest Park locations, and skip the cash station — they make decent gifts too.",
+    "order": 2,
+    "q": "Are car wash tokens worth it?"
+  },
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "faqEntry-4",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "faqEntry",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "a": "Tokens are sold in packs: 5 for $45, 10 for $85 (save $5), and 25 for $200 (save $25). Each token redeems for one Ultimate-tier wash, normally $10.",
+    "order": 3,
+    "q": "What does a wash token cost?"
+  },
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "faqEntry-5",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "faqEntry",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "a": "Both Spotless Carwash locations in Forest Park are open 7am–10pm, every day. The automatic and self-serve bays are card-and-cash operated at the bay — Visa, Mastercard, Amex, tap, Apple Pay, cash, and wash tokens accepted.",
+    "order": 4,
+    "q": "What are your hours?"
+  },
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "faqEntry-6",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "faqEntry",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "a": "The Roosevelt Road location has heated, enclosed automatic bays for winter washing — your car is washed and air-dried inside the bay so doors and locks don't freeze on the way out. The Madison Street location has open-fronted bays.",
+    "order": 5,
+    "q": "Are your bays heated in winter?"
+  },
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "faqEntry-7",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "faqEntry",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "a": "Spotless Carwash has two locations in Forest Park, IL: 7343 Roosevelt Road and 7802 Madison Street. Both sites have automatic touchless bays and self-serve wand bays, and both are open 7am–10pm daily.",
+    "order": 6,
+    "q": "Where are you located in Forest Park?"
+  },
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "faqEntry-8",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "faqEntry",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "a": "No. Spotless wash tokens never expire and are not site-restricted — buy them once, use them whenever, at either Forest Park location.",
+    "order": 7,
+    "q": "Do tokens expire?"
+  }
+]

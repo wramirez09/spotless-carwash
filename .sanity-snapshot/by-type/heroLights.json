@@ -1,0 +1,12 @@
+[
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "heroLights",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "heroLights",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "greenLabel": "Go",
+    "redLabel": "Stop",
+    "yellowLabel": "Back up"
+  }
+]

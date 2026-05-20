@@ -1,0 +1,27 @@
+[
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "siteSettings",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "siteSettings",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "description": "Forest Park's touchless car wash. Two locations with heated automatic bays for winter and self-serve wand bays. Open 7am–10pm daily.",
+    "keywords": [
+      "car wash",
+      "touchless car wash",
+      "self-serve car wash",
+      "Forest Park IL",
+      "Forest Park car wash",
+      "heated car wash",
+      "wash tokens",
+      "apple pay car wash",
+      "tap to pay car wash"
+    ],
+    "ogDescription": "Two Forest Park locations, heated automatic bays, self-serve wand bays. Open 7am–10pm daily.",
+    "ogTitle": "Spotless Carwash · Touchless Car Wash · Forest Park, IL",
+    "titleDefault": "Touchless Car Wash in Forest Park, IL | Spotless Carwash",
+    "titleTemplate": "%s | Spotless Carwash",
+    "twitterDescription": "Two Forest Park locations, heated automatic bays, self-serve wand bays. Open 7am–10pm daily.",
+    "twitterTitle": "Spotless Carwash · Touchless Car Wash · Forest Park, IL"
+  }
+]

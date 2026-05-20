@@ -1,0 +1,84 @@
+[
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "footer",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "footer",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "columns": [
+      {
+        "_key": "_columns_0",
+        "items": [
+          {
+            "_key": "_columns_0_items_0",
+            "href": "/locations/roosevelt-rd",
+            "label": "7343 Roosevelt Rd"
+          },
+          {
+            "_key": "_columns_0_items_1",
+            "href": "/locations/madison-st",
+            "label": "7802 Madison St"
+          }
+        ],
+        "title": "Locations"
+      },
+      {
+        "_key": "_columns_1",
+        "items": [
+          {
+            "_key": "_columns_1_items_0",
+            "href": "/#washes",
+            "label": "Wash packages"
+          },
+          {
+            "_key": "_columns_1_items_1",
+            "href": "/#bays",
+            "label": "Bays"
+          },
+          {
+            "_key": "_columns_1_items_2",
+            "href": "/#tokens",
+            "label": "Wash tokens"
+          },
+          {
+            "_key": "_columns_1_items_3",
+            "href": "/#how",
+            "label": "How it works"
+          },
+          {
+            "_key": "_columns_1_items_4",
+            "href": "/faq",
+            "label": "FAQ"
+          }
+        ],
+        "title": "Site"
+      },
+      {
+        "_key": "_columns_2",
+        "items": [
+          {
+            "_key": "_columns_2_items_0",
+            "external": true,
+            "href": "tel:7087712945",
+            "label": "(708) 771-2945"
+          },
+          {
+            "_key": "_columns_2_items_1",
+            "external": true,
+            "href": "mailto:info@spotlessautowash.com",
+            "label": "info@spotlessautowash.com"
+          },
+          {
+            "_key": "_columns_2_items_2",
+            "href": "/faq",
+            "label": "Open 7am–10pm"
+          }
+        ],
+        "title": "Contact"
+      }
+    ],
+    "copyrightLine": "© 2026 Spotless Carwash · Forest Park, IL",
+    "kicker": "Keep it clean.",
+    "tagline": "Touchless, brushless, trackless & scratchless automatic carwashes serving Forest Park."
+  }
+]

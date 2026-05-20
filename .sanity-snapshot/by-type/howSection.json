@@ -1,0 +1,41 @@
+[
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "howSection",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "howSection",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "bayLabel": "BAY SIGNAL",
+    "eyebrow": "How it works",
+    "headlineLine1": "Watch the lights.",
+    "headlineLine2": "Don't back up.",
+    "lede": "Our automatic bays run on a simple traffic-light system. Wait for green, pull forward slow, hit the stop signal, and let the timer count down.",
+    "sectionNumber": "02",
+    "steps": [
+      {
+        "_key": "_steps_0",
+        "description": "Tap, card, cash, or token — Apple Pay too. Pick your wash (8, 9, 10, or 12) and confirm.",
+        "n": "01",
+        "title": "Pay at the station"
+      },
+      {
+        "_key": "_steps_1",
+        "description": "Don't pull in unless you have a green light. Red & yellow mean wait.",
+        "n": "02",
+        "title": "Wait for green"
+      },
+      {
+        "_key": "_steps_2",
+        "description": "Pull forward slowly. Hit the RED STOP signal, then put your car in park and sit tight.",
+        "n": "03",
+        "title": "Pull in & park"
+      },
+      {
+        "_key": "_steps_3",
+        "description": "Check the countdown timer straight ahead. When the door opens and the dryers finish, pull through.",
+        "n": "04",
+        "title": "Watch the timer"
+      }
+    ]
+  }
+]

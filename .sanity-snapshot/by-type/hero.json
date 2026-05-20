@@ -1,0 +1,36 @@
+[
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "hero",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "hero",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "avgWashTime": "4 min",
+    "bayCardBody": "Don't enter unless the light is green. Pull forward slowly, let the message guide you.",
+    "bayCardHeading": "Pull up & watch the lights.",
+    "bayCardStatus": "Bay 02 ready · Roosevelt Rd",
+    "eyebrow": "Forest Park, Illinois · Two locations",
+    "headlineLine1": "Spotless",
+    "headlineLine2": "Carwash",
+    "headlineTagline": "— keep it clean.",
+    "paymentLine": "Visa · MC · Amex · Apple Pay · Cash · Tokens",
+    "primaryCta": {
+      "href": "#washes",
+      "label": "See wash packages"
+    },
+    "secondaryCta": {
+      "href": "#how",
+      "label": "How it works"
+    },
+    "subheadBody": "Heated indoor bays. No brushes. Open 7am–10pm, every day since 1995.",
+    "subheadYellow": "Forest Park's touchless car wash. For 30 years.",
+    "tickerItems": [
+      "KEEP IT CLEAN",
+      "TOUCHLESS AUTO WASH",
+      "HEATED INDOOR BAYS AT ROOSEVELT RD",
+      "SELF-SERVE WAND BAYS",
+      "OPEN 7AM–10PM · SINCE THE 90s",
+      "SPOT FREE RINSE"
+    ]
+  }
+]

@@ -1,0 +1,21 @@
+[
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "instructions",
+    "_rev": "F0CWfg0F0K2QuXSnyZur5y",
+    "_system": {
+      "base": {
+        "id": "instructions",
+        "rev": "LZYs3klQoBSuxHRXKY8g5q"
+      }
+    },
+    "_type": "instructions",
+    "_updatedAt": "2026-05-15T18:56:58Z",
+    "eyebrow": "Self-serve dial",
+    "headlineLine1": "Ten settings.",
+    "headlineLine2": "One **clean** car.",
+    "priceLabel": "$4 / 5 min",
+    "sectionNumber": "05",
+    "tip": "Ten premium wash settings at your fingertips — tire & wheel cleaner, low-pressure presoak, high-pressure detergent, foaming brush, high-pressure rinse, clear coat sealant, Durashield surface gloss, spot-free rinse and air shammee dryer.\n\n$4.00 for 5 mins.\n\nFor best results, work top-to-bottom. Let presoak dwell 10–20 seconds before rinsing, and always finish with the spot-free rinse — never Durashield as the last step."
+  }
+]

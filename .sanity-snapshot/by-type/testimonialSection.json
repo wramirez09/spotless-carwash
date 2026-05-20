@@ -1,0 +1,34 @@
+[
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "testimonialSection",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "testimonialSection",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "aggregateRating": null,
+    "eyebrow": "Reviews from Google",
+    "googleProfileUrl": null,
+    "heading": "What Forest Park drivers say.",
+    "quotes": [
+      {
+        "_key": "_quotes_0",
+        "attribution": "Mike R., Forest Park",
+        "rating": 5,
+        "text": "Pulled in right before close after a Chicago snowstorm. Heated bay, four and a half minutes, drove out spotless. The only place that does it right."
+      },
+      {
+        "_key": "_quotes_1",
+        "attribution": "Anna T., Oak Park",
+        "rating": 5,
+        "text": "Self-serve bays have everything you need. The Durashield + spot-free combo is the move. Tokens make the price feel like nothing."
+      },
+      {
+        "_key": "_quotes_2",
+        "attribution": "Dave K., Oak Park",
+        "rating": 5,
+        "text": "My salt-covered SUV looked brand new in under five minutes. Touchless and zero scratches — I will not go anywhere else."
+      }
+    ],
+    "totalReviews": null
+  }
+]

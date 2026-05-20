@@ -1,0 +1,43 @@
+[
+  {
+    "_createdAt": "2026-04-29T05:09:24Z",
+    "_id": "bays",
+    "_rev": "LZYs3klQoBSuxHRXKY8g5q",
+    "_type": "bays",
+    "_updatedAt": "2026-05-15T18:39:28Z",
+    "bays": [
+      {
+        "_key": "bay-automatic",
+        "_type": "bayCard",
+        "desc": "Drive in, drive out — clean in 4½ minutes. No brushes. No swirl marks. No risk to fresh paint or ceramic coatings. Roosevelt Rd's heated indoor bays let you wash year-round, even at -10°.",
+        "features": [
+          "Heated indoor bays (Roosevelt Rd)",
+          "Air cannon dryers",
+          "~4½ min wash",
+          "Brushless & scratchless"
+        ],
+        "kind": "automatic",
+        "titleLine1": "Touchless",
+        "titleLine2": "Automatic Bays"
+      },
+      {
+        "_key": "bay-self-serve",
+        "_type": "bayCard",
+        "desc": "Wash it your way. Nine settings — from engine cleaner to Durashield gloss to spot-free rinse — for $4 every 5 minutes. Full dial walkthrough below.",
+        "features": [
+          "9 wash settings",
+          "Spot-free rinse",
+          "Durashield gloss",
+          "Foaming brush"
+        ],
+        "kind": "self-serve",
+        "titleLine1": "Self-Serve",
+        "titleLine2": "Wand Bays"
+      }
+    ],
+    "eyebrow": "Two ways to wash",
+    "heading": "Sit back, or **do it yourself**.",
+    "sectionNumber": "04",
+    "subhead": "Hands-free touchless automatic washes, or self-serve bays with foaming brushes when you want to do it yourself."
+  }
+]
