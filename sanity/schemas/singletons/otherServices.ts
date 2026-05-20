@@ -75,9 +75,26 @@ export default defineType({
               type: 'object',
               name: 'scheduleRow',
               fields: [
-                defineField({ name: 'label', type: 'string', validation: (r) => r.required() }),
-                defineField({ name: 'hours', type: 'string', validation: (r) => r.required() }),
+                defineField({
+                  name: 'label',
+                  type: 'string',
+                  description: 'Day(s) the row covers, e.g. "Mon – Fri" or "Sat / Sun / Holidays".',
+                  validation: (r) => r.required(),
+                }),
+                defineField({
+                  name: 'hours',
+                  type: 'string',
+                  description: 'Times for those day(s), e.g. "12PM – 5PM" or "9AM – 11AM & 12PM – 4PM".',
+                  validation: (r) => r.required(),
+                }),
               ],
+              preview: {
+                select: { label: 'label', hours: 'hours' },
+                prepare: ({ label, hours }) => ({
+                  title: label || '(no label)',
+                  subtitle: hours || '(no hours)',
+                }),
+              },
             }),
           ],
         }),

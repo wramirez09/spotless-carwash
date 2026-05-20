@@ -1,6 +1,8 @@
 import { sanityFetch } from '@/lib/sanityFetch'
 import { renderHighlight } from '@/lib/renderHighlight'
 import DialChart from './DialChart'
+import SanityImage from './SanityImage'
+import type { ImageWithAlt } from '../../lib/sanityImage'
 
 type InstructionsData = {
   eyebrow: string
@@ -9,11 +11,13 @@ type InstructionsData = {
   headlineLine2: string
   tip: string
   priceLabel: string
+  chartImage?: ImageWithAlt | null
 }
 
 const INSTRUCTIONS_QUERY = `*[_type == "instructions"][0]{
   eyebrow, sectionNumber,
-  headlineLine1, headlineLine2, tip, priceLabel
+  headlineLine1, headlineLine2, tip, priceLabel,
+  chartImage
 }`
 
 const FALLBACK: InstructionsData = {
@@ -69,7 +73,17 @@ export default async function Instructions() {
             })}
           </div>
         </div>
-        <DialChart />
+        {section.chartImage?.asset?._ref ? (
+          <SanityImage
+            image={section.chartImage}
+            width={1200}
+            height={1280}
+            sizes="(max-width: 768px) 100vw, 640px"
+            className="w-full h-auto rounded-[14px] shadow-[0_24px_60px_rgba(0,0,0,.4)]"
+          />
+        ) : (
+          <DialChart />
+        )}
       </div>
     </section>
   )

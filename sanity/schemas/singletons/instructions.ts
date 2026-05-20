@@ -12,5 +12,11 @@ export default defineType({
     defineField({ name: 'headlineLine2', type: 'string' }),
     defineField({ name: 'tip', type: 'text', rows: 4 }),
     defineField({ name: 'priceLabel', type: 'string', description: 'e.g. "$4 / 5 min"' }),
+    defineField({
+      name: 'chartImage',
+      type: 'imageWithAlt',
+      description:
+        'Optional. When set, replaces the built-in colored dial chart with this image on the right column of the Self-Serve section. Leave empty to keep the default chart.',
+    }),
   ],
 })
