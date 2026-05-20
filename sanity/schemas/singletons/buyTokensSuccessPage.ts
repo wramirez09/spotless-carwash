@@ -38,7 +38,7 @@ export default defineType({
       rows: 4,
       group: 'header',
       description:
-        'Used when Stripe returns a customer email. Use {email} as the placeholder, e.g. "Thanks, {email}. Your token codes will arrive...".',
+        'Used when Stripe returns a customer name or email. Placeholders: {name} (preferred — falls back to email if no name on file), {email} (legacy alias — also resolves to name when available), {address} (single-line billing address from Stripe checkout). Example: "Thanks, {name}. Your token codes will be mailed to {address}."',
     }),
     defineField({
       name: 'subheadWithoutEmail',

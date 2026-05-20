@@ -124,15 +124,37 @@ type Params = {
 
 type LineRow = { label: string; quantity: number; amount: number }
 
+function formatAddress(addr: Stripe.Address | null | undefined): string | null {
+  if (!addr) return null
+  const parts = [
+    addr.line1,
+    addr.line2,
+    [addr.city, addr.state].filter(Boolean).join(', '),
+    addr.postal_code,
+  ].filter((p): p is string => !!p && p.trim().length > 0)
+  return parts.length ? parts.join(', ') : null
+}
+
 async function fetchSession(sessionId: string): Promise<{
   status: 'ok' | 'missing' | 'error'
   customerEmail: string | null
+  customerName: string | null
+  customerAddress: string | null
   total: number | null
   currency: string
   lines: LineRow[]
 }> {
   const secret = process.env.STRIPE_SECRET_KEY
-  if (!secret) return { status: 'error', customerEmail: null, total: null, currency: 'usd', lines: [] }
+  if (!secret)
+    return {
+      status: 'error',
+      customerEmail: null,
+      customerName: null,
+      customerAddress: null,
+      total: null,
+      currency: 'usd',
+      lines: [],
+    }
   try {
     const stripe = new Stripe(secret)
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
@@ -154,12 +176,22 @@ async function fetchSession(sessionId: string): Promise<{
     return {
       status: 'ok',
       customerEmail: session.customer_details?.email ?? session.customer_email ?? null,
+      customerName: session.metadata?.customer_name ?? session.customer_details?.name ?? null,
+      customerAddress: formatAddress(session.customer_details?.address),
       total: session.amount_total ?? null,
       currency: session.currency ?? 'usd',
       lines,
     }
   } catch {
-    return { status: 'missing', customerEmail: null, total: null, currency: 'usd', lines: [] }
+    return {
+      status: 'missing',
+      customerEmail: null,
+      customerName: null,
+      customerAddress: null,
+      total: null,
+      currency: 'usd',
+      lines: [],
+    }
   }
 }
 
@@ -172,12 +204,29 @@ export default async function SuccessPage({ searchParams }: Params) {
   const [{ session_id }, copy] = await Promise.all([searchParams, loadCopy()])
   const data = session_id
     ? await fetchSession(session_id)
-    : { status: 'missing' as const, customerEmail: null, total: null, currency: 'usd', lines: [] }
+    : {
+        status: 'missing' as const,
+        customerEmail: null,
+        customerName: null,
+        customerAddress: null,
+        total: null,
+        currency: 'usd',
+        lines: [],
+      }
 
+  // The greeting prefers the customer's name when available, and falls back to
+  // the email address otherwise. Both {name} and {email} placeholders resolve
+  // to the same personalized token so legacy Sanity copy ("Thanks, {email}...")
+  // automatically benefits without any CMS edit. {address} is filled with the
+  // Stripe billing address (single-line) when present.
+  const greeting = data.customerName ?? data.customerEmail
   const subheadText =
     data.status === 'ok'
-      ? data.customerEmail
-        ? copy.subheadWithEmailTemplate.replace('{email}', data.customerEmail)
+      ? greeting
+        ? copy.subheadWithEmailTemplate
+            .replace('{name}', greeting)
+            .replace('{email}', greeting)
+            .replace('{address}', data.customerAddress ?? '')
         : copy.subheadWithoutEmail
       : copy.subheadFallback
 
