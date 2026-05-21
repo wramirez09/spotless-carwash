@@ -1,17 +1,17 @@
 import { defineArrayMember, defineField, defineType } from 'sanity'
 
 const DEFAULT_DIAL_ROWS = [
-  {
-    _type: 'dialRow',
-    label: 'Engine Cleaner',
-    spectrumPrefix: false,
-    instructionLine1: 'Apply to entire engine.',
-    instructionLine2: 'Spot free rinse.',
-    instructionLine2Bold: true,
-    bgColor: '#4a4a52',
-    fgColor: '#ffffff',
-    variant: 'default',
-  },
+  // {
+  //   _type: 'dialRow',
+  //   label: 'Engine Cleaner',
+  //   spectrumPrefix: false,
+  //   instructionLine1: 'Apply to entire engine.',
+  //   instructionLine2: 'Spot free rinse.',
+  //   instructionLine2Bold: true,
+  //   bgColor: '#4a4a52',
+  //   fgColor: '#ffffff',
+  //   variant: 'default',
+  // },
   {
     _type: 'dialRow',
     label: 'Tire & Wheel Cleaner',

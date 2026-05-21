@@ -8,7 +8,7 @@ export type DialStep = {
 }
 
 export const dialSteps: DialStep[] = [
-  { n: 1, title: 'Engine cleaner', description: 'Apply to entire engine. Spot-free rinse.' },
+  // { n: 1, title: 'Engine cleaner', description: 'Apply to entire engine. Spot-free rinse.' },
   { n: 2, title: 'Tire & wheel cleaner', description: 'Apply to wheels or tires. High-pressure rinse.' },
   { n: 3, title: 'Low-pressure presoak', description: 'Apply to entire vehicle from bottom up.' },
   { n: 4, title: 'High-pressure detergent', description: 'Apply to entire vehicle from bottom up.' },

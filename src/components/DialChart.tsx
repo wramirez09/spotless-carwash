@@ -65,18 +65,18 @@ function toRow(r: SanityDialRow): Row {
 }
 
 const ROWS: Row[] = [
-  {
-    bg: '#4a4a52',
-    fg: '#fff',
-    label: <span>Engine Cleaner</span>,
-    instruction: (
-      <>
-        Apply to entire engine.
-        <br />
-        <strong>Spot free rinse.</strong>
-      </>
-    ),
-  },
+  // {
+  //   bg: '#4a4a52',
+  //   fg: '#fff',
+  //   label: <span>Engine Cleaner</span>,
+  //   instruction: (
+  //     <>
+  //       Apply to entire engine.
+  //       <br />
+  //       <strong>Spot free rinse.</strong>
+  //     </>
+  //   ),
+  // },
   {
     bg: '#ffffff',
     fg: '#1B4FD9',
