@@ -37,10 +37,12 @@ export async function sanityFetch<T>(query: string, opts: FetchOptions = {}): Pr
         })
       : sanityClient
 
+  const isDev = process.env.NODE_ENV !== 'production'
+
   try {
     return await client.fetch<T>(query, opts.params ?? {}, {
       next: {
-        revalidate: isDraft ? 0 : opts.revalidate ?? 60,
+        revalidate: isDraft || isDev ? 0 : opts.revalidate ?? 60,
         tags: opts.tags,
       },
     })

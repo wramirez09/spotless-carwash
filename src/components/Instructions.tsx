@@ -15,7 +15,7 @@ type InstructionsData = {
 const INSTRUCTIONS_QUERY = `*[_type == "instructions"][0]{
   eyebrow, sectionNumber,
   headlineLine1, headlineLine2, tip, priceLabel,
-  dialRows[]{ label, spectrumPrefix, instructionLine1, instructionLine2, bgColor, fgColor, variant }
+  dialRows[]{ label, spectrumPrefix, instructionLine1, instructionLine2, instructionLine2Bold, bgColor, fgColor, variant }
 }`
 
 const FALLBACK: InstructionsData = {

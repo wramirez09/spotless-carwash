@@ -1,5 +1,8 @@
 import 'server-only'
 import Stripe from 'stripe'
+import { FATHERS_DAY_SALE_END_MS, isFathersDaySaleActive } from './salesSchedule'
+
+export { FATHERS_DAY_SALE_END_MS, isFathersDaySaleActive }
 
 // ---------- Sandbox IDs (override via env) ----------
 
@@ -22,10 +25,6 @@ export const PACK_DISCOUNT_COUPON_ID =
 
 export const FATHERS_DAY_COUPON_ID =
   process.env.STRIPE_COUPON_FATHERS_DAY_2026 ?? 'sGKM8l9M'
-
-// Father's Day 2026 sale ends end-of-day 2026-06-21 America/Chicago
-// = 2026-06-22 04:59:59 UTC.
-export const FATHERS_DAY_SALE_END_MS = Date.UTC(2026, 5, 22, 4, 59, 59)
 
 export const WASH_VALUES = ['8', '9', '10', '12'] as const
 export type WashValue = (typeof WASH_VALUES)[number]
@@ -65,10 +64,6 @@ const SINGLE_FALLBACK_CENTS: Record<WashValue, number> = {
   '9': 900,
   '10': 1000,
   '12': 1200,
-}
-
-export function isFathersDaySaleActive(now = Date.now()): boolean {
-  return now <= FATHERS_DAY_SALE_END_MS
 }
 
 export function activePackCouponId(now = Date.now()): string {

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { isFathersDaySaleActive } from '@/lib/stripePricing'
+import { isFathersDaySaleActive } from '@/lib/salesSchedule'
 
 export default function SalesBanner() {
   const fathersDay = isFathersDaySaleActive()

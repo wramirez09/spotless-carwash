@@ -17,6 +17,7 @@ export type SanityDialRow = {
   spectrumPrefix?: boolean | null
   instructionLine1?: string | null
   instructionLine2?: string | null
+  instructionLine2Bold?: boolean | null
   bgColor?: string | null
   fgColor?: string | null
   variant?: Variant | null
@@ -27,7 +28,7 @@ function toRow(r: SanityDialRow): Row {
   const labelText = r.label ?? ''
   const label =
     variant === 'lustra' ? (
-      <span className="dial-lustra-wm">{labelText || 'LustraShield'}</span>
+      <span className="dial-lustra-wm">{labelText || 'DuraShield Gloss'}</span>
     ) : variant === 'stop' ? (
       <>
         <span className="dial-stop-badge">STOP</span>
@@ -41,13 +42,14 @@ function toRow(r: SanityDialRow): Row {
       <span>{labelText}</span>
     )
 
+  const line2Bold = r.instructionLine2Bold ?? true
   const instruction = (
     <>
       {r.instructionLine1}
       {r.instructionLine2 ? (
         <>
           <br />
-          <strong>{r.instructionLine2}</strong>
+          {line2Bold ? <strong>{r.instructionLine2}</strong> : r.instructionLine2}
         </>
       ) : null}
     </>
@@ -169,7 +171,7 @@ const ROWS: Row[] = [
   },
   {
     variant: 'lustra',
-    label: <span className="dial-lustra-wm">LustraShield</span>,
+    label: <span className="dial-lustra-wm">DuraShield Gloss</span>,
     instruction: (
       <>
         Apply to entire vehicle.
