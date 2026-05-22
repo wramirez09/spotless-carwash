@@ -14,6 +14,8 @@ import OfferCatalogSchema from '@/src/components/seo/OfferCatalogSchema'
 import HowToSchema from '@/src/components/seo/HowToSchema'
 import { locations } from '@/src/data/locations'
 
+export const dynamic = 'force-dynamic'
+
 export default function HomePage() {
   return (
     <>

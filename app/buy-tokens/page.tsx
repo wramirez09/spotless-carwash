@@ -120,6 +120,8 @@ async function loadCopy(): Promise<BuyTokensCopy> {
   return merged
 }
 
+export const dynamic = 'force-dynamic'
+
 export async function generateMetadata(): Promise<Metadata> {
   const copy = await loadCopy()
   return {
