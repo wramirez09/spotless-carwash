@@ -131,7 +131,6 @@ export async function generateMetadata(): Promise<Metadata> {
     robots: { index: true, follow: true },
   }
 }
-
 export default async function BuyTokensPage() {
   const [copy, pricing] = await Promise.all([loadCopy(), getCheckoutPricing()])
   return <BuyTokensClient copy={copy} pricing={pricing} />
