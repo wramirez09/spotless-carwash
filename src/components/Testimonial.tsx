@@ -1,4 +1,5 @@
 import { sanityFetch } from '@/lib/sanityFetch'
+import { getGoogleReviews } from '@/lib/googleReviews'
 import TestimonialClient, { type Quote } from './TestimonialClient'
 import JsonLd from './seo/JsonLd'
 
@@ -47,17 +48,33 @@ const FALLBACK: Required<Pick<SectionData, 'eyebrow' | 'heading'>> & {
 const SITE_URL = 'https://spotlesscarwash.com'
 
 export default async function Testimonial() {
-  const data = await sanityFetch<SectionData>(TESTIMONIAL_QUERY)
-  const allQuotes = data?.quotes?.length ? data.quotes : FALLBACK.quotes
-  // Only show high-star reviews (≥4). User curates in Sanity; this is a defensive filter.
-  const quotes = allQuotes.filter((q) => (q.rating ?? 5) >= 4)
+  const [data, google] = await Promise.all([
+    sanityFetch<SectionData>(TESTIMONIAL_QUERY),
+    getGoogleReviews(),
+  ])
+
+  // Prefer live Google reviews when configured; fall back to Sanity, then hardcoded copy.
+  // Defensive filter to ≥4 stars regardless of source.
+  const sourceQuotes: Quote[] = google?.reviews?.length
+    ? google.reviews.map((r) => ({
+        text: r.text,
+        attribution: r.attribution,
+        date: r.date ?? null,
+        source: 'google',
+        rating: r.rating,
+      }))
+    : data?.quotes?.length
+      ? data.quotes
+      : FALLBACK.quotes
+
+  const quotes = sourceQuotes.filter((q) => (q.rating ?? 5) >= 4)
   if (!quotes.length) return null
 
   const eyebrow = data?.eyebrow ?? FALLBACK.eyebrow
   const heading = data?.heading ?? FALLBACK.heading
-  const aggregateRating = data?.aggregateRating ?? null
-  const totalReviews = data?.totalReviews ?? null
-  const googleProfileUrl = data?.googleProfileUrl ?? null
+  const aggregateRating = google?.aggregateRating ?? data?.aggregateRating ?? null
+  const totalReviews = google?.totalReviews ?? data?.totalReviews ?? null
+  const googleProfileUrl = google?.profileUrl ?? data?.googleProfileUrl ?? null
 
   // Only emit Review schema for quotes explicitly marked source="google" with a date.
   const verifiedReviews = quotes.filter(

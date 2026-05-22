@@ -4,6 +4,11 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 
 type PkgId = '8' | '9' | '10' | '12'
+type CouponBreakdownItem = {
+  id: string
+  label: string
+  amountOffCents: number
+}
 type Pkg = {
   id: PkgId
   tokens: number
@@ -12,6 +17,7 @@ type Pkg = {
   label: string
   perToken: number // cents
   featured?: boolean
+  coupons: CouponBreakdownItem[]
 }
 
 export type PricingProp = {
@@ -96,6 +102,7 @@ const fmt = (cents: number) => `$${(cents / 100).toFixed(2)}`
 const fmtWhole = (cents: number) => `$${Math.round(cents / 100)}`
 
 type Mode = 'pack' | 'single'
+
 
 export default function BuyTokensClient({
   copy,
@@ -424,6 +431,7 @@ export default function BuyTokensClient({
                               : pkg.price
                           const save = mode === 'pack' ? pkg.save : 0
                           const finalPrice = Math.max(0, list - save)
+                          const chips = mode === 'pack' ? pkg.coupons : []
                           return (
                             <>
                               <div className="flex items-baseline gap-2">
@@ -436,10 +444,17 @@ export default function BuyTokensClient({
                                   </span>
                                 )}
                               </div>
-                              {save > 0 ? (
-                                <span className="inline-flex items-center bg-blue-700 text-yellow-400 text-[11px] font-extrabold tracking-[0.1em] px-2.5 py-1 rounded-full leading-none">
-                                  {copy.savePrefix} {fmtWhole(save)}
-                                </span>
+                              {chips.length > 0 ? (
+                                <div className="flex flex-wrap gap-1">
+                                  {chips.map((c) => (
+                                    <span
+                                      key={c.label}
+                                      className="inline-flex items-center bg-blue-700 text-yellow-400 text-[10px] font-extrabold tracking-[0.1em] uppercase px-2 py-1 rounded-full leading-none"
+                                    >
+                                      {c.label} −{fmtWhole(c.amountOffCents)}
+                                    </span>
+                                  ))}
+                                </div>
                               ) : (
                                 <span className="inline-flex items-center text-[11px] font-bold tracking-[0.1em] uppercase text-[#5b6987] leading-none">
                                   {copy.eachSuffix}
@@ -742,9 +757,24 @@ export default function BuyTokensClient({
                 </div>
 
                 {savings > 0 && (
-                  <div className="flex items-center justify-between py-3 border-b border-white/15 text-[14px]">
-                    <span className="text-blue-100">{copy.savingsLabel}</span>
-                    <span className="font-extrabold text-yellow-400">{fmt(savings)}</span>
+                  <div className="py-3 border-b border-white/15 text-[14px] space-y-2">
+                    {(mode === 'pack' ? selected.coupons : []).map((c) => (
+                      <div key={c.id} className="flex items-center justify-between">
+                        <span className="inline-flex items-center gap-2 text-blue-100">
+                          <span className="inline-flex items-center bg-yellow-400/15 text-yellow-400 text-[10px] font-extrabold tracking-[0.1em] uppercase px-2 py-0.5 rounded-full">
+                            Coupon
+                          </span>
+                          {c.label}
+                        </span>
+                        <span className="font-extrabold text-yellow-400">
+                          −{fmt(c.amountOffCents * quantity)}
+                        </span>
+                      </div>
+                    ))}
+                    <div className="flex items-center justify-between pt-1 border-t border-white/10">
+                      <span className="text-blue-100 font-semibold">{copy.savingsLabel}</span>
+                      <span className="font-extrabold text-yellow-400">−{fmt(savings)}</span>
+                    </div>
                   </div>
                 )}
 
