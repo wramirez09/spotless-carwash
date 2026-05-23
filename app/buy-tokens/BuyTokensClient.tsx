@@ -364,6 +364,13 @@ export default function BuyTokensClient({
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {PACKAGES.map((pkg, idx) => {
                   const checked = pkg.id === selectedId
+                  const list =
+                    mode === 'single'
+                      ? SINGLE_PRICES_BY_ID[pkg.id] ?? parseInt(pkg.id, 10) * 100
+                      : pkg.price
+                  const save = mode === 'pack' ? pkg.save : 0
+                  const finalPrice = Math.max(0, list - save)
+                  const chips = mode === 'pack' ? pkg.coupons : []
                   return (
                     <label
                       key={pkg.id}
@@ -424,45 +431,31 @@ export default function BuyTokensClient({
                         {mode === 'single' ? copy.packTokensSuffixSingle : copy.packTokensSuffix}
                       </div>
                       <div className="mt-4 pt-4 border-t border-dashed border-line flex flex-col items-start gap-2">
-                        {(() => {
-                          const list =
-                            mode === 'single'
-                              ? SINGLE_PRICES_BY_ID[pkg.id] ?? parseInt(pkg.id, 10) * 100
-                              : pkg.price
-                          const save = mode === 'pack' ? pkg.save : 0
-                          const finalPrice = Math.max(0, list - save)
-                          const chips = mode === 'pack' ? pkg.coupons : []
-                          return (
-                            <>
-                              <div className="flex items-baseline gap-2">
-                                <span className="display text-[28px] text-blue-500 leading-none">
-                                  {fmtWhole(finalPrice)}
-                                </span>
-                                {save > 0 && (
-                                  <span className="text-[14px] font-bold text-[#9aa9c9] line-through leading-none">
-                                    {fmtWhole(list)}
-                                  </span>
-                                )}
-                              </div>
-                              {chips.length > 0 ? (
-                                <div className="flex flex-wrap gap-1">
-                                  {chips.map((c) => (
-                                    <span
-                                      key={c.label}
-                                      className="inline-flex items-center bg-blue-700 text-yellow-400 text-[10px] font-extrabold tracking-[0.1em] uppercase px-2 py-1 rounded-full leading-none"
-                                    >
-                                      {c.label} −{fmtWhole(c.amountOffCents)}
-                                    </span>
-                                  ))}
-                                </div>
-                              ) : (
-                                <span className="inline-flex items-center text-[11px] font-bold tracking-[0.1em] uppercase text-[#5b6987] leading-none">
-                                  {copy.eachSuffix}
-                                </span>
-                              )}
-                            </>
-                          )
-                        })()}
+                        {chips.length > 0 && (
+                          <div className="w-full pb-4 border-b border-dashed border-line flex flex-col gap-1.5">
+                            {chips.map((c) => (
+                              <span
+                                key={c.label}
+                                className="w-full inline-flex items-center justify-center bg-blue-700 text-yellow-400 text-[10px] font-extrabold tracking-[0.1em] uppercase px-3 py-2 rounded-full leading-none"
+                              >
+                                {c.label} −{fmtWhole(c.amountOffCents)}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <div className={(chips.length > 0 ? 'mt-2 ' : '') + 'flex items-baseline gap-2'}>
+                          <span className="display text-[28px] text-blue-500 leading-none">
+                            {fmtWhole(finalPrice)}
+                          </span>
+                          {save > 0 && (
+                            <span className="text-[14px] font-bold text-[#9aa9c9] line-through leading-none">
+                              {fmtWhole(list)}
+                            </span>
+                          )}
+                        </div>
+                        <span className="inline-flex items-center text-[11px] font-bold tracking-[0.1em] uppercase text-[#5b6987] leading-none">
+                          {copy.eachSuffix}
+                        </span>
                       </div>
                     </label>
                   )
