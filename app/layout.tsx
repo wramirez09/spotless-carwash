@@ -90,7 +90,7 @@ export async function generateMetadata(): Promise<Metadata> {
       type: 'website',
       images: [
         {
-          url: '/images/og-image.jpg',
+          url: '/images/og-image.png',
           width: 1200,
           height: 630,
           alt: 'Spotless Carwash — touchless car wash in Forest Park, IL',
@@ -101,7 +101,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: 'summary_large_image',
       title: s.twitterTitle,
       description: s.twitterDescription,
-      images: ['/images/og-image.jpg'],
+      images: ['/images/og-image.png'],
     },
     robots: isProduction
       ? { index: true, follow: true }
