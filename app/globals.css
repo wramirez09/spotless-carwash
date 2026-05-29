@@ -196,6 +196,13 @@ body {
 
 .sale-tag .tie {
   font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.sale-tag .tie svg {
+  width: 14px;
+  height: 14px;
 }
 
 .sale-msg {

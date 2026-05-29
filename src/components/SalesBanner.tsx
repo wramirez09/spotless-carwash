@@ -9,7 +9,16 @@ export default function SalesBanner() {
       <div className="sale-inner">
         <span className="sale-tag">
           <span className="tie" aria-hidden>
-            {fathersDay ? '👔' : '✨'}
+            {fathersDay ? (
+              '👔'
+            ) : (
+              // Inline SVG sparkle that inherits `--sale-ink` (dark) via
+              // currentColor, so it renders with full contrast against the
+              // yellow badge — the previous '✨' emoji rendered yellow-on-yellow.
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden focusable="false">
+                <path d="M12 2.5l1.9 5.85a3 3 0 0 0 1.9 1.9L21.5 12l-5.85 1.9a3 3 0 0 0-1.9 1.9L12 21.5l-1.9-5.85a3 3 0 0 0-1.9-1.9L2.5 12l5.85-1.9a3 3 0 0 0 1.9-1.9L12 2.5z" />
+              </svg>
+            )}
           </span>
           {fathersDay ? "FATHER'S DAY" : 'ALWAYS ON'}
         </span>
