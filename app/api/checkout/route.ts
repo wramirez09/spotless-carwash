@@ -76,26 +76,23 @@ export async function POST(req: Request) {
     purchaseMode === 'single' ? SINGLE_PRICES[washValue] : PACK_PRICES[pkg]
   const skuWash = purchaseMode === 'single' ? washValue : pkg
 
-  // Billing address is collected by Stripe Checkout (see
-  // `billing_address_collection` below) and written back to the Customer
-  // via `customer_update.address`.
-  const customer = await stripe.customers.create({
-    email,
-    name,
-    phone,
-    metadata: {
-      source: 'buy-tokens',
-    },
-  })
-
   const applyPackDiscount = purchaseMode === 'pack'
   const fathersDayActive = applyPackDiscount && isFathersDaySaleActive()
   const packCoupon = activePackCouponId()
 
   try {
+    // We do NOT pre-create a Stripe Customer here. Pre-creation would leave an
+    // orphan Customer record for every abandoned cart or failed payment. With
+    // `customer_email` + `customer_creation: 'always'`, Stripe only creates a
+    // Customer when checkout completes successfully, populated from the data
+    // collected during checkout (name + billing address). Phone is collected
+    // on the Session via `phone_number_collection` but is not auto-copied to
+    // the Customer — if you need it on the Customer, do a `customers.update`
+    // in the webhook using `session.customer_details.phone`.
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
-      customer: customer.id,
+      customer_email: email,
+      customer_creation: 'always',
       line_items: [{ price: priceId, quantity }],
       success_url: `${siteUrl}/buy-tokens/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/buy-tokens`,
@@ -110,19 +107,14 @@ export async function POST(req: Request) {
       // session.create call to throw and surfaces as the generic checkout
       // error in the browser.
       automatic_tax: { enabled: false },
-      // Show the address pre-filled from the customer and persist any edits
-      // the buyer makes in Checkout back to the Customer record.
       billing_address_collection: 'required',
-      customer_update: { address: 'auto', name: 'auto' },
-      // Phone is already on the Customer (set at creation above) and is
-      // shown/prefilled on the hosted page. `customer_update` doesn't accept
-      // `phone`, so any in-Checkout edit lands on the Session, not the
-      // Customer — handle that in the webhook if you need it persisted.
       phone_number_collection: { enabled: true },
       metadata: {
         customer_name: name,
         customer_phone: phone,
-        package_size: purchaseMode === 'single' ? '1' : pkg,
+        // Tokens per purchased unit: a 4-pack = 4 tokens, a single = 1. The
+        // chosen wash value is carried separately in `wash_value` below.
+        package_size: purchaseMode === 'single' ? '1' : '4',
         quantity: String(quantity),
         mode: purchaseMode,
         wash_value: skuWash,
