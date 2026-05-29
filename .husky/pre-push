@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-# Pre-push: run e2e tests + production build, but ONLY when pushing to
+# Pre-push: run unit tests + e2e tests + production build, but ONLY when pushing to
 # `main` or `dev` on the remote. Pushes to feature branches are skipped so
 # day-to-day iteration stays fast. Merges into main/dev still trigger checks
 # because the push that lands them targets refs/heads/main or refs/heads/dev.
@@ -19,11 +19,20 @@ while read -r _local_ref _local_sha remote_ref _remote_sha; do
 done
 
 if [ "$protected_branch_pushed" -eq 0 ]; then
-  echo "→ Push does not target main or dev — skipping e2e + build checks."
+  echo "→ Push does not target main or dev — skipping unit + e2e + build checks."
   exit 0
 fi
 
-echo "→ Push targets main or dev. Running Playwright e2e tests..."
+echo "→ Push targets main or dev. Running Vitest unit tests..."
+if ! yarn test; then
+  echo ""
+  echo "✖ Unit tests failed. Push aborted."
+  echo "  Fix the failing specs (or pass --no-verify to skip, not recommended)."
+  exit 1
+fi
+
+echo ""
+echo "→ Running Playwright e2e tests..."
 if ! yarn test:e2e; then
   echo ""
   echo "✖ E2E tests failed. Push aborted."

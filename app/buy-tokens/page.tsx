@@ -131,7 +131,31 @@ export async function generateMetadata(): Promise<Metadata> {
     robots: { index: true, follow: true },
   }
 }
-export default async function BuyTokensPage() {
-  const [copy, pricing] = await Promise.all([loadCopy(), getCheckoutPricing()])
+type SearchParams = Promise<Record<string, string | string[] | undefined>>
+
+/**
+ * `?_now=<ISO>` simulates a wall-clock time for the Father's Day sale window —
+ * used by e2e tests (see `e2e/fathersDaySale.spec.ts`). The override is
+ * IGNORED on Vercel Production so it can never leak into a real customer
+ * session; on Preview / local dev it's honored if the value parses.
+ */
+function parseNowOverride(value: string | string[] | undefined): number | undefined {
+  if (process.env.VERCEL_ENV === 'production') return undefined
+  if (typeof value !== 'string' || value.length === 0) return undefined
+  const ms = Date.parse(value)
+  return Number.isNaN(ms) ? undefined : ms
+}
+
+export default async function BuyTokensPage({
+  searchParams,
+}: {
+  searchParams?: SearchParams
+}) {
+  const params = (await searchParams) ?? {}
+  const nowOverrideMs = parseNowOverride(params._now)
+  const [copy, pricing] = await Promise.all([
+    loadCopy(),
+    getCheckoutPricing(nowOverrideMs),
+  ])
   return <BuyTokensClient copy={copy} pricing={pricing} />
 }

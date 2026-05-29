@@ -1,5 +1,9 @@
 import 'server-only'
-import { FATHERS_DAY_SALE_END_MS, isFathersDaySaleActive } from './salesSchedule'
+import {
+  FATHERS_DAY_SALE_END_MS,
+  FATHERS_DAY_SALE_START_MS,
+  isFathersDaySaleActive,
+} from './salesSchedule'
 import {
   getFathersDayCouponId,
   getPackDiscountCouponId,
@@ -9,7 +13,11 @@ import {
 } from './stripeEnv'
 import Stripe from 'stripe'
 
-export { FATHERS_DAY_SALE_END_MS, isFathersDaySaleActive }
+export {
+  FATHERS_DAY_SALE_END_MS,
+  FATHERS_DAY_SALE_START_MS,
+  isFathersDaySaleActive,
+}
 
 // ---------- Stripe IDs (resolved via lib/stripeEnv.ts at module load).
 // Picks PROD_* on Vercel Production, DEV_* otherwise. The hardcoded sandbox
@@ -107,6 +115,12 @@ export function activePackCouponId(now = Date.now()): string {
   return isFathersDaySaleActive(now) ? FATHERS_DAY_COUPON_ID : PACK_DISCOUNT_COUPON_ID
 }
 
+/**
+ * Optional `nowOverrideMs` lets the BuyTokensPage simulate a different
+ * wall-clock time for e2e tests (gated to non-production there). Passing
+ * `undefined` falls back to `Date.now()` everywhere downstream.
+ */
+
 let stripeSingleton: Stripe | null = null
 function getStripe(): Stripe | null {
   if (stripeSingleton) return stripeSingleton
@@ -167,9 +181,12 @@ function splitCouponBreakdown(
   ]
 }
 
-export async function getCheckoutPricing(): Promise<CheckoutPricing> {
-  const fathersDayActive = isFathersDaySaleActive()
-  const couponId = activePackCouponId()
+export async function getCheckoutPricing(
+  nowOverrideMs?: number,
+): Promise<CheckoutPricing> {
+  const now = nowOverrideMs ?? Date.now()
+  const fathersDayActive = isFathersDaySaleActive(now)
+  const couponId = activePackCouponId(now)
   const stripe = getStripe()
 
   if (!stripe) {
