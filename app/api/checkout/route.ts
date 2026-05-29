@@ -7,6 +7,7 @@ import {
   isFathersDaySaleActive,
   type WashValue,
 } from '@/lib/stripePricing'
+import { getStripeSecretKey } from '@/lib/stripeEnv'
 
 export const runtime = 'nodejs'
 
@@ -23,7 +24,7 @@ type Body = {
 const VALID_WASH: Set<WashValue> = new Set(['8', '9', '10', '12'])
 
 export async function POST(req: Request) {
-  const secret = process.env.STRIPE_SECRET_KEY
+  const secret = getStripeSecretKey()
   if (!secret) {
     return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 })
   }

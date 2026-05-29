@@ -1,37 +1,46 @@
 import 'server-only'
 import { FATHERS_DAY_SALE_END_MS, isFathersDaySaleActive } from './salesSchedule'
+import {
+  getFathersDayCouponId,
+  getPackDiscountCouponId,
+  getPackPriceId,
+  getSinglePriceId,
+  getStripeSecretKey,
+} from './stripeEnv'
 import Stripe from 'stripe'
 
 export { FATHERS_DAY_SALE_END_MS, isFathersDaySaleActive }
 
-// ---------- Sandbox IDs (override via env) ----------
+// ---------- Stripe IDs (resolved via lib/stripeEnv.ts at module load).
+// Picks PROD_* on Vercel Production, DEV_* otherwise. The hardcoded sandbox
+// IDs below are only ever used as last-resort fallbacks for DEV_* misses —
+// on Vercel Production the getters throw before the `??` fallback applies.
 
 export const PACK_PRICES: Record<'8' | '9' | '10' | '12', string> = {
-  '8': process.env.STRIPE_PRICE_PACK_8 ?? 'price_1TYbXTGhjWB5e4mpkuHG1Ckd',
-  '9': process.env.STRIPE_PRICE_PACK_9 ?? 'price_1TYbXcGhjWB5e4mpodKcrTAG',
-  '10': process.env.STRIPE_PRICE_PACK_10 ?? 'price_1TYbXkGhjWB5e4mpZnBQM9PI',
-  '12': process.env.STRIPE_PRICE_PACK_12 ?? 'price_1TYbXwGhjWB5e4mpjvVl1Oqf',
+  '8': getPackPriceId('8') ?? 'price_1TYbXTGhjWB5e4mpkuHG1Ckd',
+  '9': getPackPriceId('9') ?? 'price_1TYbXcGhjWB5e4mpodKcrTAG',
+  '10': getPackPriceId('10') ?? 'price_1TYbXkGhjWB5e4mpZnBQM9PI',
+  '12': getPackPriceId('12') ?? 'price_1TYbXwGhjWB5e4mpjvVl1Oqf',
 }
 
 export const SINGLE_PRICES: Record<'8' | '9' | '10' | '12', string> = {
-  '8': process.env.STRIPE_PRICE_SINGLE_8 ?? 'price_1TYEItGhjWB5e4mpWsLAcRMJ',
-  '9': process.env.STRIPE_PRICE_SINGLE_9 ?? 'price_1TYEJ3GhjWB5e4mpfgqpzfql',
-  '10': process.env.STRIPE_PRICE_SINGLE_10 ?? 'price_1TYEJBGhjWB5e4mpEIEfFyrT',
-  '12': process.env.STRIPE_PRICE_SINGLE_12 ?? 'price_1TYEJKGhjWB5e4mpdpMew8qJ',
+  '8': getSinglePriceId('8') ?? 'price_1TYEItGhjWB5e4mpWsLAcRMJ',
+  '9': getSinglePriceId('9') ?? 'price_1TYEJ3GhjWB5e4mpfgqpzfql',
+  '10': getSinglePriceId('10') ?? 'price_1TYEJBGhjWB5e4mpEIEfFyrT',
+  '12': getSinglePriceId('12') ?? 'price_1TYEJKGhjWB5e4mpdpMew8qJ',
 }
 
-// Live coupon IDs in the Stripe account (verified via MCP 2026-05-22).
-// Both are $5 off. Stripe Checkout only allows one coupon per session, so
-// the Father's Day coupon stands in for the combined sale price at checkout;
-// the FE renders both chips because conceptually the customer "sees" them
-// stacked. If you want the customer charged the full $10 off during the
-// sale, replace the Father's Day coupon in Stripe with a $10 amount_off
-// coupon (or update STRIPE_COUPON_FATHERS_DAY_2026 to a new $10 coupon).
+// Stripe Checkout only allows one coupon per session, so the Father's Day
+// coupon stands in for the combined sale price at checkout; the FE renders
+// both chips because conceptually the customer "sees" them stacked. If you
+// want the customer charged the full $10 off during the sale, the Father's
+// Day coupon in Stripe is already configured as the COMBINED amount
+// (base + sale) — see notes in lib/salesSchedule.ts.
 export const PACK_DISCOUNT_COUPON_ID =
-  process.env.STRIPE_COUPON_PACK_DISCOUNT ?? 'L033ynGl'
+  getPackDiscountCouponId() ?? 'L033ynGl'
 
 export const FATHERS_DAY_COUPON_ID =
-  process.env.STRIPE_COUPON_FATHERS_DAY_2026 ?? 'KQ9oorQm'
+  getFathersDayCouponId() ?? 'KQ9oorQm'
 
 // The "base" 4-pack bundle discount that the Father's Day coupon stacks on top
 // of, in cents. Stripe Checkout only applies one coupon per session, so the
@@ -101,7 +110,7 @@ export function activePackCouponId(now = Date.now()): string {
 let stripeSingleton: Stripe | null = null
 function getStripe(): Stripe | null {
   if (stripeSingleton) return stripeSingleton
-  const key = process.env.STRIPE_SECRET_KEY
+  const key = getStripeSecretKey()
   if (!key) return null
   stripeSingleton = new Stripe(key)
   return stripeSingleton

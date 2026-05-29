@@ -41,7 +41,7 @@ The single highest-leverage move: **claim and verify a Google Business Profile f
   ```html
   <meta property="og:title" content="Spotless Carwash — 24/7 Touchless Wash, Forest Park IL" />
   <meta property="og:description" content="Two Forest Park locations, heated automatic bays, self-serve wand bays. Open 24/7 since 1998." />
-  <meta property="og:image" content="https://[domain]/og-image.jpg" />
+  <meta property="og:image" content="https://[domain]/og-image.png" />
   <meta property="og:url" content="https://[domain]/" />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />

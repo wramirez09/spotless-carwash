@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import Stripe from 'stripe'
 import { sanityFetch } from '@/lib/sanityFetch'
+import { getStripeSecretKey } from '@/lib/stripeEnv'
 
 type Copy = {
   metaTitle: string
@@ -144,7 +145,7 @@ async function fetchSession(sessionId: string): Promise<{
   currency: string
   lines: LineRow[]
 }> {
-  const secret = process.env.STRIPE_SECRET_KEY
+  const secret = getStripeSecretKey()
   if (!secret)
     return {
       status: 'error',

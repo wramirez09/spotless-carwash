@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { getStripeSecretKey, getStripeWebhookSecret } from '@/lib/stripeEnv'
 
 export const runtime = 'nodejs'
 
@@ -39,8 +40,8 @@ async function persistAndEmailTokens(args: {
 }
 
 export async function POST(req: Request) {
-  const secret = process.env.STRIPE_SECRET_KEY
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+  const secret = getStripeSecretKey()
+  const webhookSecret = getStripeWebhookSecret()
   if (!secret || !webhookSecret) {
     return NextResponse.json({ error: 'Stripe webhook not configured' }, { status: 500 })
   }
