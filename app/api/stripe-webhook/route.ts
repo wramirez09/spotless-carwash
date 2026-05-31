@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { getStripeSecretKey, getStripeWebhookSecret } from '@/lib/stripeEnv'
+import { sendOwnerSaleNotification } from '@/lib/email'
 
 export const runtime = 'nodejs'
 
@@ -11,32 +12,6 @@ function generateTokenCode(): string {
     body += alphabet[Math.floor(Math.random() * alphabet.length)]
   }
   return `SPL-${body}`
-}
-
-async function persistAndEmailTokens(args: {
-  email: string
-  name: string
-  quantity: number
-  packageSize: string
-  mode: string
-  washValue: string
-  codes: string[]
-  sessionId: string
-}) {
-  // TODO: persist codes to your DB tied to args.email + args.sessionId.
-  // TODO: send transactional email with the codes (Resend / Postmark / SendGrid).
-  // The project does not yet have an email provider installed, so for now we log
-  // a structured record — replace this with the real integration when ready.
-  console.log('[stripe-webhook] tokens issued', {
-    email: args.email,
-    name: args.name,
-    quantity: args.quantity,
-    packageSize: args.packageSize,
-    mode: args.mode,
-    washValue: args.washValue,
-    sessionId: args.sessionId,
-    codes: args.codes,
-  })
 }
 
 export async function POST(req: Request) {
@@ -77,19 +52,33 @@ export async function POST(req: Request) {
     const codes = Array.from({ length: totalTokens }, generateTokenCode)
     const email = expanded.customer_details?.email ?? expanded.customer_email ?? ''
     const name = expanded.metadata?.customer_name ?? ''
-    const packageSize = expanded.metadata?.package_size ?? ''
     const purchaseMode = expanded.metadata?.mode ?? 'pack'
     const washValue = expanded.metadata?.wash_value ?? ''
     const quantity = Number(expanded.metadata?.quantity ?? 1)
 
     if (email && codes.length > 0) {
-      await persistAndEmailTokens({
-        email,
-        name,
-        quantity,
-        packageSize,
+      // TODO: persist codes to a DB tied to email + sessionId. Storage approach
+      // is still undecided, so codes currently live only in the owner email.
+      await sendOwnerSaleNotification({
+        customerName: name,
+        customerEmail: email,
+        customerPhone: expanded.customer_details?.phone ?? expanded.metadata?.customer_phone ?? '',
+        address: expanded.customer_details?.address
+          ? {
+              line1: expanded.customer_details.address.line1,
+              line2: expanded.customer_details.address.line2,
+              city: expanded.customer_details.address.city,
+              state: expanded.customer_details.address.state,
+              postalCode: expanded.customer_details.address.postal_code,
+              country: expanded.customer_details.address.country,
+            }
+          : null,
         mode: purchaseMode,
         washValue,
+        quantity,
+        totalTokens: totalTokens,
+        amountTotal: expanded.amount_total,
+        currency: expanded.currency,
         codes,
         sessionId: expanded.id,
       })
