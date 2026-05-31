@@ -17,8 +17,15 @@ for (const { slug, name, street } of LOCATIONS) {
 
     test('logo link returns home', async ({ page }) => {
       await page.goto(`/locations/${slug}`)
-      await page.locator('nav a[href="/"]').first().click()
-      await expect(page).toHaveURL(/\/$/)
+      const logo = page.locator('nav a[href="/"]').first()
+      await expect(logo).toBeVisible()
+      // A click landing in the Next.js hydration window gets its default
+      // navigation cancelled while the client router isn't ready yet, dropping
+      // the navigation. Retry the click+assert until one lands cleanly.
+      await expect(async () => {
+        await logo.click()
+        await expect(page).toHaveURL(/\/$/, { timeout: 1000 })
+      }).toPass({ timeout: 10000 })
     })
   })
 }
