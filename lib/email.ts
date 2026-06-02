@@ -39,6 +39,12 @@ function getFromAddress(): string {
 }
 
 function getOwnerEmail(): string {
+  // Outside Vercel Production (preview + local dev), route notifications to
+  // DEV_OWNER_NOTIFICATION_EMAIL so test purchases don't email the real owner.
+  // Falls back to the prod recipient, then the hardcoded default.
+  if (process.env.VERCEL_ENV !== 'production' && process.env.DEV_OWNER_NOTIFICATION_EMAIL) {
+    return process.env.DEV_OWNER_NOTIFICATION_EMAIL
+  }
   return process.env.OWNER_NOTIFICATION_EMAIL || DEFAULT_OWNER_EMAIL
 }
 

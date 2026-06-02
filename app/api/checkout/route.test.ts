@@ -49,6 +49,14 @@ function makeReq(body: unknown, { origin = 'https://spotless.test', raw }: { ori
   })
 }
 
+// Mailing address — required since tokens are physically shipped there.
+const MAILING = {
+  mailingLine1: '123 Roosevelt Rd',
+  mailingCity: 'Forest Park',
+  mailingState: 'IL',
+  mailingPostalCode: '60130',
+}
+
 const VALID_PACK = {
   package: '12',
   mode: 'pack',
@@ -56,6 +64,7 @@ const VALID_PACK = {
   email: 'joe@example.com',
   name: 'Joe',
   phone: '7087712945',
+  ...MAILING,
 }
 
 const VALID_SINGLE = {
@@ -65,6 +74,7 @@ const VALID_SINGLE = {
   email: 'joe@example.com',
   name: 'Joe',
   phone: '7087712945',
+  ...MAILING,
 }
 
 async function callPost(body: unknown, opts?: Parameters<typeof makeReq>[1]) {
@@ -140,6 +150,17 @@ describe('POST /api/checkout — validation', () => {
     expect(json.error).toBe('Phone required')
   })
 
+  it.each([
+    ['mailingLine1', { mailingLine1: '   ' }],
+    ['mailingCity', { mailingCity: '' }],
+    ['mailingState', { mailingState: '' }],
+    ['mailingPostalCode', { mailingPostalCode: '' }],
+  ])('returns 400 when %s is missing from the mailing address', async (_field, override) => {
+    const { res, json } = await callPost({ ...VALID_PACK, ...override })
+    expect(res.status).toBe(400)
+    expect(json.error).toBe('Complete mailing address required')
+  })
+
   it('returns 500 with the Stripe message when session.create throws', async () => {
     sessionsCreate.mockRejectedValueOnce(new Error('boom'))
     const { res, json } = await callPost(VALID_PACK)
@@ -179,6 +200,32 @@ describe('POST /api/checkout — token-count metadata (091d5fa)', () => {
     expect(metadata.package_size).toBe('1')
     expect(metadata.wash_value).toBe('10')
     expect(metadata.mode).toBe('single')
+  })
+})
+
+describe('POST /api/checkout — mailing address metadata', () => {
+  it('carries the mailing address into session metadata for the webhook', async () => {
+    await callPost(VALID_PACK)
+    const { metadata } = lastSession()
+    expect(metadata.mail_line1).toBe('123 Roosevelt Rd')
+    expect(metadata.mail_city).toBe('Forest Park')
+    expect(metadata.mail_state).toBe('IL')
+    expect(metadata.mail_postal_code).toBe('60130')
+  })
+
+  it('normalizes the state to uppercase', async () => {
+    await callPost({ ...VALID_PACK, mailingState: 'il' })
+    expect(lastSession().metadata.mail_state).toBe('IL')
+  })
+
+  it('records the mailing-list opt-in as a string flag in metadata', async () => {
+    await callPost({ ...VALID_PACK, mailingListSubscribed: true })
+    expect(lastSession().metadata.mail_list_subscribed).toBe('true')
+  })
+
+  it('defaults the mailing-list flag to false when omitted', async () => {
+    await callPost(VALID_PACK)
+    expect(lastSession().metadata.mail_list_subscribed).toBe('false')
   })
 })
 

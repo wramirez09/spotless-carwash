@@ -129,6 +129,7 @@ export default function BuyTokensClient({
   const [city, setCity] = useState('')
   const [stateRegion, setStateRegion] = useState('')
   const [zip, setZip] = useState('')
+  const [mailingList, setMailingList] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [errored, setErrored] = useState(false)
 
@@ -261,6 +262,11 @@ export default function BuyTokensClient({
           email: email.trim(),
           name: name.trim(),
           phone: phone.trim(),
+          mailingLine1: street.trim(),
+          mailingCity: city.trim(),
+          mailingState: stateRegion.trim(),
+          mailingPostalCode: zip.trim(),
+          mailingListSubscribed: mailingList,
         }),
       })
       const data: { url?: string; error?: string } = await res.json()
@@ -556,9 +562,21 @@ export default function BuyTokensClient({
                   />
                 </label>
 
+                <div className="sm:col-span-2 flex items-start gap-3 rounded-xl border-[1.5px] border-blue-500 bg-blue-50 px-4 py-3">
+                  <LockIcon className="mt-0.5 shrink-0 text-blue-700" />
+                  <p className="text-[13px] leading-relaxed text-blue-700">
+                    <span className="font-extrabold uppercase tracking-[0.08em]">
+                      Where we mail your tokens.
+                    </span>{' '}
+                    Your physical wash tokens are shipped by USPS to the address below, so
+                    please make sure it&apos;s accurate and complete. This is separate from
+                    the billing address you&apos;ll enter at payment.
+                  </p>
+                </div>
+
                 <label className="block sm:col-span-2 relative">
                   <div className="text-[12px] font-bold tracking-[0.14em] uppercase text-[#5b6987] mb-1.5">
-                    Street address
+                    Mailing address <span className="text-blue-500">*</span>
                   </div>
                   <input
                     type="text"
@@ -683,6 +701,19 @@ export default function BuyTokensClient({
                       className="w-full border-[1.5px] border-line rounded-xl px-4 py-3.5 text-[15px] text-ink bg-white placeholder:text-[#9aa9c9] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(27,79,217,0.12)] transition"
                     />
                   </div>
+                </label>
+
+                <label className="sm:col-span-2 flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={mailingList}
+                    onChange={(e) => setMailingList(e.target.checked)}
+                    className="mt-0.5 h-[18px] w-[18px] shrink-0 accent-blue-500 cursor-pointer"
+                  />
+                  <span className="text-[13px] leading-relaxed text-[#445273]">
+                    Email me Spotless deals, coupons, and seasonal wash specials. You can
+                    unsubscribe anytime. (Optional)
+                  </span>
                 </label>
               </div>
             </section>

@@ -19,6 +19,16 @@ type Body = {
   email?: string
   name?: string
   phone?: string
+  // Mailing address — where physical tokens get shipped. Collected in the
+  // buy-tokens form (distinct from the billing address Stripe collects on its
+  // hosted page). Carried through to the webhook via session metadata.
+  mailingLine1?: string
+  mailingLine2?: string
+  mailingCity?: string
+  mailingState?: string
+  mailingPostalCode?: string
+  // Opt-in to marketing emails. Optional checkbox on the buy-tokens form.
+  mailingListSubscribed?: boolean
 }
 
 const VALID_WASH: Set<WashValue> = new Set(['8', '9', '10', '12'])
@@ -53,6 +63,12 @@ export async function POST(req: Request) {
   const email = (body.email ?? '').trim()
   const name = (body.name ?? '').trim()
   const phone = (body.phone ?? '').trim()
+  const mailingLine1 = (body.mailingLine1 ?? '').trim()
+  const mailingLine2 = (body.mailingLine2 ?? '').trim()
+  const mailingCity = (body.mailingCity ?? '').trim()
+  const mailingState = (body.mailingState ?? '').trim().toUpperCase()
+  const mailingPostalCode = (body.mailingPostalCode ?? '').trim()
+  const mailingListSubscribed = body.mailingListSubscribed === true
 
   if (purchaseMode === 'pack' && !VALID_WASH.has(pkg)) {
     return NextResponse.json({ error: 'Bad package' }, { status: 400 })
@@ -68,6 +84,11 @@ export async function POST(req: Request) {
   }
   if (!phone) {
     return NextResponse.json({ error: 'Phone required' }, { status: 400 })
+  }
+  // Mailing address is required — tokens are physically shipped to it. Stripe's
+  // billing address is collected separately and does not substitute for this.
+  if (!mailingLine1 || !mailingCity || !mailingState || !mailingPostalCode) {
+    return NextResponse.json({ error: 'Complete mailing address required' }, { status: 400 })
   }
 
   const stripe = new Stripe(secret)
@@ -112,6 +133,15 @@ export async function POST(req: Request) {
       metadata: {
         customer_name: name,
         customer_phone: phone,
+        // Mailing address — read back in the webhook to persist as the shipping
+        // address for the physical tokens. (Stripe metadata values cap at 500
+        // chars; address parts are well under that.)
+        mail_line1: mailingLine1,
+        mail_line2: mailingLine2,
+        mail_city: mailingCity,
+        mail_state: mailingState,
+        mail_postal_code: mailingPostalCode,
+        mail_list_subscribed: mailingListSubscribed ? 'true' : 'false',
         // Tokens per purchased unit: a 4-pack = 4 tokens, a single = 1. The
         // chosen wash value is carried separately in `wash_value` below.
         package_size: purchaseMode === 'single' ? '1' : '4',
