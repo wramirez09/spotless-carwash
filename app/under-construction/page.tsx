@@ -58,7 +58,7 @@ export default function UnderConstructionPage() {
           </div>
 
           <h1 className="uc-display text-[clamp(2.75rem,12vw,8.75rem)] leading-[0.95]">
-            Site under
+            Website under
             <span className="block">
               <em className="text-yellow-400" style={{ fontStyle: 'italic' }}>
                 construction
