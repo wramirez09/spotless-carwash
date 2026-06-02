@@ -111,8 +111,13 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const { isEnabled: isDraft } = await draftMode()
-  const pathname = (await headers()).get('x-pathname') ?? ''
+  const headerList = await headers()
+  const pathname = headerList.get('x-pathname') ?? ''
   const isStudio = pathname.startsWith('/studio')
+  // Set by middleware when the maintenance flag is on — the construction page
+  // ships its own header/footer, so drop the site chrome.
+  const isUnderConstruction = headerList.get('x-under-construction') === '1'
+  const hideChrome = isStudio || isUnderConstruction
 
   return (
     <html
@@ -120,14 +125,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       className={`${archivo.variable} ${archivoBlack.variable} ${barlowCondensed.variable} ${jetbrains.variable}`}
     >
       <body className="bg-paper text-ink font-sans">
-        {!isStudio && (
+        {!hideChrome && (
           <div className="sticky top-0 z-50">
             <SalesBanner />
             <Nav />
           </div>
         )}
         <main>{children}</main>
-        {!isStudio && <Footer />}
+        {!hideChrome && <Footer />}
         {isDraft && (
           <>
             <VisualEditing />

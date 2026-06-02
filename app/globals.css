@@ -35,6 +35,29 @@ body {
   font-family: var(--font-jetbrains), ui-monospace, monospace;
 }
 
+/* ============== UNDER-CONSTRUCTION PAGE ============== */
+/* Namespaced so the maintenance page can use Archivo Black for its display
+   type without colliding with the site's Barlow Condensed `.display`. */
+.uc-display {
+  font-family: var(--font-archivo-black), 'Archivo Black', 'Archivo', sans-serif;
+  font-style: italic;
+  letter-spacing: -0.02em;
+  line-height: 0.92;
+}
+
+.uc-hazard {
+  background-image: repeating-linear-gradient(45deg, #ffd93d 0 28px, #08183f 28px 56px);
+  background-size: 56px 56px;
+}
+
+.uc-hazard-soft {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 217, 61, 0.18) 0 28px,
+    transparent 28px 56px
+  );
+}
+
 .lamp {
   width: 120px;
   height: 120px;

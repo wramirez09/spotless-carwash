@@ -30,5 +30,9 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    // These specs assert the real site. Force the maintenance gate off so a
+    // local UNDER_CONSTRUCTION=true in .env.local doesn't reroute every page
+    // to /under-construction and fail the suite. A real env var wins over .env*.
+    env: { UNDER_CONSTRUCTION: 'false' },
   },
 })
