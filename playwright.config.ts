@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const PORT = 3000
+// Dedicated port so e2e never reuses another app squatting on the default 3000.
+const PORT = 3209
 const baseURL = `http://localhost:${PORT}`
 
 export default defineConfig({
@@ -25,7 +26,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'yarn dev',
+    command: `yarn dev --port ${PORT}`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
