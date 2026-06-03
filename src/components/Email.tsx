@@ -15,6 +15,11 @@ const FALLBACK: EmailData = {
 }
 
 export default async function Email() {
+  // Gated behind an env flag (opt-in): the section only renders when
+  // PROMOTIONS_SIGNUP_ENABLED is exactly 'true'. Read server-side, so when off
+  // the section never reaches the client HTML.
+  if (process.env.PROMOTIONS_SIGNUP_ENABLED !== 'true') return null
+
   const data = await sanityFetch<Partial<EmailData>>(EMAIL_QUERY)
   return <EmailClient data={{ ...FALLBACK, ...(data ?? {}) }} />
 }
