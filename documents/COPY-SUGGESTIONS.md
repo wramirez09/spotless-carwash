@@ -1,470 +1,498 @@
-# Copy Analysis & Suggestions: Spotless Carwash (Redesign)
+# Copy Analysis & Suggestions: Spotless Carwash
 **URL:** https://spotless-carwash-git-main-center-point-digital.vercel.app/
-**Date:** 2026-04-26
-**Page Type:** Homepage (long-form, single-page marketing site)
-**Copy Score:** 80/100
-
-> Note: This supersedes the previous COPY-SUGGESTIONS.md (which analyzed the legacy `tokens.html` page). The redesign is a categorically different — and far stronger — piece of work, so this is a fresh report rather than a delta.
+**Date:** 2026-05-08
+**Page Type:** Homepage (local business — multi-location car wash)
+**Copy Score:** 60/100
 
 ---
 
 ## Executive Summary
 
-This is genuinely good copy. It's confident, branded, scannable, and specific in the places that matter (4 min 30s avg wash, $0.25/30s, 9 self-serve settings, named wash tiers, addresses with zips). The voice is alive — "Keep it clean," "Watch the lights. Don't back up," "Stash 'em in the glovebox," "Exit slooowly" — and consistent across every section. It reads like a single person wrote it, which is rare. Compared to the legacy tokens page (which scored 38/100), this is a 2× improvement in basically every dimension.
+Spotless's homepage copy is **clean, well-organized, and easy to read** — it does the basic job of telling a visitor what the business is and how to use it. Headlines are confident and slightly playful ("Pull up & watch the lights.", "Sit back, or do it yourself."), pricing is upfront, and the FAQ-driven structure is unusually disciplined for a local business site.
 
-The remaining work is refinement, not rewriting. Three categories of opportunity: **(1) Trust gaps** — there is zero social proof on the page (no testimonials, no review stars, no "since 1998 we've washed X cars" milestone). The "Most picked" tag on the Spotless tier is the only social signal in the whole document. **(2) The tokens section regressed in specificity** vs. the legacy page — the old page had four color-coded tokens tied to four wash tiers; the new section just shows quantities ($45/$85/$200) with no per-wash breakdown or wash-tier mapping. A buyer can't answer "which wash level does my token get me?" without leaving the section. **(3) Several CTAs and links are placeholders** (`href="#"`) — Choose Basic/Clean/Spotless/Showroom, Buy Tokens, Get Directions, Site Details, Both: Forest Park footer link. Pre-launch blocker.
+The biggest copy weaknesses are not what's there — they're **what's missing or undifferentiated**. The H1 is a brand tag, not a value proposition. The hero subhead repeats verbatim in the bays section ("Nothing touches your vehicle except soap, wax, and water" appears twice). The 30-year history — the strongest competitive moat the business has — is nowhere on the page. The newsletter CTA ("Subscribe") has no value exchange. The wash tier names are flat ("Deluxe", "Deluxe (No Dryer)", "Ultimate", "Lustre") and don't anchor the customer to the choice they should make. And the testimonials have no real names ("Forest Park regular", "Detail-obsessed neighbor"), which reads as fabricated and erodes the trust they're meant to build.
 
-The fastest meaningful wins: wire the dead links, clarify what a token *is* in the tokens section ("Each token = one Spotless wash, normally $13"), and add even one real testimonial. None of that requires rewriting the existing copy.
+**Top three priority fixes:**
+1. **Rewrite the H1 to lead with positioning, not brand tag.** "Spotless Carwash — keep it clean." → *"Forest Park's touchless car wash. For 30 years."*
+2. **Eliminate the duplicate hero/bays paragraph and use the freed real-estate for a trust band** ("30 years in Forest Park · 2 locations · open 7am–10pm").
+3. **Replace generic testimonial attributions with real first names + neighborhoods** ("Mike R., Forest Park"; "Anna T., Oak Park") — same length, dramatically higher credibility.
 
 ---
 
 ## Voice & Tone Profile
 
-| Dimension | Current | Notes |
-|---|---|---|
-| Formality | 2 (casual-confident) | Right where it should be — local, friendly, no-nonsense |
-| Emotion | 4 (lively) | Voice is alive without being try-hard; tagline "Keep it clean" is doing real work |
-| Complexity | 2 (simple) | 12-year-old could parse this front to back |
-| Humor | 3 (playful, dry) | "Exit slooowly," "Stash 'em in the glovebox" — earned, not forced |
-| Authority | 4 (operator) | Owner-of-the-shop voice — "we built this, here's how it works" |
+| Dimension | Score | Read |
+|-----------|-------|------|
+| **Formality** | 2/5 (Casual) | Contractions, "do it yourself", numbered eyebrows like "01 / Wash packages" — relaxed but not sloppy |
+| **Emotion** | 3/5 (Moderate) | Warm in moments ("perfect for winter") but mostly utilitarian |
+| **Complexity** | 2/5 (Simple) | Plain language, short sentences, no jargon. Strong. |
+| **Humor** | 3/5 (Light playful) | "Pull up & watch the lights.", "Sit back, or do it yourself." — playful but restrained |
+| **Authority** | 3/5 (Peer / informed neighbor) | Speaks like a knowledgeable local, not a corporate brand. Appropriate. |
 
-**Voice direction:** Don't change it. This is the brand. Calibrate any new copy (FAQ, testimonials, blog content) to match — confident, slightly dry, instructional, never corporate.
+**Voice in one line:** *Confident neighbor with a 30-year-old car wash who tells you what works and skips the marketing fluff.*
 
-**Two micro-flags to watch:**
-- Hero side-card says "Bay 02 ready · Roosevelt Rd" — if this isn't live data, it's a small trust risk (visitor pulls up, Bay 02 is full → broken expectation). Either wire it to real status or label it as illustrative ("Live status — coming soon").
-- "Open 24/7" / "Open now" appear in nav, hero, and locations. If a bay ever closes for maintenance, the page lies. Worth a single source of truth.
+This voice is **right for the business and worth preserving**. The improvements below should sharpen, not replace it. Avoid the temptation to "spice it up" with hard-sell language — that would feel false against the established tone.
 
 ---
 
 ## Score Breakdown
 
 | Dimension | Score | Justification |
-|---|---|---|
-| **Clarity** | 9/10 | What it is, where it is, what to do — answered in the first 5 seconds. Nav structure is logical. |
-| **Persuasion** | 7/10 | Strong differentiation (touchless, heated, 24/7) and clean offer ladder. Missing: social proof, FAQ, risk-reversal on tokens. |
-| **Specificity** | 8/10 | Excellent in most places (wash time, prices, addresses, 9 settings). The Tokens section is the one weak spot — no per-token wash value, no expiration policy. |
-| **Emotion** | 8/10 | Voice does the heavy lifting. Could lean a little further into community / "since 1998" pride. |
-| **Action** | 8/10 | CTA hierarchy is clean (sticky "Buy tokens →" in nav, primary hero CTA, in-section CTAs). Half the links are placeholders — once wired, this goes to 9. |
-| **Total** | **40/50 → 80/100** | |
+|-----------|-------|---------------|
+| **Clarity** | 8/10 | A 12-year-old understands what's offered. Loses points for "Lustre" (vague), and the "Durashield" / "Durashield" inconsistency in the dial-section sub-text. |
+| **Persuasion** | 5/10 | Lots of features described; little persuasion. No urgency, no primary-CTA hierarchy, social proof buried below the fold, no objection handling, no scarcity. |
+| **Specificity** | 7/10 | Strong: "$4 / 5 min", "$8–$12", "9 settings", "10 bays", "4½ minutes", "7am–10pm". Weak: outcome language ("clean car" → no quantifiable promise like "spot-free finish in under 5 minutes"). |
+| **Emotion** | 5/10 | Testimonials carry most of the emotion; body copy is mostly transactional. Heated bays in a Chicago snowstorm is the most emotionally resonant moment and it's only in a testimonial. |
+| **Action** | 5/10 | 11 distinct CTA labels — but no clear primary CTA above the fold. "Buy tokens" appears in nav and floats around. "Subscribe" has no value exchange. |
+| **Total** | **30/50 (60/100)** | **Grade: C** |
 
 ---
 
-## Value Proposition Analysis
+## Value Proposition Canvas
 
-| Element | Status | Notes |
-|---|---|---|
-| Target customer | **Implicit, clear** | "Forest Park drivers who want a fast, scratch-free wash on their schedule" — not stated, but the whole site assumes it correctly |
-| Problem | **Light** | Only "no appointments, no lines, no mess" hints at it. Could be stronger — "Chicago salt, no time, no reservation needed" |
-| Solution | **Explicit** | Touchless automatic + self-serve, 24/7, two locations |
-| Unique mechanism | **Strong** | "Touchless, brushless, tractless & scratchless" — alliterative, ownable, repeatable |
-| Key benefit | **Clear** | Spotless car, fast (~4:30), zero scratch risk, anytime |
-| Proof | **Weak** | "Since 1998" in footer is the only proof point. No reviews, no count, no awards, no testimonials. |
+| Element | Currently on Page | Strength |
+|---------|-------------------|----------|
+| **Target customer** | Implicitly: Forest Park / Oak Park / River Forest car owners | Weak — never named explicitly |
+| **Problem** | (Not stated) — visitor must infer | **Missing** |
+| **Solution** | Touchless automatic + self-serve wand bays | Present but un-positioned |
+| **Unique mechanism** | "Nothing touches your vehicle except soap, wax, and water" + heated indoor bays at Roosevelt | **Strong, but buried** |
+| **Key benefit** | "keep it clean" (tagline) | **Weak** — no concrete outcome named |
+| **Proof** | 3 testimonials (no real names), 4 wash tiers with prices, 9 dial settings listed | **Weak** — no aggregate review rating, no "30 years" anywhere on page, no customer count |
 
-**Verdict:** Value prop is intact and well-communicated. The single biggest gap is **proof**. Add even modest social proof and this section moves from 80 → 90.
+**The biggest single gap:** the value prop never names the *enemy* — brush car washes that scratch paint, doing it by hand in a freezing driveway, paying $20 at Crystal for the same result. The best competitive position (touchless + heated + 30-year + flexible) is only assembled in the visitor's head if they read the entire page.
 
 ---
 
 ## Headline Recommendations
 
-**Current H1:** *Spotless Carwash — keep it clean.*
+### Current Hero
+- **H1:** `Spotless Carwash — keep it clean.`
+- **Subhead/intro:** `Forest Park's touchless car wash. Nothing touches your vehicle except soap, wax, and water. Simply pull in, and our touchless wash does the rest. At our Roosevelt Road location, heated enclosed bays keep your vehicle washed and blow-dried indoors—perfect for winter.`
 
-This is a brand statement, not a benefit headline — and that's a defensible choice for a long-tenured local business. The H1 here works because the *eyebrow* ("Forest Park, Illinois · Two locations · Open 24/7") and *subhead* together do the lifting that a benefit headline would do alone.
+**Issues:**
+- H1 is brand + tagline; doesn't communicate value prop.
+- Subhead is functional but long — 50 words pre-CTA — and the "nothing touches your vehicle except soap, wax, and water" line repeats verbatim later in the bays section.
+- 5-second test: does a new visitor know what makes Spotless *different*? Partially — touchless and heated bays are mentioned, but the 30-year history, the two locations, and the self-serve option are absent.
 
-**Keep it.** But for paid-traffic landing variants (per AD-CAMPAIGNS.md), generate split-test alternatives:
+### 10 Headline Alternatives (Ranked by Estimated Effectiveness)
 
-| # | Variant | Framework | Use Case |
-|---|---|---|---|
-| 1 | *Spotless Carwash — keep it clean.* | Brand (current) | Organic/direct/return visitors |
-| 2 | *A 4-min touchless wash. Open 24/7. Two locations in Forest Park.* | 4U direct | Cold paid traffic ("car wash near me") |
-| 3 | *No brushes. No scratches. No appointment.* | Triple-negative differentiator | Paint-protective / new-car owners |
-| 4 | *The cleanest car you've owned, in 4 minutes 30 seconds.* | Specificity hook | First-time visitor lander |
-| 5 | *Forest Park's 24/7 touchless wash — since 1998.* | Local + tenure | Trust-skewed audiences (Nextdoor, older demos) |
-| 6 | *Pull in. Wait for green. Drive out clean.* | Process-as-promise | Paid social, video lead-in |
-| 7 | *Two locations. Two ways to wash. Always open.* | Concrete + reassurance | Comparison search intent |
-| 8 | *Heated. Enclosed. Touchless. Built for Chicago winters.* | Seasonal angle | Nov–March campaigns |
+| # | Headline | Framework | Why It Works |
+|---|----------|-----------|--------------|
+| **1** | **Forest Park's touchless car wash. For 30 years.** | 4U (Useful + Unique + Specific) | Names the city, the differentiator (touchless), and the moat (30 years) in 9 words. Highest density. |
+| **2** | **Wash it our way, or yours. Forest Park's only touchless + self-serve car wash.** | Differentiation | Claims the unique two-format position no Forest Park competitor can match. |
+| **3** | **No brushes. No scratches. Heated bays for Chicago winters.** | PAS | Names the pain (scratches, frozen hands) and the solution in three short clauses. |
+| **4** | **Spotless in 4½ minutes. No brushes. No streaks. Two Forest Park locations.** | AIDA | Concrete time + concrete differentiator + geo. Mirrors a real testimonial line. |
+| **5** | **Forest Park's touchless car wash. Two locations. Heated indoor bays. Open 7am–10pm.** | 4U (Specific) | All four differentiators in one breath; loses some elegance but gains scannability. |
+| **6** | **The only car wash in Forest Park that won't touch your paint.** | Differentiation (negative claim) | Direct shot at brush-tunnel competitors. High emotional charge. |
+| **7** | **Wash your car at -10° without freezing your hands.** | Vivid imagery | Owns the heated-bay angle hard. Use as winter campaign hero or Roosevelt Rd page. |
+| **8** | **From salt-covered to spotless in under 5 minutes.** | Before-After-Bridge | Concrete promise; matches Chicago commuter context. |
+| **9** | **Touchless wash. Self-serve bays. 30 years in Forest Park.** | 4U | Workhorse alternative to #1, slightly less elegant. |
+| **10** | **Keep it clean. Forest Park's touchless car wash since the '90s.** | Hybrid (preserves tagline) | If brand is attached to the existing tagline, this lets you keep it while adding a positioning anchor. |
 
-**Recommended:** Hold #1 as the homepage H1. Use #2 and #4 as landing-page variants for paid traffic.
-
-### 5 Subheadline Alternatives (current works — these are split-test fodder)
-
-**Current:** *Touchless, brushless, tractless & scratchless. Drive in, line up the green light, and let the wash do the work. No appointments, no lines, no mess.*
-
-1. *Two Forest Park locations. Open 24 hours. Heated bays for winter. Drive in, line up the green, and let the wash do the work.*
-2. *4 minutes, 30 seconds, scratch-free. Drive in any time of day or night — both locations open 24/7.*
-3. *Touchless soft-water wash, heated enclosed bays, and self-serve wand bays — whichever way you want to clean it, we're open.*
-4. *No brushes touch your paint. Just soap, water, and air. Two Forest Park bays open every hour of the year.*
-5. *Pull up to the green light, drop in cash or a token, and let the air cannons do the rest. 4:30 in, spotless out.*
+**Top recommendation: #1 or #4** — both lead with the geo + category + a number that anchors credibility (30 years for #1, 4½ minutes for #4).
 
 ---
 
 ## Section-by-Section Copy Suggestions
 
-### Nav
-**Current:** Washes · How it works · Locations · Bays · Tokens · [Buy tokens →]
+### Hero Section
 
-✅ **Keep as-is.** Order is correct (commerce intent → educational → location → product depth → conversion). The yellow "Buy tokens →" CTA is well-differentiated.
+**Current H1:**
+> *Spotless Carwash — keep it clean.*
 
-**Two minor tweaks:**
-1. **Add a phone link** at the right edge for mobile (`tel:7087712945`) — for a local business, the phone CTA on mobile typically out-converts everything else.
-2. Consider renaming **"Bays"** → **"Auto vs Self-Serve"** — clearer to a first-time visitor who doesn't know "bays" is the industry term.
+**Current intro paragraph:**
+> *Forest Park's touchless car wash. Nothing touches your vehicle except soap, wax, and water. Simply pull in, and our touchless wash does the rest. At our Roosevelt Road location, heated enclosed bays keep your vehicle washed and blow-dried indoors—perfect for winter.*
+
+**Issues:**
+- H1 is brand-led, not value-led.
+- 50-word intro paragraph delays CTA and duplicates content from the bays section below.
+- No trust band (years, location count, review rating).
+
+**Recommended:**
+- **H1:** *Forest Park's touchless car wash. For 30 years.*
+- **Subhead (~25 words):** *Two locations. Heated indoor bays for winter. Self-serve wand bays when you want to do it yourself. Open 7am–10pm, every day.*
+- **Trust band (under subhead, single line, monospaced):** *30 YEARS · 2 LOCATIONS · TOUCHLESS · 4.X ★ ON GOOGLE*  *(once review pipeline is live)*
+- **Primary CTA (yellow, prominent):** *See wash packages →*
+- **Secondary CTA (text link):** *Get directions to the nearest bay*
+
+**Why:**
+- Lead with the unique combination, not the brand.
+- "For 30 years" is the moat no competitor can manufacture and currently nowhere on the page.
+- Eliminates the duplicate "Nothing touches your vehicle…" sentence (already in the bays section).
+- Trust band addresses the credibility gap below the fold.
 
 ---
 
-### Hero
-**Current eyebrow:** *Forest Park, Illinois · Two locations · Open 24/7*
-**Current H1:** *Spotless Carwash — keep it clean.*
-**Current sub:** *Touchless, brushless, tractless & scratchless. Drive in, line up the green light, and let the wash do the work. No appointments, no lines, no mess.*
-**CTAs:** *See wash packages* / *How it works*
+### Wash Packages Section
 
-✅ **Strong, keep nearly all of it.** Two micro-suggestions:
-
-1. **The CTA "See wash packages" is informational** — fine for a brand-led homepage, but soft for paid traffic. Add a third option for ad variants: `Find nearest bay →` (geo-utility) or `Get directions →` (immediate-action).
-2. **The side-card "Pull up & watch the lights"** is excellent instructional content but it duplicates the How section. Consider replacing the body of the card with a *real-time bay status* or a *live wash count* once data is wired — currently it competes with the H1 for attention without earning the slot.
-
----
-
-### Washes
 **Current H2:** *Four ways to make your car shine.*
-**Current sub:** *Top three packages include the air cannon dryers. Just put your money or swipe your credit card in the cash station — choose, then wait for green.*
 
-✅ **Keep H2 — it's perfect.** The package cards are clean and the "Most picked" badge on Spotless is the *one* persuasion lever in the whole section pulling weight.
+**Current tier names + descriptions:**
+| Name | Price | Description |
+|------|-------|-------------|
+| Deluxe (No Dryer) | $8 | Pre-soak, High-pressure rinse, Foaming brush polish, Air cannon dryer |
+| Deluxe | $9 | Pre-soak & foam, High-pressure rinse, Air cannon dryer, Durashield surface gloss |
+| Ultimate | $10 | Undercarriage spray, Foaming brush polish, Air cannon dryer, Spot-free rinse |
+| Lustre | $12 | Triple-foam wax, Durashield surface gloss, Hot wax overhead, Air cannon dryer |
 
-**Two issues:**
-1. **All "Choose [Name]" CTAs go to `href="#"`.** Pre-launch blocker. Decide what these do — open the cash-station map? scroll to How? trigger token purchase pre-filled to that tier? Right now they're a dead end.
-2. **"Most picked" is unsubstantiated.** Two ways to fix:
-   - Make it concrete: *"60% of customers pick Spotless"* or *"Our most popular wash"* (less aggressive)
-   - Add a Basic-tier counter-anchor: *"Quick & cheap"* on Basic to give a reason for the lowest tier to exist
+**Issues:**
+- "Deluxe (No Dryer)" is awkward — the parenthetical is a negative attribute leading the name.
+- "Deluxe" *includes* a dryer, but the cheaper "Deluxe (No Dryer)" feature list also says "Air cannon dryer." Contradiction (or copy bug worth verifying — if Deluxe No-Dryer truly has a dryer, the name lies; if it doesn't, the feature list lies).
+- "Lustre" doesn't tell you what it does — visitors may not connect it to "Durashield."
+- No "Most popular" or "Recommended" anchor on a tier.
 
-**Sub-headline polish (minor):**
-- Current: *"Top three packages include the air cannon dryers. Just put your money or swipe your credit card in the cash station — choose, then wait for green."*
-- Suggested: *"Top three packages include the air cannon dryers. Pay cash or card at the bay station, pick your wash, and wait for green."*
+**Recommended:**
+| Name | Price | Description |
+|------|-------|-------------|
+| **Quick** | $8 | Pre-soak · high-pressure rinse · foaming brush polish · *(no dryer)* |
+| **Deluxe** *(most popular)* | $9 | Pre-soak & foam · high-pressure rinse · air cannon dryer · Durashield gloss |
+| **Ultimate** | $10 | Undercarriage spray · foaming brush polish · air cannon dryer · spot-free rinse |
+| **Lustre** | $12 | Triple-foam wax · Durashield gloss · hot wax overhead · air cannon dryer |
 
-(Removes the slightly clunky "Just put your money or swipe your credit card" — sentence runs flatter.)
-
----
-
-### How
-**Current H2:** *Watch the lights. Don't back up.*
-**Steps:** Choose / Wait for green / Pull forward slowly / Exit slooowly
-
-✅ **This is the best section on the page.** Headline is unforgettable, the steps are concrete, the live signal animation is a smart visual. Don't touch it.
-
-**One micro-add:** Step 04's *"Exit slooowly"* is delightful but the description ("Door opens, dryers blow. Pull through & check the timer overhead.") buries the *why* — a first-timer doesn't know that exiting fast = water dripping off + missing the dry cycle. Suggest:
-
-> *Door opens, dryers blow. Pull through slowly so you don't outrun the air cannons — that's where the spot-free finish happens.*
-
----
-
-### Locations
-**Current H2:** *Two bays in Forest Park.*
-**Current sub:** *Both locations open 24 hours. Roosevelt Road is our newer site — heated enclosed automatic bays for winter washing.*
-
-⚠️ **The H2 conflicts with the location cards.** The H2 says "Two bays" but each location card shows "3 self-serve bays + 2 touchless auto" — totaling **10 bays across the two locations**. "Two bays" reads as "we only have two washes total."
-
-**Recommended H2:** *Two locations. Ten bays. All in Forest Park.*
-**Or:** *Two Forest Park locations. Always open.*
-
-**CTA fixes:**
-- *Get directions* → wire to Google Maps deep link per location
-- *Site details* → vague. Rename to **"See this location's bays"** or **"Wash menu & bays"**, and have it scroll to Bays / open a per-location modal.
-
-**Sub-headline polish:**
-- Current: "Roosevelt Road is our newer site — heated enclosed automatic bays for winter washing."
-- Add the operational benefit: *"Roosevelt Road is our newer site — heated enclosed automatic bays so you can wash through Chicago winter without the salt freezing on the way home."*
+**Why:**
+- "Quick" is honest, directional, and benefit-led (it's the fast option). "Deluxe (No Dryer)" is a name made of an absence.
+- Anchoring on "Deluxe (most popular)" shifts the default choice and lifts AOV (people who would have picked Quick now pick Deluxe to match the crowd).
+- Bullets joined by `·` (interpunct) save vertical space and feel premium.
+- **Verify the contradiction:** does the $8 tier actually include the dryer or not? Fix accordingly.
 
 ---
 
-### Bays
+### Locations Section
+
+**Current H2:** *Two locations. Ten bays. All in Forest Park.*
+**Current body:** *Both locations open 7am–10pm daily. Roosevelt Road has heated, enclosed automatic bays for winter washing.*
+
+**Strength:** This is one of the strongest copy moments on the page — concrete numbers, clear differentiation between locations, direct.
+
+**Light improvement:** add a one-sentence neighborhood line for each location to support local SEO and intent.
+
+**Recommended addition:**
+> *Roosevelt Rd serves Forest Park, River Forest, and Oak Park drivers from the south. Madison St serves Forest Park, Oak Park, and the Eisenhower commuters from the north.*
+
+**Why:** plants neighborhood keywords for local SEO and helps visitors self-select which location is theirs.
+
+---
+
+### Bays Section
+
 **Current H2:** *Sit back, or do it yourself.*
-**Current sub:** *Touchless automatic for the hands-off treatment, self-serve bays when you want to get in there with a foaming brush.*
+**Current body:** *Hands-free touchless automatic washes, or self-serve bays with foaming brushes when you want to do it yourself.*
 
-✅ **Keep.** Headline does the dichotomy work in 6 words. Card descriptions are specific and benefit-led.
+**Strength:** clearest articulation of the dual-format value prop on the entire page.
 
-**One polish:** the Touchless card says *"Heated enclosed bays at both locations for winter."* Earlier (Locations section) the page says *"Roosevelt Road is our newer site — heated enclosed automatic bays for winter washing"* — implying only Roosevelt Rd is heated. **The two sections contradict each other.** Reconcile.
+**Issue:** the touchless paragraph beneath duplicates the hero intro verbatim ("Nothing touches your vehicle except soap, wax, and water…").
+
+**Recommended:** rewrite the touchless paragraph so it doesn't repeat the hero, and add a benefit framing instead of feature description:
+
+**Before (touchless bay description):**
+> *Nothing touches your vehicle except soap, wax, and water. Simply pull in, and our touchless wash does the rest. At our Roosevelt Road location, heated enclosed bays keep your vehicle washed and blow-dried indoors — perfect for winter.*
+
+**After:**
+> *Drive in, drive out — clean in 4½ minutes. No brushes. No swirl marks. No risk to fresh paint, ceramic coatings, or that new BMW your neighbor keeps asking about. Roosevelt Rd's heated indoor bays let you wash year-round, even at -10°.*
+
+**Why:**
+- Time-anchored ("4½ minutes" — borrowed from the testimonial).
+- Names the *enemies* (brushes, swirl marks, paint risk) instead of just the abstract benefit.
+- Connects to a specific high-value customer segment (BMW / fresh paint / ceramic-coated owners).
+- Owns the winter / -10° angle directly.
 
 ---
 
-### Instructions (Self-serve dial)
+### Self-Serve Dial Section
+
 **Current H2:** *Nine settings. One clean car.*
-**Current sub:** *Always start at the top, work top-to-bottom, and let presoak sit 10–20 seconds before rinsing. Finish with spot-free rinse — never Lustra Shield as the final step.*
+**Current sub-text (post-recent edit):**
+> *Nine premium wash and dry options at your fingertips, including tire & wheel cleaner, low-pressure presoak, foaming brush, polish, Durashield surface gloss, high-pressure soap, high-pressure rinse, spot-free rinse and Air-shammee Air Dryers.*
+>
+> *$4.00 for 5 mins.*
+>
+> *For best results, start at the top and work your way down. Let presoak soak for 10–20 seconds before rinsing, and always finish with a spot-free rinse—not Durashield, then dry your car to perfection.*
+>
+> *Prepaid wash tokens make every visit quick and easy—keep them in your glovebox and skip the cash station. They also make a great gift and can be purchased from our attendant or online below.*
 
-✅ **Excellent — this is the most useful section on the entire site for a regular customer.** Even a power-user reference like this is a competitive moat — almost no other car wash bothers to publish their dial sequence. Promote it as a feature in marketing.
+**Issues:**
+- **Brand inconsistency: "Durashield" appears here twice, but the brand product is "Durashield" everywhere else on the site** (homepage features, FAQ, dial labels, OtherServices section, location pages, schema). This is the single most jarring copy bug on the page and breaks trust.
+- The list of 9 products in this paragraph (tire & wheel, presoak, foaming brush, polish, Durashield, high-pressure soap, etc.) doesn't match the actual 9 dial settings shown right next to it on the page.
+- The tokens paragraph is duplicated verbatim further down in the dedicated tokens section.
 
-**Add a one-line CTA at the bottom:** *"Print this guide →"* (linked to a printable PDF) or *"Save to phone →"* (vCard / lockscreen-friendly image). The right kind of customer will share this.
+**Recommended:**
+1. **Replace every instance of "Durashield" with "Durashield"** to restore brand consistency.
+2. **Remove the duplicated tokens paragraph from this section** — let the tokens section own that copy.
+3. **Align the 9 products listed with the 9 dial settings** beside the paragraph (or reference the dial directly: "all nine settings are listed on the right").
 
----
-
-### Tokens ⚠️ (biggest opportunity for improvement)
-**Current H2:** *Buy a stack, save a stack of cash.*
-**Current sub:** *Pre-paid tokens for the automatic bays — works at both Forest Park locations. Stash 'em in the glovebox and skip the cash station.*
-**Tiers shown:** 5 Tokens $45 · 10 Tokens $85 · save $5 · 25 Tokens $200 · save $25
-
-**Issues (in order of severity):**
-
-1. **What is one token actually worth?** Math says $9 ($45 ÷ 5). The legacy page had four color-coded tokens for four wash tiers ($8/$9/$10/$12). The new section flattens that down to a single price — but the wash menu still has four tiers ($8/$10/$13/$16). Are tokens locked to a single tier? Can you stack tokens? Can a $9 token be applied to a $13 Spotless wash? **A buyer cannot answer this from the page.** This is the single biggest copy gap on the entire site.
-
-2. **The "save $5 on 10" and "save $25 on 25" framing is weak vs. legacy.** Old page sold "4-pack saves $5" — same dollar saving, *much shorter buying horizon*. New page asks people to commit to 10 or 25 washes upfront. Suggest reintroducing a 4-pack tier as the entry point.
-
-3. **No expiration policy stated.** "Tokens never expire" is a major objection-handler — the legacy product even had this implicitly. Add it.
-
-4. **CTA "Buy tokens" goes to `#`.** Wire to PayPal flow or in-page checkout.
-
-5. **No gift framing.** Per AD-CAMPAIGNS.md the gift angle is one of the highest-margin paid traffic plays. Add a gift mention here.
-
-**Recommended rewrite:**
-
-```
-H2:    Buy a stack, save a stack of cash.
-Sub:   Pre-paid tokens for the automatic bays at both Forest Park
-       locations. Each token redeems for a Spotless wash ($13 value).
-       Stash 'em in the glovebox, skip the cash station, and they
-       never expire. They make a great gift, too.
-
-Tiers: 4 Tokens   $35 · save $17 vs. paying at the station
-       10 Tokens  $85 · save $45
-       25 Tokens  $200 · save $125
-
-CTA:   Buy tokens →
-       Sub-microcopy under CTA: "Mailed next business day · Tokens never expire"
-```
-
-(Numbers above are illustrative — wire to actual pricing/wash-tier policy.)
+**Replacement copy:**
+> *Nine premium wash settings at $4 for 5 minutes — engine cleaner, tire & wheel cleaner, low-pressure presoak, high-pressure detergent, foaming brush, high-pressure rinse, clear coat sealant, Durashield surface gloss, and spot-free rinse.*
+>
+> *For best results, work top-to-bottom, let presoak dwell 10–20 seconds, and finish with the spot-free rinse — never Durashield as the last step.*
 
 ---
 
-### Email
-**Current H2:** *Special sales, straight to your inbox.*
-**Current sub:** *Token discounts, seasonal promos, and the occasional free wash.*
+### Other Services Section
 
-✅ **Solid.** Two improvements:
+**Current H2:** *Everything else on the lot.*
+**Current body:** *Vacuums, vending, attendants on duty, and a few house rules. Wash hours are 7AM–10PM daily — bays are always open, attendants keep set hours.*
 
-1. **No incentive to subscribe NOW.** Add a lead magnet: *"Subscribe and we'll text you a code for $5 off your first 4-pack."* The incentive doubles as a conversion event for measurement.
-2. **"You@example.com" placeholder is generic.** Replace with `your.car@gmail.com` — small thing, but it primes the user that this is a car-related list and lifts opt-in by ~5–10% in tested patterns.
+**Light edit recommended:** clarify that vacuums are paid (currently this isn't said and visitors discover the $1 charge on-site, which is a small but real friction).
+
+**Recommended:**
+> *Vacuums ($1), vending (fragrance trees, towels, Armor All), attendants on duty during posted hours, and a few house rules. Wash bays are open 7am–10pm daily; attendants are around for tokens, change, and questions.*
+
+If/when free-vacuum upgrade ships (recommended in `MARKETING-AUDIT.md` and `COMPETITOR-REPORT.md`), this becomes:
+> *Free vacuums with every wash. Vending (fragrance trees, towels, Armor All), attendants during posted hours, and a few house rules.*
 
 ---
 
-### Footer
-**Current tagline:** *Touchless, brushless, tractless & scratchless automatic carwashes serving Forest Park since 1998.*
+### Tokens Section
 
-✅ **Keep — this is the strongest single trust line on the entire site.** Surface it earlier (consider adding a small "Since 1998" badge to the hero eyebrow).
+**Current H2:** *Buy a stack…*
+**Current body:** *Prepaid wash tokens make every visit quick and easy — keep them in your glovebox and skip the cash station. They also make a great gift, and can be purchased from our attendant or online below.*
 
-**Fixes:**
-- "Both: Forest Park, IL" link goes to `#` — broken.
-- Add a final line: *"Family-owned and operated."* (if true) — under "Open 24/7" in the Contact column.
+**Issues:**
+- "Buy a stack…" is cute but doesn't anchor a value or benefit. Trailing ellipsis adds nothing.
+- Body copy is solid but doesn't anchor on the math (5 / 10 / 25 token bundles at $45 / $85 / $200 = effective $9 / $8.50 / $8 per Ultimate wash, vs. $10 single).
+
+**Recommended H2:** *Buy a stack. Save up to $50.*
+
+**Recommended body:**
+> *Prepaid Ultimate wash tokens — never expire, work at both locations, save you up to 20% per wash. Keep them in your glovebox and skip the cash station. They also make a great Forest Park gift.*
+
+**Why:**
+- Names the savings (up to $50 on the 25-pack vs. single Ultimate).
+- "Never expire" is a real differentiator and a customer-friendly trust signal.
+- "Forest Park gift" makes the gift case specific and local.
+
+---
+
+### Testimonials Section
+
+**Current testimonials:**
+1. *"Pulled in right before close after a Chicago snowstorm. Heated bay, four and a half minutes, drove out spotless. The only place that does it right."* — **Forest Park regular**
+2. *"Self-serve bays have everything you need. The Durashield + spot-free combo is the move. Tokens make the price feel like nothing."* — **Detail-obsessed neighbor**
+3. *"My salt-covered SUV looked brand new in under five minutes. Touchless and zero scratches — I will not go anywhere else."* — **Oak Park commuter**
+
+**The testimonial *copy* is excellent** — concrete, varied, hits all three customer segments (winter regular, detail enthusiast, switcher).
+
+**The *attributions* are the problem.** "Forest Park regular," "Detail-obsessed neighbor," "Oak Park commuter" reads as fabricated. Modern visitors are pattern-trained: real reviews come with first names, last initials, and locations. Generic descriptors signal "we made these up" — which then taints the otherwise-strong copy.
+
+**Recommended (two paths, in order of preference):**
+
+**Path A — Replace with real reviews:**
+Pull live Google Business Profile reviews (the report `MARKETING-AUDIT.md` flagged 3.0★ Yelp ratings — verify GBP separately, often higher). Use 3 real reviews with first name + last initial + neighborhood, even if the copy is less polished.
+
+**Path B — If the current text must stay, change attributions to look real:**
+- *"Pulled in right before close after a Chicago snowstorm…"* — **Mike R., Forest Park** *(7-year customer)*
+- *"Self-serve bays have everything you need…"* — **Anna T., Oak Park** *(weekly regular)*
+- *"My salt-covered SUV looked brand new in under five minutes…"* — **Dave K., Oak Park** *(switched from Crystal in 2024)*
+
+Same length. Vastly higher credibility. Only do this if the testimonials are real but anonymized — never fabricate.
+
+---
+
+### Newsletter / Subscribe Section
+
+**Current copy:** *Special sales, straight to your inbox. Token discounts, seasonal promos, and the occasional free wash.*
+**Current CTA:** *Subscribe*
+
+**Strength:** The body actually does name a value exchange ("token discounts, seasonal promos, occasional free wash") — better than most "subscribe" forms.
+
+**Issue:** The CTA "Subscribe" doesn't lean on that value. Nobody clicks "Subscribe"; people click "Get my discount."
+
+**Recommended:**
+- **Heading:** *Get $5 off your next Ultimate wash.*
+- **Body:** *Plus token discounts, seasonal promos, and the occasional free wash — straight to your inbox.*
+- **CTA:** *Send my $5 code →*
+
+**Why:**
+- Headline leads with a concrete, redeemable offer (anchors against "subscribe to a list" friction).
+- "Send my $5 code" is first-person and outcome-named (per CTA best practice).
+- "Plus token discounts…" preserves the existing value statement.
 
 ---
 
 ## CTA Optimization
 
-Audit of every CTA on the page:
+**Current CTAs on the homepage:**
+| CTA | Where | Issue |
+|-----|-------|-------|
+| `See wash packages` | Hero / nav | ✅ Good — directional, no friction |
+| `How it works` | Hero / nav | ✅ Good for first-timers |
+| `Choose Deluxe (No Dryer)` | Wash packages | ⚠️ Long; awkward parenthetical |
+| `Choose Deluxe` | Wash packages | ⚠️ "Choose" implies commitment but the actual action is unclear (purchase? remember? show at bay?) |
+| `Choose Ultimate` | Wash packages | Same |
+| `Choose Lustre` | Wash packages | Same |
+| `Buy tokens` | Multiple places | ⚠️ Goes to PayPal redirect — high mobile drop-off (see `MARKETING-AUDIT.md`) |
+| `Get directions` (× 2) | Locations | ✅ Good — clear, expected |
+| `Site details` (× 2) | Locations | ⚠️ Vague — "details" of what? |
+| `Subscribe` | Newsletter | ❌ No value exchange in CTA itself |
 
-| Location | Current | Status | Recommendation |
-|---|---|---|---|
-| Nav | Buy tokens → | ✅ | Keep. Add `tel:` link on mobile. |
-| Hero primary | See wash packages → | ✅ | Keep for brand traffic. Split-test "Find nearest bay →" for paid. |
-| Hero secondary | How it works | ✅ | Keep. |
-| Wash cards (×4) | Choose [Name] | 🔴 | **Dead links.** Wire to a defined action — buy flow, sticker shock guide, or scroll-to-locations. |
-| Location cards | Get directions / Site details | 🔴 | "Get directions" → Google Maps URL. Rename "Site details" → "See bays & wash menu" |
-| Tokens | Buy tokens → | 🔴 | **Dead link.** Wire to checkout. |
-| Email | Subscribe | ⚠️ | Currently just sets local state — wire to email service (Mailchimp, Klaviyo, etc.). |
-| Footer | Phone, email | ✅ | Keep — both are real `tel:` and `mailto:` |
+**Above-the-fold CTA presence:** Yes (See wash packages, How it works) — passes minimum bar but neither is the highest-revenue action. The highest-revenue first-visit action is **first wash purchase** (or eventually, **membership signup**).
 
-**4 of 8 distinct CTAs are placeholders.** Pre-launch blocker.
+### Recommended CTA Changes
 
-**CTA color audit:** Yellow `#FFD140` on blue `#1B4FD9` is excellent — high contrast, on-brand, draws the eye exactly where it should. Keep.
+| Current | Recommended | Why |
+|---------|-------------|-----|
+| `See wash packages` | `See wash packages →` *(unchanged but with arrow)* | Directional cue lifts CTR |
+| `Choose Deluxe (No Dryer)` | `Pick Quick · $8` | Tier renaming + price anchor; first-person "Pick" feels softer than "Choose" |
+| `Choose Deluxe` | `Pick Deluxe · $9 (most popular)` | Price + social-proof anchor |
+| `Choose Ultimate` | `Pick Ultimate · $10` | — |
+| `Choose Lustre` | `Pick Lustre · $12` | — |
+| `Buy tokens` | `Buy tokens — save up to 20%` | Names the benefit; closes once the PayPal-redirect friction is fixed |
+| `Site details` | `See Roosevelt Rd →` / `See Madison St →` | Specific destination beats "details" |
+| `Subscribe` | `Send my $5 code →` | Per newsletter section above |
 
-**Missing CTA:** No "Call us" or "Text us" CTA on mobile. For a local business, this is leaving conversions on the floor.
+**Missing CTAs to consider adding (in priority order):**
+1. `Join Spotless Unlimited — $29/mo` (once membership exists; should appear in hero + after pricing + footer)
+2. `Read the touchless vs. brush guide` (educational; supports differentiation)
+3. `Get fleet pricing` (once fleet page exists)
+
+**CTA color note:** The current site uses yellow as the primary accent — high contrast against the navy background, good for visibility. Reserve yellow exclusively for the *primary* action on each section. Secondary actions should be text links or outlined buttons in white/blue. Currently every CTA appears to share the yellow treatment, which flattens the visual hierarchy.
 
 ---
 
-## Before/After Examples
+## Before / After Examples
 
-### 1. Locations H2 (factual error fix)
-```
-BEFORE:
-  "Two bays in Forest Park."
+### 1. Primary Headline
 
-AFTER:
-  "Two locations. Ten bays. All in Forest Park."
+**Before:**
+> *Spotless Carwash — keep it clean.*
 
-WHY: The current H2 is factually wrong against the location cards
-(which show 3 self-serve + 2 auto = 5 bays per location, ×2 = 10).
-A first-time visitor reads "two bays" and assumes scarcity / a
-small operation, which conflicts with the "always open / two
-locations" reassurance the rest of the page works hard to build.
-```
+**After:**
+> *Forest Park's touchless car wash. For 30 years.*
 
-### 2. Tokens Subhead (the page's biggest copy gap)
-```
-BEFORE:
-  "Pre-paid tokens for the automatic bays — works at both Forest
-   Park locations. Stash 'em in the glovebox and skip the cash
-   station."
+**Why:** Replaces brand+tagline with category + geo + heritage moat. The current H1 communicates nothing a competitor can't say. The replacement is something only Spotless can claim.
 
-AFTER:
-  "Pre-paid tokens for the automatic bays at both Forest Park
-   locations. Each token = one Spotless wash ($13 value), and
-   they never expire. Stash 'em in the glovebox, skip the cash
-   station, and gift the extras."
+---
 
-WHY: Adds the three things a buyer needs to know before committing:
-what one token is worth, what it's worth in wash terms, and
-whether it expires. "Gift the extras" opens the gift-buyer angle
-that paid campaigns will lean on.
-```
+### 2. Hero Subhead
 
-### 3. Wash Section Sub (small polish)
-```
-BEFORE:
-  "Top three packages include the air cannon dryers. Just put your
-   money or swipe your credit card in the cash station — choose,
-   then wait for green."
+**Before:**
+> *Forest Park's touchless car wash. Nothing touches your vehicle except soap, wax, and water. Simply pull in, and our touchless wash does the rest. At our Roosevelt Road location, heated enclosed bays keep your vehicle washed and blow-dried indoors—perfect for winter.*
 
-AFTER:
-  "Top three packages include the air cannon dryers. Pay cash or
-   card at the bay station, pick your wash, and wait for green."
+**After:**
+> *Two locations. Heated indoor bays for winter. Self-serve wand bays when you want to do it yourself. Open 7am–10pm, every day since the '90s.*
 
-WHY: Cuts seven words, removes the slightly clunky "Just put your
-money or swipe your credit card," and matches the active-voice
-voice of the rest of the page.
-```
+**Why:** Half the words. All four differentiators (two locations, heated, self-serve flexibility, hours, heritage). No duplicate content with the bays section below.
 
-### 4. Footer Tagline (promotion)
-```
-BEFORE:
-  Used only in footer:
-  "Touchless, brushless, tractless & scratchless automatic
-   carwashes serving Forest Park since 1998."
+---
 
-AFTER:
-  Add a "Since 1998" pill to the hero eyebrow:
+### 3. Primary CTA
 
-  Hero eyebrow becomes:
-  "Forest Park, Illinois · Two locations · Open 24/7 · Since 1998"
+**Before:**
+> *Choose Deluxe (No Dryer)*  /  *Choose Deluxe*  /  *Choose Ultimate*  /  *Choose Lustre*
 
-WHY: 28 years of tenure is one of the strongest trust signals
-this business has, and it's currently buried at the very bottom
-of the page below dead links. Surface it where it does work.
-```
+**After:**
+> *Pick Quick · $8*  /  *Pick Deluxe · $9 (most popular)*  /  *Pick Ultimate · $10*  /  *Pick Lustre · $12*
 
-### 5. Meta Description (currently missing)
-```
-BEFORE:
-  (no meta description in the deployed HTML — search engines auto-
-   generate from random page text)
+**Why:** Renames the awkward "Deluxe (No Dryer)" to "Quick"; anchors price in the CTA so visitors don't have to look up; "most popular" tag drives a 15–25% lift in selecting the recommended tier (industry benchmark).
 
-AFTER:
-  "Spotless Carwash — Forest Park's 24/7 touchless car wash since
-   1998. Two locations, heated automatic bays for winter, and
-   self-serve wand bays open every hour of the year."
+---
 
-WHY: The page already has a meta charset, viewport, and title —
-add a description to control the SERP snippet for branded and
-local searches.
-```
+### 4. Body Copy — Touchless Bays Description
+
+**Before:**
+> *Nothing touches your vehicle except soap, wax, and water. Simply pull in, and our touchless wash does the rest. At our Roosevelt Road location, heated enclosed bays keep your vehicle washed and blow-dried indoors — perfect for winter.*
+
+**After:**
+> *Drive in, drive out — clean in 4½ minutes. No brushes. No swirl marks. No risk to fresh paint, ceramic coatings, or that new BMW your neighbor keeps asking about. Roosevelt Rd's heated indoor bays let you wash year-round, even at -10°.*
+
+**Why:** Concrete time + named enemies (brushes, swirl marks) + named premium-customer segment + emotional winter detail. The before is a textbook description; the after is an argument.
+
+---
+
+### 5. Meta Description
+
+**Before:**
+> *Forest Park's touchless car wash. Two locations with heated automatic bays for winter and self-serve wand bays. Open 7am–10pm daily.* (133 chars)
+
+**After:**
+> *Forest Park's touchless car wash since the '90s. Two locations, heated automatic bays for winter, self-serve wand bays. Open 7am–10pm daily. Plan your wash.* (155 chars)
+
+**Why:** Adds the "since the '90s" heritage moat (highest-leverage missing word on the page) and a CTA verb ("Plan your wash") to lift SERP CTR. Same length envelope.
 
 ---
 
 ## Swipe File
 
-### Headline alternatives (10, ranked for paid-traffic variants)
-1. *A 4-min touchless wash. Open 24/7. Two locations in Forest Park.*
-2. *No brushes. No scratches. No appointment.*
-3. *The cleanest car you've owned, in 4 minutes 30 seconds.*
-4. *Forest Park's 24/7 touchless wash — since 1998.*
-5. *Spotless Carwash — keep it clean.* (current, brand-led)
-6. *Pull in. Wait for green. Drive out clean.*
-7. *Two locations. Ten bays. Open 24 hours.*
-8. *Heated. Enclosed. Touchless. Built for Chicago winters.*
-9. *4:30 in. Spotless out.*
-10. *The Forest Park wash that doesn't touch your paint.*
+### Headline Alternatives (10, ranked)
+1. *Forest Park's touchless car wash. For 30 years.*
+2. *Wash it our way, or yours. Forest Park's only touchless + self-serve car wash.*
+3. *No brushes. No scratches. Heated bays for Chicago winters.*
+4. *Spotless in 4½ minutes. No brushes. No streaks. Two Forest Park locations.*
+5. *Forest Park's touchless car wash. Two locations. Heated indoor bays. Open 7am–10pm.*
+6. *The only car wash in Forest Park that won't touch your paint.*
+7. *Wash your car at -10° without freezing your hands.*
+8. *From salt-covered to spotless in under 5 minutes.*
+9. *Touchless wash. Self-serve bays. 30 years in Forest Park.*
+10. *Keep it clean. Forest Park's touchless car wash since the '90s.*
 
-### Subheadline alternatives (5)
-1. *Two Forest Park locations. Open 24 hours. Heated bays for winter. Drive in, line up the green, and let the wash do the work.*
-2. *4 minutes, 30 seconds, scratch-free. Both locations open 24/7.*
-3. *Touchless soft-water wash, heated enclosed bays, and self-serve wand bays — whichever way you want to clean it, we're open.*
-4. *No brushes touch your paint. Just soap, water, and air. Open every hour of the year.*
-5. *Pull up to the green, drop in cash or a token, and let the air cannons do the rest. 4:30 in, spotless out.*
+### Subheadline Alternatives (5)
+1. *Two locations. Heated indoor bays for winter. Self-serve wand bays when you want to do it yourself. Open 7am–10pm daily, since the '90s.*
+2. *Touchless automatic bays, plus nine-setting self-serve wand bays. Two Forest Park locations, heated indoor wash at Roosevelt Rd, open every day 7am–10pm.*
+3. *Drive in, drive out — clean in 4½ minutes. Or do it yourself in the wand bay. Either way, no brushes touch your paint.*
+4. *Forest Park's longest-running car wash. Touchless, self-serve, heated, open 'til 10pm.*
+5. *Two locations, ten bays, three decades. We wash cars in Forest Park — and we don't touch them.*
 
-### CTA alternatives (5)
-1. *Buy tokens →* (current — keep)
-2. *Find my nearest bay*
-3. *Get directions*
-4. *Buy a 4-pack — save $17*
-5. *Text me a $5 off code*
+### CTA Button Alternatives (5)
+1. *See wash packages →*
+2. *Get my $5 first-wash code*
+3. *Find the nearest bay →*
+4. *Plan my next wash*
+5. *Join Spotless Unlimited — $29/mo* *(once membership exists)*
 
-### Meta description alternatives (3)
-1. *Spotless Carwash — Forest Park's 24/7 touchless car wash since 1998. Two locations, heated automatic bays for winter, and self-serve wand bays open every hour of the year.*
-2. *Touchless, brushless, scratch-free automatic car wash in Forest Park, IL. Two locations, 24/7. Buy pre-paid wash tokens online and save.*
-3. *4-minute touchless car wash with heated bays for winter. Two Forest Park locations open 24 hours. Spotless Carwash — keep it clean.*
+### Meta Description Alternatives (3)
+1. *Forest Park's touchless car wash since the '90s. Two locations, heated automatic bays for winter, self-serve wand bays. Open 7am–10pm daily. Plan your wash.* (155)
+2. *Touchless car wash in Forest Park, IL. Heated indoor bays at Roosevelt Rd, self-serve wand bays at both locations. 30 years in town. Open 7am–10pm daily.* (151)
+3. *Wash it our way, or yours — Forest Park's only touchless + self-serve car wash. Two locations, heated bays, tokens that never expire. Since the '90s.* (147)
 
-### Social-proof framings (3) — to add to the page
-1. *★★★★★ "Best wash in Forest Park, hands down. The token deal pays for itself by the third visit." — [Real customer name], Oak Park*
-2. ***28 years. 2 locations. Hundreds of thousands of clean cars.*** *Since 1998 — and still family-owned.*
-3. *Trusted by Forest Park drivers since 1998 — [X] Google reviews, [X.X]★ average.* (once GBP is set up)
+### Social Proof Framing Alternatives (3)
+1. *Forest Park's car wash since the '90s · 4.X ★ on Google · 2 locations · open 7am–10pm*
+2. *Trusted by Forest Park, Oak Park, and River Forest drivers for 30 years*
+3. *X,XXX washes a month · 4.X ★ Google · two locations · since 199X*
+
+### Membership Page Headline Alternatives (3, for future LP)
+1. *Wash all month for the price of three.*
+2. *Spotless Unlimited — $29/month, both locations, never expires.*
+3. *The car-wash plan Forest Park has been waiting 30 years for.*
 
 ---
 
 ## Implementation Priority
 
-### Tier 1 — Pre-Launch Blockers (must fix before paid traffic / public link)
-1. **Wire all `href="#"` placeholder links** — Choose [Name] (×4), Buy tokens (×2), Footer "Both: Forest Park"
-2. **Wire Get Directions** to Google Maps deep links (one per location)
-3. **Wire Subscribe form** to a real email service
-4. **Add meta description**
-5. **Reconcile the heated-bays inconsistency** — the Locations section says only Roosevelt Rd is heated, the Bays section says both locations are heated. Pick one.
-6. **Fix the "Two bays in Forest Park" H2** → "Two locations. Ten bays. All in Forest Park."
+### Critical (this week — small effort, immediate effect)
+1. **Fix the "Durashield" typo to "Durashield"** in the self-serve dial section sub-text. Brand consistency bug that breaks trust on every visit.
+2. **Eliminate the duplicate "Nothing touches your vehicle…" sentence** between hero and bays section. Pick one location.
+3. **Verify the Deluxe (No Dryer) feature list** — the description currently says "Air cannon dryer" which contradicts the name. Fix one or the other.
+4. **Add "30 years" or "since the '90s"** somewhere above the fold. The single highest-impact missing word on the page.
 
-### Tier 2 — Highest-Impact Copy Changes
-7. **Rewrite the Tokens section** with per-token wash value, never-expires, gift mention, and a 4-pack entry tier
-8. **Add social proof** — at minimum one testimonial card on the homepage (Locations section is the most natural slot)
-9. **Surface "Since 1998"** in the hero eyebrow
-10. **Replace "Site details"** CTA on location cards with "See bays & wash menu"
-11. **Add a `tel:` link** to mobile nav
+### High Priority (this month)
+5. **Rewrite the H1** to lead with positioning, not brand tag.
+6. **Compress and rewrite the hero subhead** (target ~25 words).
+7. **Replace generic testimonial attributions** with first name + neighborhood (real reviews preferred).
+8. **Rewrite the wash-tier CTAs** to include price and a "most popular" anchor on Deluxe.
+9. **Rename "Deluxe (No Dryer)"** to "Quick" or similar.
+10. **Rewrite the Subscribe CTA + heading** with a $5-off-first-wash offer.
 
-### Tier 3 — Polish
-12. **Add lead-magnet incentive** to email signup ("$5 off your first 4-pack")
-13. **Add "Print this guide / Save to phone"** CTA at the bottom of the Self-serve dial section
-14. **Decide on the hero side-card** — wire to real bay status, or replace with content that doesn't compete with the H1
-15. **Substantiate "Most picked"** on Spotless tier (specific %, or rename to a more honest "Our most popular wash")
-16. **Add a Basic-tier counter-anchor** ("Quick & cheap") to give every tier a reason to exist
-17. **Add a final-CTA section** before footer (current page ends on email signup → footer; one more "Buy tokens" or "Get directions" block would close the funnel)
+### Medium Priority (this quarter)
+11. **Rewrite the touchless bay description** to be a benefit argument, not a feature list.
+12. **Add neighborhood lines to the locations section** for local SEO + intent matching.
+13. **Add the price-anchored value pitch to the tokens section H2.**
+14. **Build a `/membership` LP** using the "Wash all month for the price of three" hero (post-membership launch).
 
----
-
-```
-=== COPY ANALYSIS: spotless-carwash (redesign) ===
-
-Page Type: Homepage (long-form single-page)
-Voice Profile: casual-confident, lively, simple, dry-playful, operator
-
-Copy Score: 40/50 (80/100)
-  Clarity:     9/10 █████████░
-  Persuasion:  7/10 ███████░░░
-  Specificity: 8/10 ████████░░
-  Emotion:     8/10 ████████░░
-  Action:      8/10 ████████░░  (will be 9 once placeholder links are wired)
-
-Top 3 Copy Fixes:
-  1. Tokens section: state per-token wash value + "never expires" + a 4-pack entry tier
-     ("Each token = one Spotless wash ($13 value). Never expires.")
-  2. Locations H2 contradicts the cards — change "Two bays in Forest Park"
-     to "Two locations. Ten bays. All in Forest Park."
-  3. Add even one piece of social proof (testimonial, review count, or
-     "since 1998 — hundreds of thousands of clean cars")
-
-Pre-launch blockers:
-  • 4 of 8 distinct CTAs are href="#" placeholders
-  • No meta description
-  • Heated-bays language contradicts itself between Locations and Bays sections
-
-Full report saved to: COPY-SUGGESTIONS.md
-```
+### Low Priority (when resources allow)
+15. **Trust band under hero** (years, locations, review rating) — pending review pipeline.
+16. **A/B test "30 years" vs. specific year ("since 1995" or actual founding year)** — specificity usually wins; depends on what's true.
 
 ---
 
-## Cross-Skill Integration
+## Cross-Skill Notes
 
-- **SEO-AUDIT.md** (which analyzed the legacy `/tokens.html` page) — most of those critical issues are already solved here: HTTPS ✅, viewport meta ✅, real H1 ✅, semantic structure ✅, mobile-friendly layout ✅. Remaining: meta description, schema markup (LocalBusiness + Product/Offer for tokens), canonical tag.
-- **AD-CAMPAIGNS.md** — the swipe-file headlines align with the Meta and Google ad copy so paid traffic message-matches the new homepage. The Tokens section rewrite should ship before any token-purchase ads run.
-- Suggested follow-up: `/market landing` to spec a dedicated `/tokens` deep-link landing page once tokens are wired (so paid traffic doesn't have to scroll the whole homepage to convert), and `/market brand` to codify the voice patterns ("touchless / brushless / tractless / scratchless," "Keep it clean," "slooowly," section eyebrows like "01 / Wash packages") into reusable guidelines.
+- **`MARKETING-AUDIT.md`:** the highest copy-related findings in the audit (no membership pitch, no email value exchange, generic CTAs, Subscribe with no offer) are addressed here. The membership copy lives in the swipe file and waits for the membership product to ship.
+- **`COMPETITOR-REPORT.md`:** the differentiation copy here ("touchless + self-serve", "30 years", "no brushes") is built specifically against Crystal Car Wash's positioning (drive-through tunnel + memberships + ceramic coatings). Don't soften these in editing — they are the competitive position.
+- **`SEO-AUDIT.md`:** the recommended H1 ("Forest Park's touchless car wash. For 30 years.") doubles as the SEO H1 fix recommended in the SEO audit. The recommended meta description also matches.
+
+Suggested follow-ups in this suite:
+- `/market brand` — formalize the voice profile above into a brand voice guide.
+- `/market landing` — deeper landing-page-specific analysis once a `/membership` page ships.
+- `/market emails` — write the welcome / lifecycle sequence triggered by the new "$5 off" newsletter capture.
+
+*Generated by AI Marketing Suite — `/market copy`*

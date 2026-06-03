@@ -32,10 +32,11 @@ export default function HomePage() {
       <Locations />
       <Bays />
       <Testimonial />
+      <Email />
       <Instructions />
       <OtherServices />
       <Tokens />
-      <Email />
+
     </>
   )
 }

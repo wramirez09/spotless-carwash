@@ -6,10 +6,10 @@ const EMAIL_QUERY = `*[_type == "emailSection"][0]{
 }`
 
 const FALLBACK: EmailData = {
-  headlineLine1: 'Join the list.',
-  headlineLine2: 'Wash deals, first.',
-  body: 'Subscribe for occasional Forest Park car-care tips, token discounts, and seasonal promos. No spam — unsubscribe anytime.',
-  placeholder: 'you@example.com',
+  headlineLine1: 'Spotless updates,',
+  headlineLine2: 'straight to your inbox.',
+  body: 'Subscribe for occasional Forest Park car-care tips and updates from Spotless Car Wash. No spam — unsubscribe anytime.',
+  placeholder: 'Enter your email',
   submitLabel: 'Subscribe',
   successLabel: "You're subscribed ✓",
 }

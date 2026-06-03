@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import PromotionSignup from './PromotionSignup'
 
 export const metadata: Metadata = {
   title: 'Spotless Carwash — Site under construction',
@@ -143,6 +144,9 @@ export default function UnderConstructionPage() {
               </div>
             </div>
           </section>
+
+          {/* PROMOTIONS SIGNUP */}
+          <PromotionSignup />
 
           {/* LOCATION INTRO */}
           <div className="max-w-[1100px] mx-auto text-left mt-14 px-5 md:px-7">
