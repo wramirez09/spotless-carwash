@@ -6,12 +6,12 @@ const EMAIL_QUERY = `*[_type == "emailSection"][0]{
 }`
 
 const FALLBACK: EmailData = {
-  headlineLine1: 'Get $5 off',
-  headlineLine2: 'your first Ultimate wash.',
-  body: 'Subscribe for occasional Forest Park car-care tips, token discounts, seasonal promos, and the occasional free wash.',
+  headlineLine1: 'Join the list.',
+  headlineLine2: 'Wash deals, first.',
+  body: 'Subscribe for occasional Forest Park car-care tips, token discounts, and seasonal promos. No spam — unsubscribe anytime.',
   placeholder: 'you@example.com',
-  submitLabel: 'Send my $5 code',
-  successLabel: 'Code on the way ✓',
+  submitLabel: 'Subscribe',
+  successLabel: "You're subscribed ✓",
 }
 
 export default async function Email() {
