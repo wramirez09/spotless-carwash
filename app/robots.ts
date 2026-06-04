@@ -10,6 +10,6 @@ export default function robots(): MetadataRoute.Robots {
   }
   return {
     rules: { userAgent: '*', allow: '/', disallow: ['/marketing-audit', '/competitor-report', '/seo-audit'] },
-    sitemap: 'https://spotlesscarwash.com/sitemap.xml',
+    sitemap: 'https://spotlessautowash.com/sitemap.xml',
   }
 }

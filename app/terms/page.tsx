@@ -24,7 +24,7 @@ const FALLBACK: Copy = {
   lastUpdatedLabel: 'Last updated:',
   lastUpdatedDate: 'May 2026',
   intro:
-    'By using the Spotless Carwash website at spotlesscarwash.com, or by buying or redeeming wash tokens, you agree to these terms.',
+    'By using the Spotless Carwash website at spotlessautowash.com, or by buying or redeeming wash tokens, you agree to these terms.',
   sections: [
     {
       heading: 'Wash tokens',

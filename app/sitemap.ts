@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { locations } from '@/src/data/locations'
 
-const SITE_URL = 'https://spotlesscarwash.com'
+const SITE_URL = 'https://spotlessautowash.com'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date()

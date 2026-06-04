@@ -1,6 +1,6 @@
 import JsonLd from './JsonLd'
 
-const SITE_URL = 'https://spotlesscarwash.com'
+const SITE_URL = 'https://spotlessautowash.com'
 
 export type BreadcrumbItem = {
   name: string

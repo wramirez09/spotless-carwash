@@ -210,7 +210,7 @@ title: 'Roosevelt Rd · Spotless Carwash · Forest Park, IL'    // titleTemplate
                 '✅ `quality=75` is reasonable for web.',
                 '⚠️ **Alt text count is light.** Only 4 alt attributes detected on the homepage. Many image roles are likely background/decorative.',
                 '⚠️ **One image filename has a typo:** `madison-loaction.jpg` (should be `madison-location.jpg`). Filenames are a minor SEO signal — descriptive, correct filenames help.',
-                '⚠️ **No OpenGraph image** (`og:image`) is set. Social shares will show empty cards on Twitter/X, LinkedIn, Slack, iMessage, Facebook, etc. Twitter card type is `summary_large_image` but no image is provided — **broken**.',
+                '✅ **OpenGraph image is set** (`/images/og-image.png`, 1200×630) with `summary_large_image` Twitter cards — social shares on X, LinkedIn, Slack, iMessage, Facebook, etc. render a proper preview.',
               ],
             },
             {
@@ -311,7 +311,7 @@ title: 'Roosevelt Rd · Spotless Carwash · Forest Park, IL'    // titleTemplate
               _type: 'reportCode',
               _key: 'ccode',
               code: `export const metadata = {
-  metadataBase: new URL('https://spotlesscarwash.com'),  // production domain
+  metadataBase: new URL('https://spotlessautowash.com'),  // production domain
   alternates: { canonical: '/' },  // override per page as needed
   // ...
 }`,
@@ -466,7 +466,7 @@ title: 'Roosevelt Rd · Spotless Carwash · Forest Park, IL'    // titleTemplate
               ],
             },
             { _type: 'reportProse', _key: 'r5', body: [p('**Recommended:**', 'r5a')] },
-            { _type: 'reportCode', _key: 'r6', code: `User-Agent: *\nAllow: /\n\nSitemap: https://spotlesscarwash.com/sitemap.xml` },
+            { _type: 'reportCode', _key: 'r6', code: `User-Agent: *\nAllow: /\n\nSitemap: https://spotlessautowash.com/sitemap.xml` },
           ],
         },
         {
@@ -484,7 +484,7 @@ title: 'Roosevelt Rd · Spotless Carwash · Forest Park, IL'    // titleTemplate
                 p('**Recommended fix:**', 's3b'),
               ],
             },
-            { _type: 'reportCode', _key: 's4', code: `<url><loc>https://spotlesscarwash.com/</loc>...</url>\n<url><loc>https://spotlesscarwash.com/faq</loc>...</url>\n<url><loc>https://spotlesscarwash.com/locations/roosevelt-rd</loc>...</url>\n<url><loc>https://spotlesscarwash.com/locations/madison-st</loc>...</url>` },
+            { _type: 'reportCode', _key: 's4', code: `<url><loc>https://spotlessautowash.com/</loc>...</url>\n<url><loc>https://spotlessautowash.com/faq</loc>...</url>\n<url><loc>https://spotlessautowash.com/locations/roosevelt-rd</loc>...</url>\n<url><loc>https://spotlessautowash.com/locations/madison-st</loc>...</url>` },
             {
               _type: 'reportProse',
               _key: 's5',
@@ -858,7 +858,7 @@ title: 'Roosevelt Rd · Spotless Carwash · Forest Park, IL'    // titleTemplate
               _key: 'crl',
               style: 'number',
               items: [
-                '**Add absolute URLs to sitemap.xml.** Currently `/` instead of `https://spotlesscarwash.com/` — Google may silently ignore relative URLs. Configure `metadataBase` in `app/layout.tsx`.',
+                '**Add absolute URLs to sitemap.xml.** Currently `/` instead of `https://spotlessautowash.com/` — Google may silently ignore relative URLs. Configure `metadataBase` in `app/layout.tsx`.',
                 '**Add `Sitemap:` declaration to robots.txt.** One line, no risk.',
                 '**Add canonical tags to every page.** Set `metadataBase` and `alternates.canonical` in `app/layout.tsx` and per-page metadata.',
                 '**Add `og:image` and `twitter:image`.** Use a 1200×630 hero of the storefront or wash bay. Set in `app/layout.tsx`.',

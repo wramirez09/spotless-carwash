@@ -45,7 +45,7 @@ const FALLBACK: Required<Pick<SectionData, 'eyebrow' | 'heading'>> & {
   ],
 }
 
-const SITE_URL = 'https://spotlesscarwash.com'
+const SITE_URL = 'https://spotlessautowash.com'
 
 export default async function Testimonial() {
   const [data, google] = await Promise.all([

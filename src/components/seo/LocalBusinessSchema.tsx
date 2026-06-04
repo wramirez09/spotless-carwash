@@ -1,7 +1,7 @@
 import { type Location, fullAddress } from '@/src/data/locations'
 import JsonLd from './JsonLd'
 
-const SITE_URL = 'https://spotlesscarwash.com'
+const SITE_URL = 'https://spotlessautowash.com'
 
 // Approximate coordinates derived from street addresses. Replace with exact
 // coords from Google Business Profile when available.

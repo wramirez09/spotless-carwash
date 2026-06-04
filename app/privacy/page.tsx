@@ -25,7 +25,7 @@ const FALLBACK: Copy = {
   lastUpdatedLabel: 'Last updated:',
   lastUpdatedDate: 'May 2026',
   intro:
-    'This privacy policy describes how Spotless Carwash (“we,” “us”) collects and uses information when you visit our website at spotlesscarwash.com or our two locations in Forest Park, IL.',
+    'This privacy policy describes how Spotless Carwash (“we,” “us”) collects and uses information when you visit our website at spotlessautowash.com or our two locations in Forest Park, IL.',
   sections: [
     {
       heading: 'What we collect',

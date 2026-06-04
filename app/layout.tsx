@@ -45,7 +45,7 @@ const isProduction = process.env.VERCEL_ENV === 'production'
 // preview traffic don't pollute the property.
 const GA_MEASUREMENT_ID = 'G-95C5VC84RL'
 
-const SITE_URL = 'https://spotlesscarwash.com'
+const SITE_URL = 'https://spotlessautowash.com'
 
 const SITE_SETTINGS_QUERY = `*[_type == "siteSettings"][0]{
   titleDefault, titleTemplate, description, keywords,
