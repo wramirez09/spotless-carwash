@@ -21,8 +21,13 @@ const DONE_MESSAGE: Record<TerminalOutcome, string> = {
   already_subscribed: "You're already on our list — thanks!",
 }
 
+const inputClass =
+  'flex-1 rounded-full bg-white px-5 py-3.5 text-blue-950 font-semibold placeholder:text-slate-400 outline-none ring-2 ring-transparent focus:ring-yellow-400 transition'
+
 export default function PromotionSignup() {
   const [email, setEmail] = useState('')
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
   const [state, setState] = useState<State>('idle')
   const [outcome, setOutcome] = useState<TerminalOutcome>('subscribed')
   const [message, setMessage] = useState('')
@@ -34,7 +39,13 @@ export default function PromotionSignup() {
       const res = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, source: 'under_construction', confirmResubscribe }),
+        body: JSON.stringify({
+          email,
+          name: name.trim() || undefined,
+          phone: phone.trim() || undefined,
+          source: 'under_construction',
+          confirmResubscribe,
+        }),
       })
       const data = (await res.json().catch(() => ({}))) as SubscribeResponse
       if (!res.ok) {
@@ -87,30 +98,63 @@ export default function PromotionSignup() {
           </div>
         ) : (
           <>
-            <form onSubmit={onSubmit} className="mt-5 flex flex-col sm:flex-row gap-3" noValidate>
-              <label htmlFor="promo-email" className="sr-only">
-                Email address
-              </label>
-              <input
-                id="promo-email"
-                type="email"
-                name="email"
-                inputMode="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@email.com"
-                aria-invalid={state === 'error'}
-                className="flex-1 rounded-full bg-white px-5 py-3.5 text-blue-950 font-semibold placeholder:text-slate-400 outline-none ring-2 ring-transparent focus:ring-yellow-400 transition"
-              />
-              <button
-                type="submit"
-                disabled={state === 'loading'}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-yellow-400 px-7 py-3.5 text-blue-950 font-extrabold shadow-lg shadow-yellow-400/20 transition hover:bg-yellow-300 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {state === 'loading' ? 'Joining…' : 'Notify me'}
-              </button>
+            <form onSubmit={onSubmit} className="mt-5 flex flex-col gap-3" noValidate>
+              {/* Optional details — name + phone */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <label htmlFor="promo-name" className="sr-only">
+                  Name (optional)
+                </label>
+                <input
+                  id="promo-name"
+                  type="text"
+                  name="name"
+                  autoComplete="name"
+                  placeholder="Name (optional)"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className={inputClass}
+                />
+                <label htmlFor="promo-phone" className="sr-only">
+                  Phone (optional)
+                </label>
+                <input
+                  id="promo-phone"
+                  type="tel"
+                  name="phone"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  placeholder="Phone (optional)"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+              {/* Required — email + submit */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <label htmlFor="promo-email" className="sr-only">
+                  Email address
+                </label>
+                <input
+                  id="promo-email"
+                  type="email"
+                  name="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@email.com"
+                  aria-invalid={state === 'error'}
+                  className={inputClass}
+                />
+                <button
+                  type="submit"
+                  disabled={state === 'loading'}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-yellow-400 px-7 py-3.5 text-blue-950 font-extrabold shadow-lg shadow-yellow-400/20 transition hover:bg-yellow-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {state === 'loading' ? 'Joining…' : 'Notify me'}
+                </button>
+              </div>
             </form>
 
             {state === 'confirm' && (

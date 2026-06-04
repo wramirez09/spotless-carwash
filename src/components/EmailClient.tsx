@@ -21,8 +21,13 @@ type SubscribeResponse = {
   message?: string
 }
 
+const inputClass =
+  'flex-1 outline-none px-4 py-2.5 text-[15px] bg-transparent text-ink placeholder:text-slate-400 rounded-full disabled:opacity-60'
+
 export default function EmailClient({ data }: { data: EmailData }) {
   const [email, setEmail] = useState('')
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
   const [state, setState] = useState<State>('idle')
   const [outcome, setOutcome] = useState<Outcome | null>(null)
   const [message, setMessage] = useState('')
@@ -34,7 +39,13 @@ export default function EmailClient({ data }: { data: EmailData }) {
       const res = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, source: 'home', confirmResubscribe }),
+        body: JSON.stringify({
+          email,
+          name: name.trim() || undefined,
+          phone: phone.trim() || undefined,
+          source: 'home',
+          confirmResubscribe,
+        }),
       })
       const body = (await res.json().catch(() => ({}))) as SubscribeResponse
       if (!res.ok) {
@@ -45,7 +56,6 @@ export default function EmailClient({ data }: { data: EmailData }) {
       const result = body.outcome ?? 'subscribed'
       setOutcome(result)
       setMessage(body.message || '')
-      // Previously unsubscribed — hold for an explicit confirmation click.
       setState(result === 'confirm_resubscribe' ? 'confirm' : 'done')
     } catch {
       setState('error')
@@ -83,32 +93,67 @@ export default function EmailClient({ data }: { data: EmailData }) {
           <form
             onSubmit={onSubmit}
             noValidate
-            className="flex flex-col sm:flex-row gap-2 bg-white p-2 rounded-3xl sm:rounded-full sm:min-w-[480px] border-2 border-blue-700"
+            className="bg-white p-2 rounded-3xl border-2 border-blue-700 sm:min-w-[480px]"
           >
-            <label htmlFor="home-email" className="sr-only">
-              Email address
-            </label>
-            <input
-              id="home-email"
-              type="email"
-              name="email"
-              inputMode="email"
-              autoComplete="email"
-              placeholder={data.placeholder}
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={done}
-              aria-invalid={state === 'error'}
-              className="flex-1 outline-none px-4 py-2.5 text-[15px] bg-transparent text-ink placeholder:text-slate-400 rounded-full disabled:opacity-60"
-            />
-            <button
-              type="submit"
-              disabled={state === 'loading' || done}
-              className="bg-blue-700 text-white px-6 py-3 rounded-full font-extrabold text-sm hover:bg-blue-500 transition tracking-wide disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              {buttonLabel}
-            </button>
+            {/* Optional details — name + phone */}
+            <div className="flex flex-col sm:flex-row gap-2 mb-2 pb-2 border-b border-line">
+              <label htmlFor="home-name" className="sr-only">
+                Name (optional)
+              </label>
+              <input
+                id="home-name"
+                type="text"
+                name="name"
+                autoComplete="name"
+                placeholder="Name (optional)"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={done}
+                className={inputClass}
+              />
+              <label htmlFor="home-phone" className="sr-only">
+                Phone (optional)
+              </label>
+              <input
+                id="home-phone"
+                type="tel"
+                name="phone"
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="Phone (optional)"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                disabled={done}
+                className={inputClass}
+              />
+            </div>
+            {/* Required — email + submit */}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <label htmlFor="home-email" className="sr-only">
+                Email address
+              </label>
+              <input
+                id="home-email"
+                type="email"
+                name="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder={data.placeholder}
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={done}
+                aria-invalid={state === 'error'}
+                className={inputClass}
+              />
+              <button
+                type="submit"
+                disabled={state === 'loading' || done}
+                className="bg-blue-700 text-white px-6 py-3 rounded-full font-extrabold text-sm hover:bg-blue-500 transition tracking-wide disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {buttonLabel}
+              </button>
+            </div>
           </form>
 
           {state === 'confirm' && (

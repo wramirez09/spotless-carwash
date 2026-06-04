@@ -14,6 +14,11 @@ export type PromotionSignupInput = {
   // For a previously-unsubscribed email, the caller must pass true to confirm
   // the re-opt-in before we reactivate the row.
   confirmResubscribe?: boolean
+  // Optional link to a customers.id row. Set on insert and back-filled onto an
+  // existing row whose customer_id is still null. SERVER-ONLY — never accept
+  // this from the public /api/subscribe body (a client must not link rows to
+  // arbitrary customers).
+  customerId?: string | null
 }
 
 // 'subscribed'         — brand new email, row created.
@@ -41,6 +46,10 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
  * The "new vs existing" check is race-safe: we attempt an insert-or-ignore and
  * a row only comes back when THIS call created it. If nothing comes back, the
  * email already exists and we look up its status to decide already/resubscribe.
+ *
+ * When `customerId` is supplied (e.g. from the Stripe webhook after a checkout
+ * opt-in), it is stored on a new row and back-filled onto an existing,
+ * not-yet-linked row so lead signups and purchases converge on one customer.
  */
 export async function subscribeToPromotions(
   input: PromotionSignupInput,
@@ -53,6 +62,8 @@ export async function subscribeToPromotions(
     console.warn('[promotions] Supabase not configured — skipping signup')
     return { ok: false, reason: 'unconfigured' }
   }
+
+  const customerId = input.customerId ?? null
 
   // Insert-or-ignore. With ignoreDuplicates a conflicting row is left untouched
   // and not returned, so a returned row means we just created it.
@@ -67,6 +78,7 @@ export async function subscribeToPromotions(
         marketing_consent: input.marketingConsent ?? true,
         status: 'subscribed',
         unsubscribed_at: null,
+        customer_id: customerId,
       },
       { onConflict: 'email', ignoreDuplicates: true },
     )
@@ -81,10 +93,11 @@ export async function subscribeToPromotions(
     return { ok: true, outcome: 'subscribed' }
   }
 
-  // Email already exists — find out whether they'd unsubscribed.
+  // Email already exists — find out whether they'd unsubscribed and whether we
+  // can back-fill the customer link.
   const { data: existing, error: lookupErr } = await supabase
     .from('promotion_signups')
-    .select('id, status')
+    .select('id, status, customer_id')
     .eq('email', email)
     .maybeSingle()
 
@@ -92,7 +105,6 @@ export async function subscribeToPromotions(
     console.error('[promotions] existing lookup failed', { error: lookupErr })
     return { ok: false, reason: 'error' }
   }
-
 
   if (existing && existing.status !== 'subscribed') {
     // Previously unsubscribed — don't silently re-add. Ask the caller to
@@ -103,7 +115,12 @@ export async function subscribeToPromotions(
 
     const { error: reactivateErr } = await supabase
       .from('promotion_signups')
-      .update({ status: 'subscribed', unsubscribed_at: null })
+      .update({
+        status: 'subscribed',
+        unsubscribed_at: null,
+        // Link to the customer if we now know it and weren't linked before.
+        ...(customerId && !existing.customer_id ? { customer_id: customerId } : {}),
+      })
       .eq('id', existing.id)
 
     if (reactivateErr) {
@@ -111,6 +128,18 @@ export async function subscribeToPromotions(
       return { ok: false, reason: 'error' }
     }
     return { ok: true, outcome: 'resubscribed' }
+  }
+
+  // Already on the list and still subscribed — back-fill the customer link if
+  // we now know it. Non-fatal if it fails; the subscriber is already recorded.
+  if (existing && customerId && !existing.customer_id) {
+    const { error: linkErr } = await supabase
+      .from('promotion_signups')
+      .update({ customer_id: customerId })
+      .eq('id', existing.id)
+    if (linkErr) {
+      console.error('[promotions] customer link back-fill failed', { error: linkErr })
+    }
   }
 
   return { ok: true, outcome: 'already_subscribed' }

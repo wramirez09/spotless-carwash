@@ -3,6 +3,7 @@ import Stripe from 'stripe'
 import { getStripeSecretKey, getStripeWebhookSecret } from '@/lib/stripeEnv'
 import { sendOwnerSaleNotification } from '@/lib/email'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { subscribeToPromotions } from '@/lib/promotions'
 
 export const runtime = 'nodejs'
 
@@ -88,6 +89,37 @@ async function persistCustomerAndOrder(args: {
       .single()
 
     if (customerErr) throw customerErr
+
+    // Mirror the checkout marketing opt-in into the promotions list, linked to
+    // the customer row. Best-effort: subscribeToPromotions never throws, and a
+    // ticked checkbox is explicit consent, so we confirm any re-subscribe
+    // directly rather than gating it.
+    if (args.mailingListSubscribed && customer?.id) {
+      // Fully isolated from order persistence below — a promotions failure must
+      // never prevent the order row from being written.
+      try {
+        const promo = await subscribeToPromotions({
+          email: args.email,
+          name: args.name || null,
+          phone: args.phone || null,
+          source: 'checkout',
+          marketingConsent: true,
+          confirmResubscribe: true,
+          customerId: customer.id,
+        })
+        if (!promo.ok) {
+          console.error('[stripe-webhook] promotion signup failed', {
+            sessionId: args.session.id,
+            reason: promo.reason,
+          })
+        }
+      } catch (promoErr) {
+        console.error('[stripe-webhook] promotion signup threw', {
+          sessionId: args.session.id,
+          error: promoErr,
+        })
+      }
+    }
 
     const { data: inserted, error: orderErr } = await supabase
       .from('orders')

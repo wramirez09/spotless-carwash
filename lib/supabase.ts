@@ -27,6 +27,9 @@ export function getSupabaseAdmin(): SupabaseClient | null {
     cached = createClient(url, key, {
       auth: { persistSession: false, autoRefreshToken: false },
     })
+    // Log once per runtime which project this writes to — makes "prod or dev?"
+    // obvious in deploy logs without exposing the URL/keys.
+    console.log(`[supabase] admin client → ${isProductionEnv() ? 'PROD' : 'DEV'} project`)
   }
   return cached
 }
