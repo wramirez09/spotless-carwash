@@ -8,28 +8,9 @@ import {
   type WashValue,
 } from '@/lib/stripePricing'
 import { getStripeSecretKey } from '@/lib/stripeEnv'
+import { checkoutBodySchema, firstIssueMessage } from '@/lib/schemas'
 
 export const runtime = 'nodejs'
-
-type Body = {
-  package?: string
-  quantity?: number
-  mode?: 'single' | 'pack'
-  washValue?: number
-  email?: string
-  name?: string
-  phone?: string
-  // Mailing address — where physical tokens get shipped. Collected in the
-  // buy-tokens form (distinct from the billing address Stripe collects on its
-  // hosted page). Carried through to the webhook via session metadata.
-  mailingLine1?: string
-  mailingLine2?: string
-  mailingCity?: string
-  mailingState?: string
-  mailingPostalCode?: string
-  // Opt-in to marketing emails. Optional checkbox on the buy-tokens form.
-  mailingListSubscribed?: boolean
-}
 
 const VALID_WASH: Set<WashValue> = new Set(['8', '9', '10', '12'])
 
@@ -49,46 +30,42 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Site URL missing' }, { status: 500 })
   }
 
-  let body: Body
+  let json: unknown
   try {
-    body = (await req.json()) as Body
+    json = await req.json()
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const pkg = (body.package ?? '') as WashValue
-  const quantity = Math.max(1, Math.min(20, Number(body.quantity) || 1))
-  const purchaseMode: 'single' | 'pack' = body.mode === 'single' ? 'single' : 'pack'
-  const washValue = String(Number(body.washValue)) as WashValue
-  const email = (body.email ?? '').trim()
-  const name = (body.name ?? '').trim()
-  const phone = (body.phone ?? '').trim()
-  const mailingLine1 = (body.mailingLine1 ?? '').trim()
-  const mailingLine2 = (body.mailingLine2 ?? '').trim()
-  const mailingCity = (body.mailingCity ?? '').trim()
-  const mailingState = (body.mailingState ?? '').trim().toUpperCase()
-  const mailingPostalCode = (body.mailingPostalCode ?? '').trim()
-  const mailingListSubscribed = body.mailingListSubscribed === true
+  // zod handles shape, coercion, trimming, the quantity clamp, and all the
+  // required-field messages (Valid email required / Name required / Phone
+  // required / Complete mailing address required).
+  const parsed = checkoutBodySchema.safeParse(json)
+  if (!parsed.success) {
+    return NextResponse.json({ error: firstIssueMessage(parsed.error) }, { status: 400 })
+  }
+  const b = parsed.data
 
+  const pkg = b.package as WashValue
+  const quantity = b.quantity
+  const purchaseMode = b.mode
+  const washValue = String(Number(b.washValue)) as WashValue
+  const email = b.email
+  const name = b.name
+  const phone = b.phone
+  const mailingLine1 = b.mailingLine1
+  const mailingLine2 = b.mailingLine2
+  const mailingCity = b.mailingCity
+  const mailingState = b.mailingState
+  const mailingPostalCode = b.mailingPostalCode
+  const mailingListSubscribed = b.mailingListSubscribed
+
+  // Mode-dependent wash-value check drives pricing, so it stays explicit.
   if (purchaseMode === 'pack' && !VALID_WASH.has(pkg)) {
     return NextResponse.json({ error: 'Bad package' }, { status: 400 })
   }
   if (purchaseMode === 'single' && !VALID_WASH.has(washValue)) {
     return NextResponse.json({ error: 'Bad wash value' }, { status: 400 })
-  }
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return NextResponse.json({ error: 'Valid email required' }, { status: 400 })
-  }
-  if (!name) {
-    return NextResponse.json({ error: 'Name required' }, { status: 400 })
-  }
-  if (!phone) {
-    return NextResponse.json({ error: 'Phone required' }, { status: 400 })
-  }
-  // Mailing address is required — tokens are physically shipped to it. Stripe's
-  // billing address is collected separately and does not substitute for this.
-  if (!mailingLine1 || !mailingCity || !mailingState || !mailingPostalCode) {
-    return NextResponse.json({ error: 'Complete mailing address required' }, { status: 400 })
   }
 
   const stripe = new Stripe(secret)

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { subscribeBodySchema, firstIssueMessage } from '@/lib/schemas'
 
 export type EmailData = {
   headlineLine1: string
@@ -33,19 +34,28 @@ export default function EmailClient({ data }: { data: EmailData }) {
   const [message, setMessage] = useState('')
 
   async function submit(confirmResubscribe = false) {
+    const payload = {
+      email,
+      name: name.trim() || undefined,
+      phone: phone.trim() || undefined,
+      source: 'home',
+      confirmResubscribe,
+    }
+    // Validate with the same schema the API uses — instant, matching feedback.
+    const check = subscribeBodySchema.safeParse(payload)
+    if (!check.success) {
+      setState('error')
+      setMessage(firstIssueMessage(check.error))
+      return
+    }
+
     setState('loading')
     setMessage('')
     try {
       const res = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          name: name.trim() || undefined,
-          phone: phone.trim() || undefined,
-          source: 'home',
-          confirmResubscribe,
-        }),
+        body: JSON.stringify(payload),
       })
       const body = (await res.json().catch(() => ({}))) as SubscribeResponse
       if (!res.ok) {

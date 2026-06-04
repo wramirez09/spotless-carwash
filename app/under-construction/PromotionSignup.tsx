@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { subscribeBodySchema, firstIssueMessage } from '@/lib/schemas'
 
 type State = 'idle' | 'loading' | 'confirm' | 'done' | 'error'
 type Outcome = 'subscribed' | 'resubscribed' | 'already_subscribed' | 'confirm_resubscribe'
@@ -33,19 +34,28 @@ export default function PromotionSignup() {
   const [message, setMessage] = useState('')
 
   async function submit(confirmResubscribe = false) {
+    const payload = {
+      email,
+      name: name.trim() || undefined,
+      phone: phone.trim() || undefined,
+      source: 'under_construction',
+      confirmResubscribe,
+    }
+    // Validate with the same schema the API uses — instant, matching feedback.
+    const check = subscribeBodySchema.safeParse(payload)
+    if (!check.success) {
+      setState('error')
+      setMessage(firstIssueMessage(check.error))
+      return
+    }
+
     setState('loading')
     setMessage('')
     try {
       const res = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          name: name.trim() || undefined,
-          phone: phone.trim() || undefined,
-          source: 'under_construction',
-          confirmResubscribe,
-        }),
+        body: JSON.stringify(payload),
       })
       const data = (await res.json().catch(() => ({}))) as SubscribeResponse
       if (!res.ok) {

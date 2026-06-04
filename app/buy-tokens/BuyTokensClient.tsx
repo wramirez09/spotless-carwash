@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { checkoutBodySchema, firstIssueMessage } from '@/lib/schemas'
 
 type PkgId = '8' | '9' | '10' | '12'
 type CouponBreakdownItem = {
@@ -249,25 +250,37 @@ export default function BuyTokensClient({
     e.preventDefault()
     if (submitting) return
     setErrored(false)
+
+    const payload = {
+      package: selected.id,
+      quantity,
+      mode,
+      washValue,
+      email: email.trim(),
+      name: name.trim(),
+      phone: phone.trim(),
+      mailingLine1: street.trim(),
+      mailingCity: city.trim(),
+      mailingState: stateRegion.trim(),
+      mailingPostalCode: zip.trim(),
+      mailingListSubscribed: mailingList,
+    }
+
+    // Validate with the same schema the API uses, so bad input is caught before
+    // the round-trip and the message matches the server's.
+    const check = checkoutBodySchema.safeParse(payload)
+    if (!check.success) {
+      setErrored(true)
+      alert(`${copy.checkoutErrorMessage}\n\n${firstIssueMessage(check.error)}`)
+      return
+    }
+
     setSubmitting(true)
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          package: selected.id,
-          quantity,
-          mode,
-          washValue,
-          email: email.trim(),
-          name: name.trim(),
-          phone: phone.trim(),
-          mailingLine1: street.trim(),
-          mailingCity: city.trim(),
-          mailingState: stateRegion.trim(),
-          mailingPostalCode: zip.trim(),
-          mailingListSubscribed: mailingList,
-        }),
+        body: JSON.stringify(payload),
       })
       const data: { url?: string; error?: string } = await res.json()
       if (!res.ok || !data.url) {

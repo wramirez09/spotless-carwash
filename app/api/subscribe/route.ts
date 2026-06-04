@@ -1,17 +1,8 @@
 import { NextResponse } from 'next/server'
 import { subscribeToPromotions, type SubscribeOutcome } from '@/lib/promotions'
+import { subscribeBodySchema, firstIssueMessage } from '@/lib/schemas'
 
 export const runtime = 'nodejs'
-
-type Body = {
-  email?: unknown
-  name?: unknown
-  phone?: unknown
-  source?: unknown
-  confirmResubscribe?: unknown
-}
-
-const asString = (v: unknown): string => (typeof v === 'string' ? v : '')
 
 // Human-readable confirmation per outcome, returned alongside the machine
 // `outcome` so clients can show it directly or map their own copy.
@@ -23,24 +14,25 @@ const OUTCOME_MESSAGES: Record<SubscribeOutcome, string> = {
 }
 
 export async function POST(req: Request) {
-  let body: Body
+  let json: unknown
   try {
-    body = await req.json()
+    json = await req.json()
   } catch {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 })
   }
 
-  const email = asString(body.email)
-  if (!email) {
-    return NextResponse.json({ error: 'Email is required.' }, { status: 400 })
+  const parsed = subscribeBodySchema.safeParse(json)
+  if (!parsed.success) {
+    return NextResponse.json({ error: firstIssueMessage(parsed.error) }, { status: 400 })
   }
+  const body = parsed.data
 
   const result = await subscribeToPromotions({
-    email,
-    name: asString(body.name) || null,
-    phone: asString(body.phone) || null,
-    source: asString(body.source) || 'website',
-    confirmResubscribe: body.confirmResubscribe === true,
+    email: body.email,
+    name: body.name || null,
+    phone: body.phone || null,
+    source: body.source || 'website',
+    confirmResubscribe: body.confirmResubscribe,
   })
 
   if (!result.ok) {
