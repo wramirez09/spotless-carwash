@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Archivo, Archivo_Black, Barlow_Condensed, JetBrains_Mono } from 'next/font/google'
 import { draftMode, headers } from 'next/headers'
+import Script from 'next/script'
 import VisualEditing from 'next-sanity/visual-editing/client-component'
 import Nav from '@/src/components/Nav'
 import SalesBanner from '@/src/components/SalesBanner'
@@ -39,6 +40,10 @@ const jetbrains = JetBrains_Mono({
 })
 
 const isProduction = process.env.VERCEL_ENV === 'production'
+
+// Google Analytics 4. Loaded only in production so localhost and Vercel
+// preview traffic don't pollute the property.
+const GA_MEASUREMENT_ID = 'G-95C5VC84RL'
 
 const SITE_URL = 'https://spotlesscarwash.com'
 
@@ -125,6 +130,23 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       className={`${archivo.variable} ${archivoBlack.variable} ${barlowCondensed.variable} ${jetbrains.variable}`}
     >
       <body className="bg-paper text-ink font-sans">
+        {isProduction && (
+          <>
+            {/* Google tag (gtag.js) */}
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="gtag-init" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${GA_MEASUREMENT_ID}');
+              `}
+            </Script>
+          </>
+        )}
         {!hideChrome && (
           <div className="sticky top-0 z-50">
             <SalesBanner />
