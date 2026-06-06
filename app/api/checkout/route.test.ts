@@ -6,18 +6,27 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 // tests assert on the *arguments* the route builds (the part 091d5fa changed)
 // without any network calls.
 
-const { sessionsCreate, customersCreate, getStripeSecretKey, isFathersDaySaleActive } =
-  vi.hoisted(() => ({
-    sessionsCreate: vi.fn(),
-    customersCreate: vi.fn(),
-    getStripeSecretKey: vi.fn(() => 'sk_test_fake'),
-    isFathersDaySaleActive: vi.fn(() => false),
-  }))
+const {
+  sessionsCreate,
+  customersCreate,
+  couponsRetrieve,
+  couponsCreate,
+  getStripeSecretKey,
+  isFathersDaySaleActive,
+} = vi.hoisted(() => ({
+  sessionsCreate: vi.fn(),
+  customersCreate: vi.fn(),
+  couponsRetrieve: vi.fn(),
+  couponsCreate: vi.fn(),
+  getStripeSecretKey: vi.fn(() => 'sk_test_fake'),
+  isFathersDaySaleActive: vi.fn(() => false),
+}))
 
 vi.mock('stripe', () => ({
   default: class FakeStripe {
     checkout = { sessions: { create: sessionsCreate } }
     customers = { create: customersCreate }
+    coupons = { retrieve: couponsRetrieve, create: couponsCreate }
   },
 }))
 
@@ -87,9 +96,24 @@ const lastSession = () => sessionsCreate.mock.calls.at(-1)?.[0]
 
 // --- Tests ----------------------------------------------------------------
 
+// Default coupon-mock world: the base coupon exists ($5 off), derived
+// `<base>_x<qty>` coupons don't yet, and creating one succeeds.
+const BASE_COUPON = {
+  id: 'coupon_test',
+  amount_off: 500,
+  currency: 'usd',
+  name: '$5 Off 4-Packs',
+  redeem_by: null,
+}
+
 beforeEach(() => {
   sessionsCreate.mockReset().mockResolvedValue({ url: 'https://checkout.stripe.com/c/pay/test' })
   customersCreate.mockReset()
+  couponsRetrieve.mockReset().mockImplementation(async (id: string) => {
+    if (id === BASE_COUPON.id) return BASE_COUPON
+    throw Object.assign(new Error(`No such coupon: ${id}`), { code: 'resource_missing' })
+  })
+  couponsCreate.mockReset().mockImplementation(async (params: { id: string }) => params)
   getStripeSecretKey.mockReturnValue('sk_test_fake')
   isFathersDaySaleActive.mockReturnValue(false)
 })
@@ -232,11 +256,59 @@ describe('POST /api/checkout — mailing address metadata', () => {
 describe('POST /api/checkout — discounts & quantity', () => {
   it('auto-applies the pack coupon and records the 5-off discount outside the sale', async () => {
     isFathersDaySaleActive.mockReturnValue(false)
-    await callPost(VALID_PACK)
+    await callPost({ ...VALID_PACK, quantity: 1 })
     const session = lastSession()
     expect(session.discounts).toEqual([{ coupon: 'coupon_test' }])
     expect(session.allow_promotion_codes).toBeUndefined()
     expect(session.metadata.pack_discount).toBe('5_off')
+    // Single-pack orders use the base coupon as-is — no derivation round-trip.
+    expect(couponsCreate).not.toHaveBeenCalled()
+  })
+
+  it('creates and applies a quantity-scaled coupon for multi-pack orders', async () => {
+    await callPost({ ...VALID_PACK, quantity: 2 })
+    expect(couponsCreate).toHaveBeenCalledWith({
+      id: 'coupon_test_x2',
+      amount_off: 1000,
+      currency: 'usd',
+      duration: 'once',
+      name: '$5 Off 4-Packs ×2',
+    })
+    expect(lastSession().discounts).toEqual([{ coupon: 'coupon_test_x2' }])
+  })
+
+  it('carries the base coupon expiry onto the derived coupon (Father\'s Day)', async () => {
+    couponsRetrieve.mockImplementation(async (id: string) => {
+      if (id === BASE_COUPON.id) return { ...BASE_COUPON, amount_off: 1000, redeem_by: 1782172740 }
+      throw Object.assign(new Error('missing'), { code: 'resource_missing' })
+    })
+    await callPost({ ...VALID_PACK, quantity: 3 })
+    expect(couponsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'coupon_test_x3', amount_off: 3000, redeem_by: 1782172740 }),
+    )
+  })
+
+  it('reuses an existing quantity-scaled coupon without creating a new one', async () => {
+    couponsRetrieve.mockResolvedValue({ id: 'coupon_test_x2', amount_off: 1000 })
+    await callPost({ ...VALID_PACK, quantity: 2 })
+    expect(couponsCreate).not.toHaveBeenCalled()
+    expect(lastSession().discounts).toEqual([{ coupon: 'coupon_test_x2' }])
+  })
+
+  it('uses the derived coupon when creation races (resource_already_exists)', async () => {
+    couponsCreate.mockRejectedValue(
+      Object.assign(new Error('Coupon already exists.'), { code: 'resource_already_exists' }),
+    )
+    await callPost({ ...VALID_PACK, quantity: 2 })
+    expect(lastSession().discounts).toEqual([{ coupon: 'coupon_test_x2' }])
+  })
+
+  it('falls back to the base coupon when derivation fails, and checkout still succeeds', async () => {
+    couponsCreate.mockRejectedValue(new Error('stripe is down'))
+    const { res, json } = await callPost({ ...VALID_PACK, quantity: 2 })
+    expect(res.status).toBe(200)
+    expect(json.url).toBe('https://checkout.stripe.com/c/pay/test')
+    expect(lastSession().discounts).toEqual([{ coupon: 'coupon_test' }])
   })
 
   it('records the Father\'s Day discount on packs during the sale window', async () => {

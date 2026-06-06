@@ -14,6 +14,47 @@ export const runtime = 'nodejs'
 
 const VALID_WASH: Set<WashValue> = new Set(['8', '9', '10', '12'])
 
+// Stripe applies fixed-amount coupons once per SESSION, not per line-item
+// unit — so the $5-off pack coupon would only ever take $5 off no matter how
+// many packs are in the order. To honor "$5 off every pack", derive a
+// quantity-scaled coupon (`<base>_x<qty>`, amount_off = base × qty) lazily,
+// reusing it on later orders via the deterministic ID.
+async function couponForQuantity(
+  stripe: Stripe,
+  baseId: string,
+  quantity: number,
+): Promise<string> {
+  if (quantity <= 1) return baseId
+  const derivedId = `${baseId}_x${quantity}`
+  try {
+    await stripe.coupons.retrieve(derivedId)
+    return derivedId
+  } catch {
+    // Not created yet — fall through to create it.
+  }
+  try {
+    const base = await stripe.coupons.retrieve(baseId)
+    // percent_off coupons already scale with quantity; nothing to derive.
+    if (!base.amount_off) return baseId
+    await stripe.coupons.create({
+      id: derivedId,
+      amount_off: base.amount_off * quantity,
+      currency: base.currency ?? 'usd',
+      duration: 'once',
+      name: `${base.name ?? baseId} ×${quantity}`,
+      // Carry over any expiry (e.g. the Father's Day coupon's redeem_by).
+      ...(base.redeem_by ? { redeem_by: base.redeem_by } : {}),
+    })
+    return derivedId
+  } catch (err) {
+    // A concurrent request may have created it between retrieve and create —
+    // the derived coupon exists, so use it. Any other failure falls back to
+    // the base coupon: $5 off beats a failed checkout.
+    const code = (err as { code?: string } | null)?.code
+    return code === 'resource_already_exists' ? derivedId : baseId
+  }
+}
+
 export async function POST(req: Request) {
   const secret = getStripeSecretKey()
   if (!secret) {
@@ -76,7 +117,11 @@ export async function POST(req: Request) {
 
   const applyPackDiscount = purchaseMode === 'pack'
   const fathersDayActive = applyPackDiscount && isFathersDaySaleActive()
-  const packCoupon = activePackCouponId()
+  // Scale the auto-applied pack coupon to the order quantity so every pack
+  // gets the discount, not just the first (see couponForQuantity above).
+  const packCoupon = applyPackDiscount
+    ? await couponForQuantity(stripe, activePackCouponId(), quantity)
+    : ''
 
   try {
     // We do NOT pre-create a Stripe Customer here. Pre-creation would leave an
