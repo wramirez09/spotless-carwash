@@ -134,17 +134,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <>
             {/* Google tag (gtag.js) */}
             <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+              src={`https://www.googletagmanager.com/gtag/js?id=G-TLBLHMNQS2`}
               strategy="afterInteractive"
             />
             <Script id="gtag-init" strategy="afterInteractive">
               {`
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${GA_MEASUREMENT_ID}');
+                 gtag('js', new Date());
+                gtag('config', 'G-TLBLHMNQS2');
               `}
             </Script>
+
           </>
         )}
         {!hideChrome && (
