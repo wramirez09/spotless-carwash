@@ -43,7 +43,7 @@ const isProduction = process.env.VERCEL_ENV === 'production'
 
 // Google Analytics 4. Loaded only in production so localhost and Vercel
 // preview traffic don't pollute the property.
-const GA_MEASUREMENT_ID = 'G-95C5VC84RL'
+const GA_MEASUREMENT_ID = 'G-MVJPLNK9F9'
 
 const SITE_URL = 'https://spotlessautowash.com'
 
