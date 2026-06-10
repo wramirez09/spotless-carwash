@@ -134,7 +134,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <>
             {/* Google tag (gtag.js) */}
             <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=G-VKJXM72GJ7`}
+              src={`https://www.googletagmanager.com/gtag/js?id=G-MX3L9QX928`}
               strategy="afterInteractive"
             />
             <Script id="gtag-init" strategy="afterInteractive">
@@ -142,7 +142,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){dataLayer.push(arguments);}
                  gtag('js', new Date());
-                gtag('config', 'G-VKJXM72GJ7');
+                gtag('config', 'G-MX3L9QX928');
               `}
             </Script>
 
