@@ -113,13 +113,8 @@ export default function BuyTokensClient({
   pricing: PricingProp
 }) {
   const PACKAGES = pricing.packs
-  const SINGLE_PRICES_BY_ID: Record<PkgId, number> = pricing.singles.reduce(
-    (acc, s) => {
-      acc[s.id] = s.price
-      return acc
-    },
-    {} as Record<PkgId, number>,
-  )
+  // Single-token purchase was removed; pack is the only purchase mode. The
+  // payload still carries `mode` so the checkout API contract is unchanged.
   const mode: Mode = 'pack'
   const [selectedId, setSelectedId] = useState<Pkg['id']>('12')
   const [quantity, setQuantity] = useState<number>(1)
@@ -228,15 +223,14 @@ export default function BuyTokensClient({
 
   const selected = PACKAGES.find((p) => p.id === selectedId)!
   const washValue = parseInt(selected.id, 10)
-  const singlePrice = SINGLE_PRICES_BY_ID[selected.id] ?? washValue * 100
-  const unitPrice = mode === 'single' ? singlePrice : selected.price
-  const unitSavings = mode === 'single' ? 0 : selected.save
-  const tokensPerUnit = mode === 'single' ? 1 : selected.tokens
+  const unitPrice = selected.price
+  const unitSavings = selected.save
+  const tokensPerUnit = selected.tokens
   const subtotal = unitPrice * quantity
   const savings = unitSavings * quantity
-  const unitSingular = mode === 'single' ? copy.tokenSingular : copy.packSingular
-  const unitPlural = mode === 'single' ? copy.tokenPlural : copy.packPlural
-  const perUnitPrice = mode === 'single' ? unitPrice : Math.round(unitPrice / tokensPerUnit)
+  const unitSingular = copy.packSingular
+  const unitPlural = copy.packPlural
+  const perUnitPrice = Math.round(unitPrice / tokensPerUnit)
 
   const buttonLabel = useMemo(() => {
     if (submitting) return copy.submittingLabel
@@ -340,13 +334,10 @@ export default function BuyTokensClient({
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {PACKAGES.map((pkg, idx) => {
                   const checked = pkg.id === selectedId
-                  const list =
-                    mode === 'single'
-                      ? SINGLE_PRICES_BY_ID[pkg.id] ?? parseInt(pkg.id, 10) * 100
-                      : pkg.price
-                  const save = mode === 'pack' ? pkg.save : 0
+                  const list = pkg.price
+                  const save = pkg.save
                   const finalPrice = Math.max(0, list - save)
-                  const chips = mode === 'pack' ? pkg.coupons : []
+                  const chips = pkg.coupons
                   return (
                     <label
                       key={pkg.id}
@@ -404,7 +395,7 @@ export default function BuyTokensClient({
                         ${pkg.id}
                       </div>
                       <div className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#5b6987] mt-3">
-                        {mode === 'single' ? copy.packTokensSuffixSingle : copy.packTokensSuffix}
+                        {copy.packTokensSuffix}
                       </div>
                       <div className="mt-4 pt-4 border-t border-dashed border-line flex flex-col items-start gap-2">
                         {chips.length > 0 && (
@@ -441,10 +432,10 @@ export default function BuyTokensClient({
               <div className="mt-5 bg-white border border-line rounded-2xl p-4 flex items-center justify-between gap-4">
                 <div>
                   <div className="font-extrabold text-[15px]">
-                    {mode === 'single' ? copy.quantityHeadingSingle : copy.quantityHeading}
+                    {copy.quantityHeading}
                   </div>
                   <div className="text-[13px] text-[#5b6987] mt-0.5">
-                    {mode === 'single' ? copy.quantitySubtextSingle : copy.quantitySubtext}
+                    {copy.quantitySubtext}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -463,7 +454,7 @@ export default function BuyTokensClient({
                     max={20}
                     value={quantity}
                     onChange={(e) => setQuantity(clampQty(parseInt(e.target.value, 10) || 1))}
-                    aria-label={mode === 'single' ? copy.quantityInputLabelSingle : copy.quantityInputLabel}
+                    aria-label={copy.quantityInputLabel}
                     className="w-16 px-2 py-2 text-center text-[16px] font-extrabold border-[1.5px] border-line rounded-xl text-ink [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <button
@@ -738,7 +729,7 @@ export default function BuyTokensClient({
                 <div className="flex items-start justify-between gap-3 pb-4 border-b border-white/15">
                   <div>
                     <div className="font-extrabold text-[16px]">
-                      {mode === 'single' ? `$${selected.id} wash · ${copy.tokenSingular}` : selected.label}
+                      {selected.label}
                     </div>
                     <div className="text-[13px] text-blue-200 mt-0.5">
                       {fmt(perUnitPrice)} {copy.perTokenSuffix} · ×{quantity}{' '}
@@ -752,7 +743,7 @@ export default function BuyTokensClient({
 
                 {savings > 0 && (
                   <div className="py-3 border-b border-white/15 text-[14px] space-y-2">
-                    {(mode === 'pack' ? selected.coupons : []).map((c) => (
+                    {selected.coupons.map((c) => (
                       <div key={c.id} className="flex items-center justify-between">
                         <span className="inline-flex items-center gap-2 text-blue-100">
                           <span className="inline-flex items-center bg-yellow-400/15 text-yellow-400 text-[10px] font-extrabold tracking-[0.1em] uppercase px-2 py-0.5 rounded-full">
