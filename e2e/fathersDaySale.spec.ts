@@ -8,6 +8,9 @@ import { test, expect, type Page } from '@playwright/test'
 // wall-clock time. The override is gated to non-production in
 // `app/buy-tokens/page.tsx` so it cannot be triggered against a live deploy.
 //
+// Pack cards are the only purchase surface — the single/pack mode toggle was
+// removed in "chore: remove single token purchase".
+//
 // UI surface for the sale:
 //   - Each pack card and the order summary render a "Father's Day" coupon
 //     chip in addition to the always-on "4-Pack bundle" chip.
@@ -28,11 +31,9 @@ const AFTER_SALE = '2026-06-22T00:01:00-05:00'    // Mon June 22 00:01 Chicago
 async function visitBuyTokens(page: Page, isoNow: string) {
   const response = await page.goto(`/buy-tokens?_now=${encodeURIComponent(isoNow)}`)
   expect(response?.ok()).toBeTruthy()
-  // Pack mode is the default — Father's Day chips only render on pack cards.
-  await expect(page.getByRole('tab', { name: /4-pack/i })).toHaveAttribute(
-    'aria-selected',
-    'true',
-  )
+  // Pack cards are the only purchase surface (the single/pack mode toggle was
+  // removed). Wait for the radio group to render before asserting on chips.
+  await expect(page.locator('input[name="package"]').first()).toBeAttached()
 }
 
 test.describe("Father's Day 2026 sale", () => {
