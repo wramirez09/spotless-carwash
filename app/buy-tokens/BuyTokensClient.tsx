@@ -120,7 +120,7 @@ export default function BuyTokensClient({
     },
     {} as Record<PkgId, number>,
   )
-  const [mode, setMode] = useState<Mode>('pack')
+  const mode: Mode = 'pack'
   const [selectedId, setSelectedId] = useState<Pkg['id']>('12')
   const [quantity, setQuantity] = useState<number>(1)
   const [email, setEmail] = useState('')
@@ -336,49 +336,6 @@ export default function BuyTokensClient({
             {/* STEP 1 — PACKAGE */}
             <section>
               <StepHead num={copy.step1Number} kicker={copy.step1Kicker} title={copy.step1Title} />
-
-              {/* Mode toggle */}
-              <div className="mb-6">
-                {copy.modeHelper && (
-                  <div className="text-[11px] font-bold tracking-[0.22em] uppercase text-[#9aa9c9] mb-2.5">
-                    {copy.modeHelper}
-                  </div>
-                )}
-                <div
-                  role="tablist"
-                  aria-label={copy.modeHelper || 'Purchase mode'}
-                  className="flex w-full sm:w-auto sm:inline-flex bg-white border-2 border-line rounded-2xl p-1 gap-1"
-                >
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={mode === 'pack'}
-                    onClick={() => setMode('pack')}
-                    className={
-                      'flex-1 sm:flex-none px-4 sm:px-5 py-2.5 rounded-xl text-[13px] font-extrabold tracking-[0.06em] uppercase transition whitespace-nowrap ' +
-                      (mode === 'pack'
-                        ? 'bg-blue-500 text-white shadow-[0_6px_16px_rgba(27,79,217,0.25)]'
-                        : 'text-[#5b6987] hover:text-blue-500')
-                    }
-                  >
-                    {copy.modePackLabel}
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={mode === 'single'}
-                    onClick={() => setMode('single')}
-                    className={
-                      'flex-1 sm:flex-none px-4 sm:px-5 py-2.5 rounded-xl text-[13px] font-extrabold tracking-[0.06em] uppercase transition whitespace-nowrap ' +
-                      (mode === 'single'
-                        ? 'bg-blue-500 text-white shadow-[0_6px_16px_rgba(27,79,217,0.25)]'
-                        : 'text-[#5b6987] hover:text-blue-500')
-                    }
-                  >
-                    {copy.modeSingleLabel}
-                  </button>
-                </div>
-              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {PACKAGES.map((pkg, idx) => {
