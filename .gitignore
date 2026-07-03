@@ -41,3 +41,5 @@ pnpm-debug.log*
 *.sln
 *.sw?
 .claude/tmp/
+.vercel
+.env*.local
