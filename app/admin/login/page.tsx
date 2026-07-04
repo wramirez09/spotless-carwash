@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { isSupabaseAuthConfigured } from '@/lib/supabase/publicEnv'
 import LoginForm from './LoginForm'
 
 export const runtime = 'nodejs'
@@ -17,7 +18,7 @@ export default async function AdminLoginPage({
   const params = await searchParams
   const nextRaw = params.next
   const next = (Array.isArray(nextRaw) ? nextRaw[0] : nextRaw) || undefined
-  const notConfigured = !process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const notConfigured = !isSupabaseAuthConfigured()
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-paper px-5 text-ink">

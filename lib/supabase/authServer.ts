@@ -1,19 +1,19 @@
 import 'server-only'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
+import { supabasePublicEnv } from './publicEnv'
 
 // Server-side Supabase auth client bound to the request cookies. Used in server
 // components, route handlers, and server actions to read the current session
 // and to sign in/out. Returns null when the public env isn't configured so
 // callers can fail closed instead of throwing.
 export async function createServerSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !anonKey) return null
+  const { url, key } = supabasePublicEnv()
+  if (!url || !key) return null
 
   const cookieStore = await cookies()
 
-  return createServerClient(url, anonKey, {
+  return createServerClient(url, key, {
     cookies: {
       getAll() {
         return cookieStore.getAll()

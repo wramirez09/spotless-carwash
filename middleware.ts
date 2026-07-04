@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { isAdminEmail } from './lib/adminAccess'
+import { supabasePublicEnv } from './lib/supabase/publicEnv'
 
 const UNDER_CONSTRUCTION_PATH = '/under-construction'
 const ADMIN_PREFIX = '/admin'
@@ -33,17 +34,16 @@ async function handleAdmin(request: NextRequest, requestHeaders: Headers) {
   const { pathname } = request.nextUrl
   const isPublicAdminPath = pathname === LOGIN_PATH || pathname.startsWith(AUTH_PREFIX)
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const { url, key } = supabasePublicEnv()
 
   let response = NextResponse.next({ request: { headers: requestHeaders } })
 
-  if (!url || !anonKey) {
+  if (!url || !key) {
     if (isPublicAdminPath) return response
     return NextResponse.redirect(new URL(LOGIN_PATH, request.url))
   }
 
-  const supabase = createServerClient(url, anonKey, {
+  const supabase = createServerClient(url, key, {
     cookies: {
       getAll() {
         return request.cookies.getAll()
