@@ -119,10 +119,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const headerList = await headers()
   const pathname = headerList.get('x-pathname') ?? ''
   const isStudio = pathname.startsWith('/studio')
+  // The admin dashboard ships its own layout — no marketing nav/footer.
+  const isAdmin = pathname.startsWith('/admin')
   // Set by middleware when the maintenance flag is on — the construction page
   // ships its own header/footer, so drop the site chrome.
   const isUnderConstruction = headerList.get('x-under-construction') === '1'
-  const hideChrome = isStudio || isUnderConstruction
+  const hideChrome = isStudio || isAdmin || isUnderConstruction
 
   return (
     <html
