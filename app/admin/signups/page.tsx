@@ -5,6 +5,8 @@ import {
   fetchSignupSources,
   parseSignupQuery,
 } from '@/lib/signups'
+import { getSessionUser } from '@/lib/supabase/authServer'
+import { signOut } from '../login/actions'
 import SignupsTable from './SignupsTable'
 import StatCards from './StatCards'
 
@@ -24,10 +26,11 @@ export default async function SignupsDashboardPage({
   const params = await searchParams
   const query = parseSignupQuery(params)
 
-  const [pageData, stats, sources] = await Promise.all([
+  const [pageData, stats, sources, user] = await Promise.all([
     fetchSignups(query),
     fetchSignupStats(),
     fetchSignupSources(),
+    getSessionUser(),
   ])
 
   const exportQs = new URLSearchParams()
@@ -50,15 +53,32 @@ export default async function SignupsDashboardPage({
               Email sign-ups
             </h1>
           </div>
-          <a
-            href={exportHref}
-            className="inline-flex items-center gap-2 rounded-full bg-blue-700 px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-blue-500"
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Export CSV
-          </a>
+          <div className="flex items-center gap-3">
+            <a
+              href={exportHref}
+              className="inline-flex items-center gap-2 rounded-full bg-blue-700 px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-blue-500"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Export CSV
+            </a>
+            {user?.email && (
+              <div className="flex items-center gap-2 border-l border-line pl-3">
+                <span className="hidden text-xs font-semibold text-slate-500 sm:inline" title={user.email}>
+                  {user.email}
+                </span>
+                <form action={signOut}>
+                  <button
+                    type="submit"
+                    className="rounded-full border border-line px-4 py-2.5 text-sm font-bold text-blue-700 transition hover:border-blue-500"
+                  >
+                    Sign out
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 

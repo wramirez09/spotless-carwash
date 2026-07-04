@@ -1,7 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
+import { isAdminEmail } from './lib/adminAccess'
 
 const UNDER_CONSTRUCTION_PATH = '/under-construction'
 const ADMIN_PREFIX = '/admin'
+const LOGIN_PATH = '/admin/login'
+const AUTH_PREFIX = '/admin/auth' // magic-link callback — reachable without a session
 
 // Toggle the public maintenance page via env. Read at request time so flipping
 // the var (Vercel env / .env.local) takes effect without a code change.
@@ -11,8 +15,8 @@ function isUnderConstruction(): boolean {
 
 // Paths that stay reachable while the site is under construction: the
 // construction page itself, API routes (Stripe webhook + token fulfillment
-// must keep working), the Sanity Studio so content can still be edited, and the
-// admin dashboard (its own Basic-Auth gate runs first, below).
+// must keep working), the Sanity Studio, and the admin area (its own auth gate
+// runs first, below).
 function isAllowedDuringConstruction(pathname: string): boolean {
   return (
     pathname === UNDER_CONSTRUCTION_PATH ||
@@ -22,69 +26,72 @@ function isAllowedDuringConstruction(pathname: string): boolean {
   )
 }
 
-// Length-safe, constant-time-ish string compare so the Basic-Auth check doesn't
-// leak the password via early-exit timing. Edge runtime has no crypto.timingSafeEqual.
-function safeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false
-  let diff = 0
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
-  return diff === 0
-}
+// Admin area: require a Supabase session whose email is on the ADMIN_EMAILS
+// allowlist. The login + magic-link callback stay public. Fails closed — if the
+// public Supabase env isn't configured, every protected path bounces to login.
+async function handleAdmin(request: NextRequest, requestHeaders: Headers) {
+  const { pathname } = request.nextUrl
+  const isPublicAdminPath = pathname === LOGIN_PATH || pathname.startsWith(AUTH_PREFIX)
 
-function unauthorized(): NextResponse {
-  return new NextResponse('Authentication required.', {
-    status: 401,
-    headers: {
-      'WWW-Authenticate': 'Basic realm="Spotless Admin", charset="UTF-8"',
-      'Cache-Control': 'no-store',
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  let response = NextResponse.next({ request: { headers: requestHeaders } })
+
+  if (!url || !anonKey) {
+    if (isPublicAdminPath) return response
+    return NextResponse.redirect(new URL(LOGIN_PATH, request.url))
+  }
+
+  const supabase = createServerClient(url, anonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll()
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+        response = NextResponse.next({ request: { headers: requestHeaders } })
+        cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
+      },
     },
   })
-}
 
-// HTTP Basic Auth for the admin area. Fails CLOSED: if ADMIN_USER/ADMIN_PASSWORD
-// aren't configured, no credentials can match, so /admin stays locked.
-function isAuthorizedAdmin(request: NextRequest): boolean {
-  const user = process.env.ADMIN_USER
-  const pass = process.env.ADMIN_PASSWORD
-  if (!user || !pass) return false
+  // getUser() re-validates the JWT with Supabase (don't trust the cookie alone).
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  const authorized = !!user && isAdminEmail(user.email)
 
-  const header = request.headers.get('authorization') ?? ''
-  const [scheme, encoded] = header.split(' ')
-  if (scheme !== 'Basic' || !encoded) return false
-
-  let decoded: string
-  try {
-    decoded = atob(encoded)
-  } catch {
-    return false
+  if (isPublicAdminPath) {
+    // Already signed in? Skip the login page and go to the dashboard.
+    if (pathname === LOGIN_PATH && authorized) {
+      return NextResponse.redirect(new URL('/admin/signups', request.url))
+    }
+    return response
   }
-  const sep = decoded.indexOf(':')
-  if (sep < 0) return false
 
-  const gotUser = decoded.slice(0, sep)
-  const gotPass = decoded.slice(sep + 1)
-  // Evaluate both halves regardless of the first result (no short-circuit).
-  const okUser = safeEqual(gotUser, user)
-  const okPass = safeEqual(gotPass, pass)
-  return okUser && okPass
+  if (!authorized) {
+    const redirect = new URL(LOGIN_PATH, request.url)
+    redirect.searchParams.set('next', pathname)
+    return NextResponse.redirect(redirect)
+  }
+
+  return response
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  const headers = new Headers(request.headers)
-  headers.set('x-pathname', pathname)
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-pathname', pathname)
 
-  // Admin dashboard: Basic-Auth gated, independent of the construction flag so
-  // it's reachable (and protected) whether or not the public site is live.
   if (pathname.startsWith(ADMIN_PREFIX)) {
-    if (!isAuthorizedAdmin(request)) return unauthorized()
-    return NextResponse.next({ request: { headers } })
+    return handleAdmin(request, requestHeaders)
   }
 
   if (isUnderConstruction()) {
     // Flag the request so the root layout drops the normal nav/footer chrome.
-    headers.set('x-under-construction', '1')
+    requestHeaders.set('x-under-construction', '1')
 
     if (!isAllowedDuringConstruction(pathname)) {
       // Rewrite (not redirect) so every page URL serves the construction page
@@ -92,11 +99,11 @@ export function middleware(request: NextRequest) {
       // so there's no loop.
       const url = request.nextUrl.clone()
       url.pathname = UNDER_CONSTRUCTION_PATH
-      return NextResponse.rewrite(url, { request: { headers } })
+      return NextResponse.rewrite(url, { request: { headers: requestHeaders } })
     }
   }
 
-  return NextResponse.next({ request: { headers } })
+  return NextResponse.next({ request: { headers: requestHeaders } })
 }
 
 export const config = {
