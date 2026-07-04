@@ -1,14 +1,26 @@
 'use client'
 
 import { useState } from 'react'
-import { requestMagicLink } from './actions'
+import { requestMagicLink, signInWithPassword } from './actions'
 
+type Mode = 'password' | 'magic'
 type State = 'idle' | 'loading' | 'sent' | 'error'
 
+const inputClass =
+  'rounded-full border-2 border-line bg-white px-5 py-3 text-ink outline-none placeholder:text-slate-400 focus:border-blue-500'
+
 export default function LoginForm({ next, notConfigured }: { next?: string; notConfigured?: boolean }) {
+  const [mode, setMode] = useState<Mode>('password')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [state, setState] = useState<State>('idle')
   const [message, setMessage] = useState('')
+
+  function switchMode(nextMode: Mode) {
+    setMode(nextMode)
+    setState('idle')
+    setMessage('')
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -16,6 +28,18 @@ export default function LoginForm({ next, notConfigured }: { next?: string; notC
     setState('loading')
     setMessage('')
     try {
+      if (mode === 'password') {
+        const res = await signInWithPassword(email, password, next)
+        if (res.ok) {
+          // Full navigation so the middleware picks up the new session cookie.
+          window.location.assign(res.redirectTo)
+          return
+        }
+        setState('error')
+        setMessage(res.message)
+        return
+      }
+
       const res = await requestMagicLink(email, next)
       if (res.ok) {
         setState('sent')
@@ -40,10 +64,10 @@ export default function LoginForm({ next, notConfigured }: { next?: string; notC
         <p className="text-sm font-bold text-ink">{message}</p>
         <button
           type="button"
-          onClick={() => setState('idle')}
+          onClick={() => switchMode('password')}
           className="mt-3 text-xs font-bold text-blue-500 underline"
         >
-          Use a different email
+          Back to sign in
         </button>
       </div>
     )
@@ -66,15 +90,54 @@ export default function LoginForm({ next, notConfigured }: { next?: string; notC
         onChange={(e) => setEmail(e.target.value)}
         placeholder="you@email.com"
         aria-invalid={state === 'error'}
-        className="rounded-full border-2 border-line bg-white px-5 py-3 text-ink outline-none placeholder:text-slate-400 focus:border-blue-500"
+        className={inputClass}
       />
+
+      {mode === 'password' && (
+        <>
+          <label htmlFor="admin-password" className="sr-only">
+            Password
+          </label>
+          <input
+            id="admin-password"
+            type="password"
+            name="password"
+            autoComplete="current-password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            aria-invalid={state === 'error'}
+            className={inputClass}
+          />
+        </>
+      )}
+
       <button
         type="submit"
         disabled={state === 'loading' || notConfigured}
         className="rounded-full bg-blue-700 px-6 py-3 font-extrabold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {state === 'loading' ? 'Sending…' : 'Email me a sign-in link'}
+        {state === 'loading'
+          ? mode === 'password'
+            ? 'Signing in…'
+            : 'Sending…'
+          : mode === 'password'
+            ? 'Sign in'
+            : 'Email me a sign-in link'}
       </button>
+
+      {!notConfigured && (
+        <button
+          type="button"
+          onClick={() => switchMode(mode === 'password' ? 'magic' : 'password')}
+          className="text-xs font-bold text-blue-500 underline"
+        >
+          {mode === 'password'
+            ? 'Email me a sign-in link instead'
+            : 'Sign in with a password instead'}
+        </button>
+      )}
 
       {notConfigured && (
         <p className="text-xs font-semibold text-slate-400" role="note">

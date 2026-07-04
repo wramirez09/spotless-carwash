@@ -62,6 +62,52 @@ export async function requestMagicLink(email: string, next?: string): Promise<Ma
   return neutral
 }
 
+export type PasswordResult =
+  | { ok: true; redirectTo: string }
+  | { ok: false; message: string }
+
+/**
+ * Sign in with an email + password. Fails closed on the ADMIN_EMAILS allowlist
+ * before ever touching Supabase, and returns a single generic message for every
+ * failure so the form never reveals which addresses are admins or whether the
+ * password was the wrong part. On success the session cookie is written here
+ * (this runs in a server action, where cookie writes succeed) and the caller
+ * does a full navigation so the middleware picks the session up.
+ */
+export async function signInWithPassword(
+  email: string,
+  password: string,
+  next?: string,
+): Promise<PasswordResult> {
+  const invalid: PasswordResult = { ok: false, message: 'Invalid email or password.' }
+
+  const clean = email.trim().toLowerCase()
+  if (!EMAIL_RE.test(clean) || !password) return invalid
+
+  // Not an allowlisted admin → never establish a session.
+  if (!isAdminEmail(clean)) return invalid
+
+  const supabase = await createServerSupabase()
+  if (!supabase) {
+    return { ok: false, message: 'Sign-in is not configured. Please contact the site admin.' }
+  }
+
+  const { data, error } = await supabase.auth.signInWithPassword({ email: clean, password })
+  if (error || !data.user) {
+    if (error) console.error('[admin-auth] signInWithPassword failed', { message: error.message })
+    return invalid
+  }
+
+  // Defense in depth: if the authenticated user isn't an admin, drop the session.
+  if (!isAdminEmail(data.user.email)) {
+    await supabase.auth.signOut()
+    return invalid
+  }
+
+  const safeNext = next && next.startsWith('/admin') ? next : '/admin/signups'
+  return { ok: true, redirectTo: safeNext }
+}
+
 export async function signOut(): Promise<void> {
   const supabase = await createServerSupabase()
   if (supabase) await supabase.auth.signOut()

@@ -8,7 +8,7 @@ const EMAIL_QUERY = `*[_type == "emailSection"][0]{
 const FALLBACK: EmailData = {
   headlineLine1: 'Spotless updates,',
   headlineLine2: 'straight to your inbox.',
-  body: 'Get occasional updates from Spotless Car Wash — new services, seasonal deals, and Forest Park car-care tips. No spam, unsubscribe anytime.',
+  body: 'Get occasional emails from Spotless Car Wash — sales, seasonal promotions, and Forest Park car-care tips. No spam, unsubscribe anytime.',
   placeholder: 'Enter your email',
   submitLabel: 'Subscribe',
   successLabel: "You're subscribed ✓",

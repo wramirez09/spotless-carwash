@@ -29,7 +29,7 @@ export default async function AdminLoginPage({
           </p>
           <h1 className="display text-[36px] leading-none text-blue-700">Sign in</h1>
           <p className="mt-2 text-sm text-slate-500">
-            Enter your admin email and we&apos;ll send you a secure sign-in link.
+            Enter your admin email and password, or request a secure sign-in link.
           </p>
         </div>
         <div className="rounded-[28px] border border-line bg-white p-6 shadow-[0_30px_60px_-40px_rgba(8,24,63,0.4)]">
