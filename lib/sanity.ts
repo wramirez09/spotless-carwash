@@ -1,6 +1,9 @@
 import { createClient } from 'next-sanity'
 
-const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!
+// Fall back to the (public) project ID so an empty env doesn't hard-crash every
+// page in local dev. The real value still comes from NEXT_PUBLIC_SANITY_PROJECT_ID
+// per environment; this is the same ID already committed in sanity.config.ts.
+const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || '60he0627'
 const dataset = 'production'
 const apiVersion = '2024-01-01'
 const studioUrl = '/studio'
