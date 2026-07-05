@@ -60,7 +60,7 @@ describe('POST /api/subscribe — success outcomes', () => {
       makeReq({
         email: 'a@b.com',
         name: 'Jo',
-        phone: '555',
+        phone: '7742463245',
         source: 'footer',
         confirmResubscribe: true,
       }),
@@ -68,7 +68,8 @@ describe('POST /api/subscribe — success outcomes', () => {
     expect(subscribeToPromotions).toHaveBeenCalledWith({
       email: 'a@b.com',
       name: 'Jo',
-      phone: '555',
+      // Normalized to canonical US form by the schema.
+      phone: '(774) 246-3245',
       source: 'footer',
       confirmResubscribe: true,
     })

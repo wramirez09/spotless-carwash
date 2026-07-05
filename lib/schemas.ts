@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { normalizeUsPhone } from './phone'
 
 // Shared zod schemas for validating untrusted request bodies at the API
 // boundary. Helpers coerce non-string input to '' so a missing field and an
@@ -15,6 +16,24 @@ const requiredStr = (message: string) => z.preprocess(trimmed, z.string().min(1,
 const optionalStr = z.preprocess(trimmed, z.string())
 // Strict boolean — true only when the value is literally `true`.
 const strictBool = z.preprocess((v) => v === true, z.boolean())
+
+// Optional US phone: '' passes through; anything non-empty must be a valid US
+// number and is normalized to the canonical `(XXX) XXX-XXXX` form for storage.
+const usPhoneOptional = z.preprocess(
+  trimmed,
+  z.string().transform((value, ctx) => {
+    if (value === '') return ''
+    const normalized = normalizeUsPhone(value)
+    if (!normalized) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Please enter a valid US phone number.',
+      })
+      return z.NEVER
+    }
+    return normalized
+  }),
+)
 
 // ---------------------------------------------------------------------------
 // POST /api/subscribe
@@ -33,7 +52,7 @@ export const subscribeBodySchema = z.object({
       .regex(EMAIL_RE, 'Please enter a valid email address.'),
   ),
   name: optionalStr,
-  phone: optionalStr,
+  phone: usPhoneOptional,
   source: optionalStr,
   confirmResubscribe: strictBool,
 })

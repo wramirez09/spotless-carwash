@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { subscribeBodySchema, firstIssueMessage } from '@/lib/schemas'
+import { formatUsPhone } from '@/lib/phone'
 
 type State = 'idle' | 'loading' | 'confirm' | 'done' | 'error'
 type Outcome = 'subscribed' | 'resubscribed' | 'already_subscribed' | 'confirm_resubscribe'
@@ -133,9 +134,10 @@ export default function PromotionSignup() {
                   name="phone"
                   inputMode="tel"
                   autoComplete="tel"
-                  placeholder="Phone (optional)"
+                  maxLength={14}
+                  placeholder="(555) 555-5555 (optional)"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(formatUsPhone(e.target.value))}
                   className={inputClass}
                 />
               </div>
