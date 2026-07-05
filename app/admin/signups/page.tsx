@@ -68,6 +68,12 @@ export default async function SignupsDashboardPage({
                 <span className="hidden text-xs font-semibold text-slate-500 sm:inline" title={user.email}>
                   {user.email}
                 </span>
+                <a
+                  href="/admin/reset-password"
+                  className="rounded-full border border-line px-4 py-2.5 text-sm font-bold text-blue-700 transition hover:border-blue-500"
+                >
+                  Change password
+                </a>
                 <form action={signOut}>
                   <button
                     type="submit"
