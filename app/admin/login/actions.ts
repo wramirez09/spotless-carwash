@@ -62,6 +62,40 @@ export async function requestMagicLink(email: string, next?: string): Promise<Ma
   return neutral
 }
 
+/**
+ * Email a password-reset link to an allowlisted admin. Neutral response so the
+ * form never reveals which addresses are admins. The link lands on the shared
+ * auth callback, which establishes a short-lived recovery session and forwards
+ * to /admin/reset-password where the new password is set.
+ */
+export async function requestPasswordReset(email: string): Promise<MagicLinkResult> {
+  const neutral: MagicLinkResult = {
+    ok: true,
+    message: 'If that address is an admin, a password-reset link is on its way — check your inbox.',
+  }
+
+  const clean = email.trim().toLowerCase()
+  if (!EMAIL_RE.test(clean)) {
+    return { ok: false, message: 'Please enter a valid email address.' }
+  }
+  if (!isAdminEmail(clean)) return neutral
+
+  const supabase = await createServerSupabase()
+  if (!supabase) {
+    return { ok: false, message: 'Sign-in is not configured. Please contact the site admin.' }
+  }
+
+  const origin = await siteOrigin()
+  const redirectTo = `${origin}/admin/auth/confirm?next=${encodeURIComponent('/admin/reset-password')}`
+
+  const { error } = await supabase.auth.resetPasswordForEmail(clean, { redirectTo })
+  if (error) {
+    console.error('[admin-auth] resetPasswordForEmail failed', { message: error.message })
+    return neutral
+  }
+  return neutral
+}
+
 export type PasswordResult =
   | { ok: true; redirectTo: string }
   | { ok: false; message: string }

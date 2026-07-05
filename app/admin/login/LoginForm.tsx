@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { requestMagicLink, signInWithPassword } from './actions'
+import { requestMagicLink, signInWithPassword, requestPasswordReset } from './actions'
 
-type Mode = 'password' | 'magic'
+type Mode = 'password' | 'magic' | 'reset'
 type State = 'idle' | 'loading' | 'sent' | 'error'
 
 const inputClass =
@@ -40,7 +40,8 @@ export default function LoginForm({ next, notConfigured }: { next?: string; notC
         return
       }
 
-      const res = await requestMagicLink(email, next)
+      const res =
+        mode === 'reset' ? await requestPasswordReset(email) : await requestMagicLink(email, next)
       if (res.ok) {
         setState('sent')
         setMessage(res.message)
@@ -75,6 +76,11 @@ export default function LoginForm({ next, notConfigured }: { next?: string; notC
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-3">
+      {mode === 'reset' && (
+        <p className="-mt-1 text-sm text-slate-500">
+          Enter your admin email and we&apos;ll send a password-reset link.
+        </p>
+      )}
       <label htmlFor="admin-email" className="sr-only">
         Email address
       </label>
@@ -124,19 +130,50 @@ export default function LoginForm({ next, notConfigured }: { next?: string; notC
             : 'Sending…'
           : mode === 'password'
             ? 'Sign in'
-            : 'Email me a sign-in link'}
+            : mode === 'reset'
+              ? 'Send reset link'
+              : 'Email me a sign-in link'}
       </button>
 
       {!notConfigured && (
-        <button
-          type="button"
-          onClick={() => switchMode(mode === 'password' ? 'magic' : 'password')}
-          className="text-xs font-bold text-blue-500 underline"
-        >
-          {mode === 'password'
-            ? 'Email me a sign-in link instead'
-            : 'Sign in with a password instead'}
-        </button>
+        <div className="flex flex-col items-center gap-1.5">
+          {mode === 'password' && (
+            <>
+              <button
+                type="button"
+                onClick={() => switchMode('reset')}
+                className="text-xs font-bold text-blue-500 underline"
+              >
+                Forgot password?
+              </button>
+              <button
+                type="button"
+                onClick={() => switchMode('magic')}
+                className="text-xs font-bold text-blue-500 underline"
+              >
+                Email me a sign-in link instead
+              </button>
+            </>
+          )}
+          {mode === 'magic' && (
+            <button
+              type="button"
+              onClick={() => switchMode('password')}
+              className="text-xs font-bold text-blue-500 underline"
+            >
+              Sign in with a password instead
+            </button>
+          )}
+          {mode === 'reset' && (
+            <button
+              type="button"
+              onClick={() => switchMode('password')}
+              className="text-xs font-bold text-blue-500 underline"
+            >
+              Back to sign in
+            </button>
+          )}
+        </div>
       )}
 
       {notConfigured && (
