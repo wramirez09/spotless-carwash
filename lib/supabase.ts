@@ -1,5 +1,6 @@
 import 'server-only'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { supabasePublicEnv } from './supabase/publicEnv'
 
 // Service-role client for server-side persistence (the stripe-webhook). The
 // service-role key bypasses RLS, so this must NEVER be imported into client
@@ -32,4 +33,28 @@ export function getSupabaseAdmin(): SupabaseClient | null {
     console.log(`[supabase] admin client → ${isProductionEnv() ? 'PROD' : 'DEV'} project`)
   }
   return cached
+}
+
+let cachedAuthAdmin: SupabaseClient | null = null
+
+/**
+ * Service-role client bound to the SAME project the auth flow uses
+ * (`NEXT_PUBLIC_SUPABASE_URL`), paired with the env-appropriate secret key. Used
+ * for privileged auth operations like `auth.admin.inviteUserByEmail` — the invite
+ * must land in the exact project that `/admin/login` authenticates against, so we
+ * key off the public auth URL rather than PROD_/DEV_ names (which could point at a
+ * different project). `server-only` keeps the secret key out of client bundles.
+ */
+export function getSupabaseAuthAdmin(): SupabaseClient | null {
+  const url = supabasePublicEnv().url
+  const key = isProductionEnv()
+    ? process.env.PROD_SUPABASE_SECRET_KEY
+    : process.env.DEV_SUPABASE_SECRET_KEY
+  if (!url || !key) return null
+  if (!cachedAuthAdmin) {
+    cachedAuthAdmin = createClient(url, key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+  }
+  return cachedAuthAdmin
 }

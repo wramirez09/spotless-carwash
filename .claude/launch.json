@@ -1,0 +1,20 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "spotless-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "langchain-agent-dev",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/williamramirez/repos/langchain-agent && exec /Users/williamramirez/.nvm/versions/node/v20.19.5/bin/npm run dev"
+      ],
+      "autoPort": true
+    }
+  ]
+}

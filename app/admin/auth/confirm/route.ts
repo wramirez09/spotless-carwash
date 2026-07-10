@@ -36,5 +36,12 @@ export async function GET(request: Request) {
     if (error) console.error('[admin-auth] verifyOtp failed', { message: error.message })
   }
 
-  redirect(ok ? next : '/admin/login?error=link')
+  if (!ok) redirect('/admin/login?error=link')
+
+  // Invite links (custom-template `type=invite`) must always land on the
+  // set-password page so a freshly invited admin picks a password — regardless
+  // of whatever `next` the link carried.
+  if (type === 'invite') redirect('/admin/reset-password?flow=invite')
+
+  redirect(next)
 }

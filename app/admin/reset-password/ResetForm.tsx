@@ -8,7 +8,7 @@ type State = 'idle' | 'loading' | 'error'
 const inputClass =
   'rounded-full border-2 border-line bg-white px-5 py-3 text-ink outline-none placeholder:text-slate-400 focus:border-blue-500'
 
-export default function ResetForm() {
+export default function ResetForm({ submitLabel = 'Save new password' }: { submitLabel?: string }) {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [state, setState] = useState<State>('idle')
@@ -80,7 +80,7 @@ export default function ResetForm() {
         disabled={state === 'loading'}
         className="rounded-full bg-blue-700 px-6 py-3 font-extrabold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {state === 'loading' ? 'Saving…' : 'Save new password'}
+        {state === 'loading' ? 'Saving…' : submitLabel}
       </button>
       {state === 'error' && (
         <p className="text-sm font-bold text-red-600" role="alert">
