@@ -25,7 +25,14 @@ export type PricingProp = {
   packs: Pkg[]
   singles: { id: PkgId; price: number }[]
   packCouponAmountOff: number
-  fathersDayActive: boolean
+  /** The seasonal sale in effect, or null outside every sale window. */
+  activeSale: {
+    id: string
+    label: string
+    badge: string
+    emoji: string
+    endLabel: string
+  } | null
 }
 
 export type BuyTokensCopy = {

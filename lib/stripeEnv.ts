@@ -60,9 +60,14 @@ export function getPackDiscountCouponId(): string | undefined {
   )
 }
 
-export function getFathersDayCouponId(): string | undefined {
+/**
+ * Coupon ID for a seasonal sale, keyed by the sale's `couponEnvSuffix`
+ * (e.g. 'LABOR_DAY_2026' → PROD_/DEV_STRIPE_COUPON_LABOR_DAY_2026).
+ * Every new seasonal sale needs its own pair of env vars.
+ */
+export function getSeasonalCouponId(envSuffix: string): string | undefined {
   return pickEnvOrThrowOnProd(
-    'PROD_STRIPE_COUPON_FATHERS_DAY_2026',
-    'DEV_STRIPE_COUPON_FATHERS_DAY_2026',
+    `PROD_STRIPE_COUPON_${envSuffix}`,
+    `DEV_STRIPE_COUPON_${envSuffix}`,
   )
 }

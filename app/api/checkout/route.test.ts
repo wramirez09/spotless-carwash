@@ -12,14 +12,16 @@ const {
   couponsRetrieve,
   couponsCreate,
   getStripeSecretKey,
-  isFathersDaySaleActive,
+  getActiveSeasonalSale,
 } = vi.hoisted(() => ({
   sessionsCreate: vi.fn(),
   customersCreate: vi.fn(),
   couponsRetrieve: vi.fn(),
   couponsCreate: vi.fn(),
-  getStripeSecretKey: vi.fn(() => 'sk_test_fake'),
-  isFathersDaySaleActive: vi.fn(() => false),
+  getStripeSecretKey: vi.fn<() => string | undefined>(() => 'sk_test_fake'),
+  getActiveSeasonalSale: vi.fn<
+    () => { id: string; discountMetadata: string } | null
+  >(() => null),
 }))
 
 vi.mock('stripe', () => ({
@@ -41,7 +43,7 @@ vi.mock('@/lib/stripePricing', () => ({
     '12': 'price_single_12',
   },
   activePackCouponId: () => 'coupon_test',
-  isFathersDaySaleActive,
+  getActiveSeasonalSale,
 }))
 
 import { POST } from './route'
@@ -115,7 +117,7 @@ beforeEach(() => {
   })
   couponsCreate.mockReset().mockImplementation(async (params: { id: string }) => params)
   getStripeSecretKey.mockReturnValue('sk_test_fake')
-  isFathersDaySaleActive.mockReturnValue(false)
+  getActiveSeasonalSale.mockReturnValue(null)
 })
 
 afterEach(() => {
@@ -255,7 +257,7 @@ describe('POST /api/checkout — mailing address metadata', () => {
 
 describe('POST /api/checkout — discounts & quantity', () => {
   it('auto-applies the pack coupon and records the 5-off discount outside the sale', async () => {
-    isFathersDaySaleActive.mockReturnValue(false)
+    getActiveSeasonalSale.mockReturnValue(null)
     await callPost({ ...VALID_PACK, quantity: 1 })
     const session = lastSession()
     expect(session.discounts).toEqual([{ coupon: 'coupon_test' }])
@@ -277,7 +279,7 @@ describe('POST /api/checkout — discounts & quantity', () => {
     expect(lastSession().discounts).toEqual([{ coupon: 'coupon_test_x2' }])
   })
 
-  it('carries the base coupon expiry onto the derived coupon (Father\'s Day)', async () => {
+  it('carries the base coupon expiry onto the derived coupon (seasonal sale)', async () => {
     couponsRetrieve.mockImplementation(async (id: string) => {
       if (id === BASE_COUPON.id) return { ...BASE_COUPON, amount_off: 1000, redeem_by: 1782172740 }
       throw Object.assign(new Error('missing'), { code: 'resource_missing' })
@@ -311,10 +313,19 @@ describe('POST /api/checkout — discounts & quantity', () => {
     expect(lastSession().discounts).toEqual([{ coupon: 'coupon_test' }])
   })
 
-  it('records the Father\'s Day discount on packs during the sale window', async () => {
-    isFathersDaySaleActive.mockReturnValue(true)
+  it('records the seasonal-sale discount on packs during a sale window', async () => {
+    getActiveSeasonalSale.mockReturnValue({
+      id: 'labor-day-2026',
+      discountMetadata: '10_off_labor_day_2026',
+    })
     await callPost(VALID_PACK)
-    expect(lastSession().metadata.pack_discount).toBe('10_off_fathers_day_2026')
+    expect(lastSession().metadata.pack_discount).toBe('10_off_labor_day_2026')
+  })
+
+  it('leaves pack_discount at 5_off when no seasonal sale is running', async () => {
+    getActiveSeasonalSale.mockReturnValue(null)
+    await callPost(VALID_PACK)
+    expect(lastSession().metadata.pack_discount).toBe('5_off')
   })
 
   it('uses promo codes (not the pack coupon) for singles and leaves pack_discount empty', async () => {

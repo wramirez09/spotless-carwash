@@ -1,16 +1,16 @@
 import Link from 'next/link'
-import { isFathersDaySaleActive } from '@/lib/salesSchedule'
+import { getActiveSeasonalSale } from '@/lib/salesSchedule'
 
 export default function SalesBanner() {
-  const fathersDay = isFathersDaySaleActive()
+  const sale = getActiveSeasonalSale()
 
   return (
     <aside className="sale-banner" role="region" aria-label="Promotional banner">
       <div className="sale-inner">
         <span className="sale-tag">
           <span className="tie" aria-hidden>
-            {fathersDay ? (
-              '👔'
+            {sale ? (
+              sale.emoji
             ) : (
               // Inline SVG sparkle that inherits `--sale-ink` (dark) via
               // currentColor, so it renders with full contrast against the
@@ -20,14 +20,14 @@ export default function SalesBanner() {
               </svg>
             )}
           </span>
-          {fathersDay ? "FATHER'S DAY" : 'ALWAYS ON'}
+          {sale ? sale.badge : 'ALWAYS ON'}
         </span>
 
-        {fathersDay ? (
+        {sale ? (
           <span className="sale-msg">
             Extra <b>$5 OFF</b> every 4-pack
             <span className="sep">·</span>
-            Now through Sun, Jun 21
+            Now through {sale.endLabel}
           </span>
         ) : (
           <span className="sale-msg">

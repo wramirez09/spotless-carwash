@@ -1,23 +1,20 @@
 import 'server-only'
 import {
-  FATHERS_DAY_SALE_END_MS,
-  FATHERS_DAY_SALE_START_MS,
-  isFathersDaySaleActive,
+  getActiveSeasonalSale,
+  isSeasonalSaleActive,
+  type SeasonalSale,
 } from './salesSchedule'
 import {
-  getFathersDayCouponId,
   getPackDiscountCouponId,
   getPackPriceId,
-  getSinglePriceId,
+  getSeasonalCouponId,
   getStripeSecretKey,
+  getSinglePriceId,
 } from './stripeEnv'
 import Stripe from 'stripe'
 
-export {
-  FATHERS_DAY_SALE_END_MS,
-  FATHERS_DAY_SALE_START_MS,
-  isFathersDaySaleActive,
-}
+export { getActiveSeasonalSale, isSeasonalSaleActive }
+export type { SeasonalSale }
 
 // ---------- Stripe IDs (resolved via lib/stripeEnv.ts at module load).
 // Picks PROD_* on Vercel Production, DEV_* otherwise. The hardcoded sandbox
@@ -38,21 +35,46 @@ export const SINGLE_PRICES: Record<'8' | '9' | '10' | '12', string> = {
   '12': getSinglePriceId('12') ?? 'price_1TYEJKGhjWB5e4mpdpMew8qJ',
 }
 
-// Stripe Checkout only allows one coupon per session, so the Father's Day
+// Stripe Checkout only allows one coupon per session, so the seasonal-sale
 // coupon stands in for the combined sale price at checkout; the FE renders
-// both chips because conceptually the customer "sees" them stacked. If you
-// want the customer charged the full $10 off during the sale, the Father's
-// Day coupon in Stripe is already configured as the COMBINED amount
+// both chips because conceptually the customer "sees" them stacked. Each
+// seasonal coupon in Stripe is configured as the COMBINED amount
 // (base + sale) — see notes in lib/salesSchedule.ts.
 export const PACK_DISCOUNT_COUPON_ID =
   getPackDiscountCouponId() ?? 'L033ynGl'
 
-export const FATHERS_DAY_COUPON_ID =
-  getFathersDayCouponId() ?? 'KQ9oorQm'
+// Hardcoded sandbox fallbacks, used only when the DEV_* env var is unset.
+// On Vercel Production `getSeasonalCouponId` throws before the `??` applies.
+const SEASONAL_COUPON_FALLBACKS: Record<string, string> = {
+  FATHERS_DAY_2026: 'KQ9oorQm',
+}
 
-// The "base" 4-pack bundle discount that the Father's Day coupon stacks on top
-// of, in cents. Stripe Checkout only applies one coupon per session, so the
-// Father's Day coupon in Stripe is configured as the COMBINED amount
+/**
+ * Coupon ID for a seasonal sale. Resolved lazily (not at module load) so a
+ * missing env var for a sale that isn't running yet can't take the site down;
+ * if resolution fails we degrade to the always-on $5 pack coupon rather than
+ * failing checkout outright.
+ */
+export function seasonalCouponId(sale: SeasonalSale): string {
+  try {
+    return (
+      getSeasonalCouponId(sale.couponEnvSuffix) ??
+      SEASONAL_COUPON_FALLBACKS[sale.couponEnvSuffix] ??
+      PACK_DISCOUNT_COUPON_ID
+    )
+  } catch (err) {
+    console.error(
+      `[stripePricing] seasonal coupon for "${sale.id}" is not configured; ` +
+        'falling back to the always-on 4-pack coupon.',
+      err,
+    )
+    return PACK_DISCOUNT_COUPON_ID
+  }
+}
+
+// The "base" 4-pack bundle discount that a seasonal coupon stacks on top of,
+// in cents. Stripe Checkout only applies one coupon per session, so the
+// seasonal coupon in Stripe is configured as the COMBINED amount
 // (base + sale). This constant is used purely to split the displayed savings
 // into two chips on the FE.
 const BUNDLE_BASE_DISCOUNT_CENTS = 500
@@ -83,11 +105,27 @@ export type SinglePricing = {
   price: number // cents
 }
 
+/** Serializable slice of the active sale, safe to pass to client components. */
+export type ActiveSaleInfo = {
+  id: string
+  label: string
+  badge: string
+  emoji: string
+  endLabel: string
+}
+
 export type CheckoutPricing = {
   packs: PackPricing[]
   singles: SinglePricing[]
   packCouponAmountOff: number // cents — total auto-applied discount per pack
-  fathersDayActive: boolean
+  /** null outside every sale window. */
+  activeSale: ActiveSaleInfo | null
+}
+
+function toSaleInfo(sale: SeasonalSale | null): ActiveSaleInfo | null {
+  if (!sale) return null
+  const { id, label, badge, emoji, endLabel } = sale
+  return { id, label, badge, emoji, endLabel }
 }
 
 // Hardcoded list fallbacks used only if Stripe is unreachable. Match the
@@ -107,12 +145,13 @@ const SINGLE_FALLBACK_CENTS: Record<WashValue, number> = {
 
 const FALLBACK_SAVE_CENTS = {
   base: 500, // always-on 4-pack bundle
-  fathersDay: 1000, // combined base + sale
+  seasonal: 1000, // combined base + sale
 } as const
 
 /** Single coupon ID actually applied at Stripe checkout. */
 export function activePackCouponId(now = Date.now()): string {
-  return isFathersDaySaleActive(now) ? FATHERS_DAY_COUPON_ID : PACK_DISCOUNT_COUPON_ID
+  const sale = getActiveSeasonalSale(now)
+  return sale ? seasonalCouponId(sale) : PACK_DISCOUNT_COUPON_ID
 }
 
 /**
@@ -146,26 +185,25 @@ function couponAmountOffFor(
 
 /**
  * Split a total `save` into chip-sized coupons for display.
- * - Outside the sale: one chip "4-Pack bundle".
- * - During the sale: "4-Pack bundle" ($5 base) + "Father's Day" (remainder).
- *   If the active coupon ends up less than the base, just show "Father's Day".
+ * - Outside a sale: one chip "4-Pack bundle".
+ * - During a sale: "4-Pack bundle" ($5 base) + the sale label (remainder).
+ *   If the active coupon ends up at or below the base, show only the sale chip
+ *   — that means the sale coupon isn't actually stacking, so claiming a $5
+ *   bundle discount on top would overstate the savings.
  */
 function splitCouponBreakdown(
   totalSave: number,
-  fathersDayActive: boolean,
+  sale: SeasonalSale | null,
 ): CouponBreakdownItem[] {
-
-
   if (totalSave <= 0) return []
-  if (!fathersDayActive) {
+  if (!sale) {
     return [
       { id: PACK_DISCOUNT_COUPON_ID, label: '4-Pack bundle', amountOffCents: totalSave },
     ]
   }
+  const saleCouponId = seasonalCouponId(sale)
   if (totalSave <= BUNDLE_BASE_DISCOUNT_CENTS) {
-    return [
-      { id: FATHERS_DAY_COUPON_ID, label: "Father's Day", amountOffCents: totalSave },
-    ]
+    return [{ id: saleCouponId, label: sale.label, amountOffCents: totalSave }]
   }
   return [
     {
@@ -174,8 +212,8 @@ function splitCouponBreakdown(
       amountOffCents: BUNDLE_BASE_DISCOUNT_CENTS,
     },
     {
-      id: FATHERS_DAY_COUPON_ID,
-      label: "Father's Day",
+      id: saleCouponId,
+      label: sale.label,
       amountOffCents: totalSave - BUNDLE_BASE_DISCOUNT_CENTS,
     },
   ]
@@ -185,12 +223,12 @@ export async function getCheckoutPricing(
   nowOverrideMs?: number,
 ): Promise<CheckoutPricing> {
   const now = nowOverrideMs ?? Date.now()
-  const fathersDayActive = isFathersDaySaleActive(now)
+  const sale = getActiveSeasonalSale(now)
   const couponId = activePackCouponId(now)
   const stripe = getStripe()
 
   if (!stripe) {
-    return fallbackPricing(fathersDayActive)
+    return fallbackPricing(sale)
   }
 
   try {
@@ -222,7 +260,7 @@ export async function getCheckoutPricing(
         perToken: Math.round(cents / tokens),
         label: `$${p.id} wash · 4-pack`,
         featured: p.id === '12',
-        coupons: splitCouponBreakdown(save, fathersDayActive),
+        coupons: splitCouponBreakdown(save, sale),
       }
     })
 
@@ -236,16 +274,14 @@ export async function getCheckoutPricing(
       }
     })
 
-    return { packs, singles, packCouponAmountOff, fathersDayActive }
+    return { packs, singles, packCouponAmountOff, activeSale: toSaleInfo(sale) }
   } catch {
-    return fallbackPricing(fathersDayActive)
+    return fallbackPricing(sale)
   }
 }
 
-function fallbackPricing(fathersDayActive: boolean): CheckoutPricing {
-  const saveCents = fathersDayActive
-    ? FALLBACK_SAVE_CENTS.fathersDay
-    : FALLBACK_SAVE_CENTS.base
+function fallbackPricing(sale: SeasonalSale | null): CheckoutPricing {
+  const saveCents = sale ? FALLBACK_SAVE_CENTS.seasonal : FALLBACK_SAVE_CENTS.base
   const packs: PackPricing[] = (Object.keys(PACK_FALLBACK_CENTS) as WashValue[]).map(
     (id) => {
       const cents = PACK_FALLBACK_CENTS[id]
@@ -259,12 +295,17 @@ function fallbackPricing(fathersDayActive: boolean): CheckoutPricing {
         perToken: Math.round(cents / tokens),
         label: `$${id} wash · 4-pack`,
         featured: id === '12',
-        coupons: splitCouponBreakdown(save, fathersDayActive),
+        coupons: splitCouponBreakdown(save, sale),
       }
     },
   )
   const singles: SinglePricing[] = (Object.keys(SINGLE_FALLBACK_CENTS) as WashValue[]).map(
     (id) => ({ id, price: SINGLE_FALLBACK_CENTS[id] }),
   )
-  return { packs, singles, packCouponAmountOff: saveCents, fathersDayActive }
+  return {
+    packs,
+    singles,
+    packCouponAmountOff: saveCents,
+    activeSale: toSaleInfo(sale),
+  }
 }

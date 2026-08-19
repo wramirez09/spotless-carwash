@@ -4,7 +4,7 @@ import {
   PACK_PRICES,
   SINGLE_PRICES,
   activePackCouponId,
-  isFathersDaySaleActive,
+  getActiveSeasonalSale,
   type WashValue,
 } from '@/lib/stripePricing'
 import { getStripeSecretKey } from '@/lib/stripeEnv'
@@ -116,7 +116,7 @@ export async function POST(req: Request) {
   const skuWash = purchaseMode === 'single' ? washValue : pkg
 
   const applyPackDiscount = purchaseMode === 'pack'
-  const fathersDayActive = applyPackDiscount && isFathersDaySaleActive()
+  const activeSale = applyPackDiscount ? getActiveSeasonalSale() : null
   // Scale the auto-applied pack coupon to the order quantity so every pack
   // gets the discount, not just the first (see couponForQuantity above).
   const packCoupon = applyPackDiscount
@@ -140,7 +140,7 @@ export async function POST(req: Request) {
       success_url: `${siteUrl}/buy-tokens/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/buy-tokens`,
       // `discounts` and `allow_promotion_codes` are mutually exclusive — packs
-      // get the auto-applied coupon (Father's Day $10 during the sale window,
+      // get the auto-applied coupon ($10 during a seasonal sale window,
       // otherwise the always-on $5), singles fall back to promo codes.
       ...(applyPackDiscount
         ? { discounts: [{ coupon: packCoupon }] }
@@ -171,9 +171,7 @@ export async function POST(req: Request) {
         mode: purchaseMode,
         wash_value: skuWash,
         pack_discount: applyPackDiscount
-          ? fathersDayActive
-            ? '10_off_fathers_day_2026'
-            : '5_off'
+          ? activeSale?.discountMetadata ?? '5_off'
           : '',
       },
     })

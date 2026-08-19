@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { sanityFetch } from '@/lib/sanityFetch'
 import { renderHighlight } from '@/lib/renderHighlight'
 import { getCheckoutPricing } from '@/lib/stripePricing'
-import { isFathersDaySaleActive } from '@/lib/salesSchedule'
+import { getActiveSeasonalSale } from '@/lib/salesSchedule'
 
 type TokensCopy = {
   eyebrow: string
@@ -13,7 +13,6 @@ type TokensCopy = {
   description: string
   cta: { label: string; href: string }
   unitLabel: string
-  saleEyebrow: string
   saleHeadline: string
 }
 
@@ -34,7 +33,6 @@ const FALLBACK: TokensCopy = {
     'Prepaid wash tokens save you $5 per 4-pack. Keep them in your glovebox, skip the cash station — and they make a great Forest Park gift.',
   cta: { label: 'Buy tokens', href: '/buy-tokens' },
   unitLabel: '/ wash · 4-pack',
-  saleEyebrow: "Father's Day sale",
   saleHeadline: 'Extra **$5 off** every 4-pack.',
 }
 
@@ -48,7 +46,7 @@ export default async function Tokens() {
     sanityFetch<Partial<TokensCopy>>(COPY_QUERY),
     getCheckoutPricing(),
   ])
-  const fathersDayActive = pricing.fathersDayActive || isFathersDaySaleActive()
+  const sale = pricing.activeSale ?? getActiveSeasonalSale()
 
   const t: TokensCopy = {
     ...FALLBACK,
@@ -72,16 +70,16 @@ export default async function Tokens() {
             }}
           />
           <div className="relative flex flex-col justify-center h-full">
-            {fathersDayActive && (
+            {sale && (
               <span className="inline-flex self-start items-center gap-2 bg-yellow-400 text-blue-700 text-[11px] font-extrabold tracking-[0.18em] uppercase rounded-full px-3 py-1.5 mb-4 shadow-[0_8px_18px_rgba(0,0,0,.25)]">
-                <span aria-hidden>👔</span> {t.saleEyebrow} · Now on
+                <span aria-hidden>{sale.emoji}</span> {sale.label} sale · Now on
               </span>
             )}
             <div className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.22em] uppercase text-yellow-400 mb-2.5">
               <span className="mono text-blue-200 font-medium">{t.sectionNumber} /</span> {t.eyebrow}
             </div>
             <h2 className="display text-[40px] sm:text-[56px] md:text-[68px] m-0 mb-4 leading-[1.02]">
-              {fathersDayActive ? (
+              {sale ? (
                 renderHighlight(t.saleHeadline, 'text-yellow-400')
               ) : (
                 <>
