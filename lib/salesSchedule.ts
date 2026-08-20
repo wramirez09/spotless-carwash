@@ -30,9 +30,11 @@ export type SeasonalSale = {
 export const FATHERS_DAY_SALE_START_MS = Date.UTC(2026, 5, 7, 5, 0, 0)
 export const FATHERS_DAY_SALE_END_MS = Date.UTC(2026, 5, 22, 4, 59, 59)
 
-// Labor Day 2026: 2026-08-19 00:00 → 2026-09-07 23:59:59 Chicago.
+// Labor Day 2026: Thu 2026-08-20 00:00 → Mon 2026-09-07 23:59:59 Chicago.
 // Labor Day itself is Mon Sep 7, 2026 — the sale runs through end of that day.
-export const LABOR_DAY_SALE_START_MS = Date.UTC(2026, 7, 19, 5, 0, 0)
+// Every 4-pack is $10 off list during the window ($8→$22, $9→$26, $10→$30,
+// $12→$38), which is why the Stripe coupon is a flat amount_off of 1000.
+export const LABOR_DAY_SALE_START_MS = Date.UTC(2026, 7, 20, 5, 0, 0)
 export const LABOR_DAY_SALE_END_MS = Date.UTC(2026, 8, 8, 4, 59, 59)
 
 export const SEASONAL_SALES: readonly SeasonalSale[] = [

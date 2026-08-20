@@ -33,10 +33,10 @@ describe('FATHERS_DAY_SALE_END_MS', () => {
 })
 
 describe('LABOR_DAY_SALE_START_MS', () => {
-  it('represents 2026-08-19 00:00:00 America/Chicago (= 05:00:00 UTC, CDT)', () => {
-    expect(LABOR_DAY_SALE_START_MS).toBe(Date.UTC(2026, 7, 19, 5, 0, 0))
+  it('represents Thu 2026-08-20 00:00:00 America/Chicago (= 05:00:00 UTC, CDT)', () => {
+    expect(LABOR_DAY_SALE_START_MS).toBe(Date.UTC(2026, 7, 20, 5, 0, 0))
     expect(new Date(LABOR_DAY_SALE_START_MS).toISOString()).toBe(
-      '2026-08-19T05:00:00.000Z',
+      '2026-08-20T05:00:00.000Z',
     )
   })
 })
@@ -113,7 +113,7 @@ describe('isLaborDaySaleActive', () => {
     expect(isLaborDaySaleActive(LABOR_DAY_SALE_START_MS - 1)).toBe(false)
   })
 
-  it('is ACTIVE at the exact start (2026-08-19 00:00:00 Chicago)', () => {
+  it('is ACTIVE at the exact start (Thu 2026-08-20 00:00:00 Chicago)', () => {
     expect(isLaborDaySaleActive(LABOR_DAY_SALE_START_MS)).toBe(true)
   })
 
@@ -135,8 +135,8 @@ describe('isLaborDaySaleActive', () => {
     expect(isLaborDaySaleActive(LABOR_DAY_SALE_END_MS + 1)).toBe(false)
   })
 
-  it('is INACTIVE the day before the sale opens (Aug 18 noon Chicago)', () => {
-    const dayBefore = Date.UTC(2026, 7, 18, 17, 0, 0)
+  it('is INACTIVE the day before the sale opens (Wed Aug 19 noon Chicago)', () => {
+    const dayBefore = Date.UTC(2026, 7, 19, 17, 0, 0)
     expect(isLaborDaySaleActive(dayBefore)).toBe(false)
   })
 
