@@ -55,6 +55,7 @@ export const SEASONAL_SALES: readonly SeasonalSale[] = [
     badge: 'LABOR DAY',
     emoji: '🛠️',
     endLabel: 'Mon, Sep 7',
+    // eslint-disable-next-line no-inline-comments -- see window notes above
     startMs: LABOR_DAY_SALE_START_MS,
     endMs: LABOR_DAY_SALE_END_MS,
     couponEnvSuffix: 'LABOR_DAY_2026',
