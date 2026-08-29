@@ -63,6 +63,15 @@ export default defineType({
       description: 'Shown under the per-token figure, e.g. "per wash".',
     }),
     defineField({ name: 'tokensSuffix', type: 'string', group: 'plans' }),
+    defineField({ name: 'washPickerKicker', type: 'string', group: 'plans' }),
+    defineField({ name: 'washPickerTitle', type: 'string', group: 'plans' }),
+    defineField({
+      name: 'washPickerHelp',
+      type: 'text',
+      rows: 2,
+      group: 'plans',
+      description: 'Explains that the token is good for one wash at the chosen tier.',
+    }),
 
     // DETAILS
     defineField({ name: 'step2Number', type: 'string', group: 'details' }),
@@ -78,6 +87,14 @@ export default defineType({
     defineField({ name: 'phonePlaceholder', type: 'string', group: 'details' }),
     defineField({ name: 'requiredMark', type: 'string', group: 'details' }),
     defineField({ name: 'mailingListLabel', type: 'string', group: 'details' }),
+    defineField({ name: 'addressHeading', type: 'string', group: 'details' }),
+    defineField({ name: 'addressLine1Label', type: 'string', group: 'details' }),
+    defineField({ name: 'addressLine1Placeholder', type: 'string', group: 'details' }),
+    defineField({ name: 'addressLine2Label', type: 'string', group: 'details' }),
+    defineField({ name: 'addressLine2Placeholder', type: 'string', group: 'details' }),
+    defineField({ name: 'cityLabel', type: 'string', group: 'details' }),
+    defineField({ name: 'stateLabel', type: 'string', group: 'details' }),
+    defineField({ name: 'postalCodeLabel', type: 'string', group: 'details' }),
 
     // HOW IT WORKS
     defineField({ name: 'step3Number', type: 'string', group: 'how' }),

@@ -99,11 +99,24 @@ export type CheckoutBody = z.infer<typeof checkoutBodySchema>
 // isSubscriptionPlanId, which owns the list of valid plans.
 export const subscriptionCheckoutBodySchema = z.object({
   plan: requiredStr('Choose a plan'),
+  // Which token denomination ships ($8/$9/$10/$12). Validated against the real
+  // list in the route via isSubscriptionWashValue, which owns that set.
+  washValue: requiredStr('Choose a token'),
   email: z.preprocess(trimmed, z.string().regex(EMAIL_RE, 'Valid email required')),
   name: requiredStr('Name required'),
   // Optional here, unlike the one-time checkout — Stripe also collects a phone
   // on the hosted page, so a blank field must not block signup.
   phone: usPhoneOptional,
+  // Where the tokens are mailed each cycle. Collected on our own form rather
+  // than Stripe's hosted page so the shipping address is captured before the
+  // customer leaves the site, matching checkoutBodySchema field-for-field.
+  mailingLine1: requiredStr('Complete mailing address required'),
+  mailingLine2: optionalStr,
+  mailingCity: requiredStr('Complete mailing address required'),
+  mailingState: z
+    .preprocess(trimmed, z.string().min(1, 'Complete mailing address required'))
+    .transform((s) => s.toUpperCase()),
+  mailingPostalCode: requiredStr('Complete mailing address required'),
   mailingListSubscribed: strictBool,
 })
 export type SubscriptionCheckoutBody = z.infer<typeof subscriptionCheckoutBodySchema>

@@ -9,7 +9,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 const { sessionsCreate, getStripeSecretKey, subscriptionPriceId } = vi.hoisted(() => ({
   sessionsCreate: vi.fn(),
   getStripeSecretKey: vi.fn<() => string | undefined>(() => 'sk_test_fake'),
-  subscriptionPriceId: vi.fn<() => string | undefined>(() => 'price_sub_weekly'),
+  subscriptionPriceId: vi.fn<(plan: string, washValue: string) => string | undefined>(
+    () => 'price_sub_weekly',
+  ),
 }))
 
 vi.mock('stripe', () => ({
@@ -31,9 +33,15 @@ import { POST } from './route'
 
 const VALID_BODY = {
   plan: 'weekly',
+  washValue: '12',
   email: 'pat@example.com',
   name: 'Pat Driver',
   phone: '(708) 555-0100',
+  mailingLine1: '7802 Madison St',
+  mailingLine2: '',
+  mailingCity: 'Forest Park',
+  mailingState: 'IL',
+  mailingPostalCode: '60130',
   mailingListSubscribed: false,
 }
 
@@ -79,12 +87,30 @@ describe('POST /api/subscription-checkout', () => {
     expect(sessionsCreate.mock.calls[0][0]).not.toHaveProperty('discounts')
   })
 
-  it('has Stripe collect the US shipping address, since tokens are mailed', async () => {
+  it('carries our own mailing address in metadata, not Stripe shipping', async () => {
+    // The address is collected on our form, so Stripe's shipping step is off —
+    // asking twice would be pure friction.
     sessionsCreate.mockResolvedValue({ url: 'https://checkout.stripe.test/s/1' })
     await POST(makeReq(VALID_BODY))
-    expect(sessionsCreate.mock.calls[0][0].shipping_address_collection).toEqual({
-      allowed_countries: ['US'],
+
+    const args = sessionsCreate.mock.calls[0][0]
+    expect(args).not.toHaveProperty('shipping_address_collection')
+    expect(args.subscription_data.metadata).toMatchObject({
+      mail_line1: '7802 Madison St',
+      mail_city: 'Forest Park',
+      mail_state: 'IL',
+      mail_postal_code: '60130',
     })
+    expect(args.metadata.mail_line1).toBe('7802 Madison St')
+  })
+
+  it('rejects an incomplete mailing address before touching Stripe', async () => {
+    const res = await POST(makeReq({ ...VALID_BODY, mailingCity: '' }))
+    expect(res.status).toBe(400)
+    await expect(res.json()).resolves.toEqual({
+      error: 'Complete mailing address required',
+    })
+    expect(sessionsCreate).not.toHaveBeenCalled()
   })
 
   it('mirrors plan metadata onto the subscription so renewal invoices carry it', async () => {
@@ -118,6 +144,34 @@ describe('POST /api/subscription-checkout', () => {
     expect(res.status).toBe(400)
     await expect(res.json()).resolves.toEqual({ error: 'Bad plan' })
     expect(sessionsCreate).not.toHaveBeenCalled()
+  })
+
+  it('rejects an unknown token denomination', async () => {
+    const res = await POST(makeReq({ ...VALID_BODY, washValue: '11' }))
+    expect(res.status).toBe(400)
+    await expect(res.json()).resolves.toEqual({ error: 'Bad token value' })
+    expect(sessionsCreate).not.toHaveBeenCalled()
+  })
+
+  it('looks the price up by plan AND denomination', async () => {
+    sessionsCreate.mockResolvedValue({ url: 'https://checkout.stripe.test/s/1' })
+    await POST(makeReq({ ...VALID_BODY, plan: 'family', washValue: '8' }))
+    expect(subscriptionPriceId).toHaveBeenCalledWith('family', '8')
+  })
+
+  it('records the chosen denomination on the subscription, not the default', async () => {
+    // The webhook reads wash_value off the invoice metadata snapshot to decide
+    // which token to ship, so a wrong value here mails the wrong coin.
+    sessionsCreate.mockResolvedValue({ url: 'https://checkout.stripe.test/s/1' })
+    await POST(makeReq({ ...VALID_BODY, plan: 'frequent', washValue: '9' }))
+
+    const args = sessionsCreate.mock.calls[0][0]
+    expect(args.subscription_data.metadata).toMatchObject({
+      plan: 'frequent',
+      tokens_per_cycle: '8',
+      wash_value: '9',
+    })
+    expect(args.metadata.wash_value).toBe('9')
   })
 
   it('rejects an invalid email before touching Stripe', async () => {

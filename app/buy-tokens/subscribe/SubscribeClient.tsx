@@ -5,15 +5,21 @@ import { useMemo, useState, type FormEvent } from 'react'
 import { formatUsPhone } from '@/lib/phone'
 import { firstIssueMessage, subscriptionCheckoutBodySchema } from '@/lib/schemas'
 
+export type VariantProp = {
+  washValue: string
+  price: number // cents / month
+  perToken: number // cents
+  listPerToken: number // cents
+  savePerToken: number // cents
+}
+
 export type PlanProp = {
   id: string
   name: string
   tokensPerCycle: number
-  washValue: string
-  price: number // cents / month
-  perToken: number // cents
   blurb: string
   featured?: boolean
+  variants: VariantProp[]
 }
 
 export type SubscribeCopy = {
@@ -35,6 +41,9 @@ export type SubscribeCopy = {
   perMonthSuffix: string
   perTokenSuffix: string
   tokensSuffix: string
+  washPickerKicker: string
+  washPickerTitle: string
+  washPickerHelp: string
 
   step2Number: string
   step2Kicker: string
@@ -49,6 +58,14 @@ export type SubscribeCopy = {
   phonePlaceholder: string
   requiredMark: string
   mailingListLabel: string
+  addressHeading: string
+  addressLine1Label: string
+  addressLine1Placeholder: string
+  addressLine2Label: string
+  addressLine2Placeholder: string
+  cityLabel: string
+  stateLabel: string
+  postalCodeLabel: string
 
   step3Number: string
   step3Kicker: string
@@ -83,15 +100,23 @@ function formatUSD(cents: number): string {
 export default function SubscribeClient({
   copy,
   plans,
+  defaultWashValue,
 }: {
   copy: SubscribeCopy
   plans: PlanProp[]
+  defaultWashValue: string
 }) {
   const featuredId = plans.find((p) => p.featured)?.id ?? plans[0]?.id ?? ''
   const [selectedId, setSelectedId] = useState(featuredId)
+  const [washValue, setWashValue] = useState(defaultWashValue)
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
+  const [line1, setLine1] = useState('')
+  const [line2, setLine2] = useState('')
+  const [city, setCity] = useState('')
+  const [stateRegion, setStateRegion] = useState('')
+  const [zip, setZip] = useState('')
   const [mailingList, setMailingList] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
@@ -100,16 +125,30 @@ export default function SubscribeClient({
     () => plans.find((p) => p.id === selectedId) ?? plans[0],
     [plans, selectedId],
   )
+  // The chosen denomination within the chosen plan. Falls back to the plan's
+  // first variant so a stale washValue can never blank out the summary.
+  const variant = useMemo(
+    () =>
+      selected?.variants.find((v) => v.washValue === washValue) ??
+      selected?.variants[0],
+    [selected, washValue],
+  )
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
-    if (submitting || !selected) return
+    if (submitting || !selected || !variant) return
 
     const body = {
       plan: selected.id,
+      washValue,
       email,
       name,
       phone,
+      mailingLine1: line1,
+      mailingLine2: line2,
+      mailingCity: city,
+      mailingState: stateRegion,
+      mailingPostalCode: zip,
       mailingListSubscribed: mailingList,
     }
 
@@ -199,6 +238,11 @@ export default function SubscribeClient({
               >
                 {plans.map((plan) => {
                   const active = plan.id === selectedId
+                  // Each card prices itself at the currently chosen token, so
+                  // switching denomination re-prices all three at once.
+                  const v =
+                    plan.variants.find((x) => x.washValue === washValue) ??
+                    plan.variants[0]
                   return (
                     <button
                       key={plan.id}
@@ -220,14 +264,14 @@ export default function SubscribeClient({
                       <div className="display text-[20px] leading-none">{plan.name}</div>
                       <div className="mt-3 flex items-baseline gap-1">
                         <span className="display text-[40px] leading-none text-blue-700">
-                          {formatUSD(plan.price)}
+                          {formatUSD(v.price)}
                         </span>
                         <span className="mono text-[11px] uppercase tracking-[0.14em] text-[#9aa9c9]">
                           {copy.perMonthSuffix}
                         </span>
                       </div>
                       <div className="mt-1 mono text-[11px] uppercase tracking-[0.14em] text-[#9aa9c9]">
-                        {formatUSD(plan.perToken)} {copy.perTokenSuffix}
+                        {formatUSD(v.perToken)} {copy.perTokenSuffix}
                       </div>
                       <div className="mt-3 text-sm font-extrabold text-blue-700">
                         {plan.tokensPerCycle} {copy.tokensSuffix}
@@ -238,6 +282,48 @@ export default function SubscribeClient({
                     </button>
                   )
                 })}
+              </div>
+
+              {/* Token denomination — re-prices every plan card above. */}
+              <div className="mt-6 rounded-2xl border-2 border-line bg-white p-5">
+                <div className="mono text-[11px] font-semibold tracking-[0.22em] uppercase text-[#9aa9c9]">
+                  {copy.washPickerKicker}
+                </div>
+                <h3 className="display m-0 mt-1 text-[20px]">{copy.washPickerTitle}</h3>
+                <div
+                  role="radiogroup"
+                  aria-label={copy.washPickerTitle}
+                  className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3"
+                >
+                  {(selected?.variants ?? []).map((v) => {
+                    const on = v.washValue === washValue
+                    return (
+                      <button
+                        key={v.washValue}
+                        type="button"
+                        role="radio"
+                        aria-checked={on}
+                        onClick={() => setWashValue(v.washValue)}
+                        className={`rounded-xl border-2 px-3 py-3 text-center transition ${
+                          on
+                            ? 'border-blue-500 bg-paper2'
+                            : 'border-line bg-white hover:border-blue-300'
+                        }`}
+                      >
+                        <div className="display text-[22px] leading-none text-blue-700">
+                          ${v.washValue}
+                        </div>
+                        <div className="mt-1 mono text-[10px] uppercase tracking-[0.12em] text-[#9aa9c9]">
+                          {formatUSD(v.price)}
+                          {copy.perMonthSuffix}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-[#5B6B8C]">
+                  {copy.washPickerHelp}
+                </p>
               </div>
             </section>
 
@@ -297,6 +383,92 @@ export default function SubscribeClient({
                   />
                 </label>
 
+                <div className="sm:col-span-2 mt-2 border-t border-line pt-4">
+                  <div className="mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9aa9c9]">
+                    {copy.addressHeading}
+                  </div>
+                </div>
+
+                <label className="block sm:col-span-2">
+                  <span className="mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9aa9c9]">
+                    {copy.addressLine1Label}{' '}
+                    <span className="text-red-500">{copy.requiredMark}</span>
+                  </span>
+                  <input
+                    type="text"
+                    required
+                    autoComplete="address-line1"
+                    value={line1}
+                    onChange={(e) => setLine1(e.target.value)}
+                    placeholder={copy.addressLine1Placeholder}
+                    className="mt-1.5 w-full rounded-xl border-2 border-line bg-white px-4 py-3 text-base text-ink focus:border-blue-500 focus:outline-none"
+                  />
+                </label>
+
+                <label className="block sm:col-span-2">
+                  <span className="mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9aa9c9]">
+                    {copy.addressLine2Label}{' '}
+                    <span className="normal-case tracking-normal">
+                      {copy.phoneOptionalLabel}
+                    </span>
+                  </span>
+                  <input
+                    type="text"
+                    autoComplete="address-line2"
+                    value={line2}
+                    onChange={(e) => setLine2(e.target.value)}
+                    placeholder={copy.addressLine2Placeholder}
+                    className="mt-1.5 w-full rounded-xl border-2 border-line bg-white px-4 py-3 text-base text-ink focus:border-blue-500 focus:outline-none"
+                  />
+                </label>
+
+                <label className="block sm:col-span-2">
+                  <span className="mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9aa9c9]">
+                    {copy.cityLabel} <span className="text-red-500">{copy.requiredMark}</span>
+                  </span>
+                  <input
+                    type="text"
+                    required
+                    autoComplete="address-level2"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="mt-1.5 w-full rounded-xl border-2 border-line bg-white px-4 py-3 text-base text-ink focus:border-blue-500 focus:outline-none"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9aa9c9]">
+                    {copy.stateLabel} <span className="text-red-500">{copy.requiredMark}</span>
+                  </span>
+                  <input
+                    type="text"
+                    required
+                    autoComplete="address-level1"
+                    maxLength={2}
+                    value={stateRegion}
+                    // Two-letter code, uppercased as they type — the schema
+                    // uppercases server-side too, this just matches what's stored.
+                    onChange={(e) => setStateRegion(e.target.value.toUpperCase())}
+                    className="mt-1.5 w-full rounded-xl border-2 border-line bg-white px-4 py-3 text-base uppercase text-ink focus:border-blue-500 focus:outline-none"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9aa9c9]">
+                    {copy.postalCodeLabel}{' '}
+                    <span className="text-red-500">{copy.requiredMark}</span>
+                  </span>
+                  <input
+                    type="text"
+                    required
+                    inputMode="numeric"
+                    autoComplete="postal-code"
+                    value={zip}
+                    onChange={(e) => setZip(e.target.value)}
+                    className="mt-1.5 w-full rounded-xl border-2 border-line bg-white px-4 py-3 text-base text-ink focus:border-blue-500 focus:outline-none"
+                  />
+                </label>
+
                 <label className="sm:col-span-2 flex items-start gap-3 text-sm text-[#5B6B8C]">
                   <input
                     type="checkbox"
@@ -346,21 +518,21 @@ export default function SubscribeClient({
               </span>
             </div>
 
-            {selected && (
+            {selected && variant && (
               <>
                 <div className="mt-5 flex items-baseline justify-between border-b border-line pb-4">
                   <div>
                     <div className="display text-[22px] leading-none">{selected.name}</div>
                     <div className="mt-1 mono text-[11px] uppercase tracking-[0.14em] text-[#9aa9c9]">
-                      {selected.tokensPerCycle} {copy.tokensSuffix}
+                      {selected.tokensPerCycle} × ${variant.washValue} {copy.tokensSuffix}
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="display text-[30px] leading-none text-blue-700">
-                      {formatUSD(selected.price)}
+                      {formatUSD(variant.price)}
                     </div>
                     <div className="mono text-[10px] uppercase tracking-[0.14em] text-[#9aa9c9]">
-                      {formatUSD(selected.perToken)} {copy.perTokenSuffix}
+                      {formatUSD(variant.perToken)} {copy.perTokenSuffix}
                     </div>
                   </div>
                 </div>
@@ -373,7 +545,7 @@ export default function SubscribeClient({
                   <div className="flex items-center justify-between border-t border-line pt-3">
                     <dt className="display text-[18px]">{copy.totalLabel}</dt>
                     <dd className="display text-[26px] text-blue-700">
-                      {formatUSD(selected.price)}
+                      {formatUSD(variant.price)}
                     </dd>
                   </div>
                 </dl>

@@ -13,7 +13,11 @@ vi.mock('./supabase', () => ({ getSupabaseAdmin }))
 vi.mock('server-only', () => ({}))
 vi.mock('./promotions', () => ({ subscribeToPromotions: vi.fn(async () => ({ ok: true })) }))
 
-import { mapStripeStatus, recordFulfillmentForInvoice } from './subscriptions'
+import {
+  mapStripeStatus,
+  persistSubscriptionFromSession,
+  recordFulfillmentForInvoice,
+} from './subscriptions'
 
 type SubRow = {
   id: string
@@ -51,14 +55,22 @@ function makeSupabase(scenario: Scenario) {
       updateCalls.push({ table, patch })
       return builder
     })
-    builder.select = vi.fn(() =>
-      didUpsert
-        ? Promise.resolve({
-            data: scenario.upsertRows ?? [{ id: 'f_1' }],
-            error: scenario.upsertError ?? null,
-          })
-        : builder,
-    )
+    builder.select = vi.fn(() => {
+      if (!didUpsert) return builder
+      // After an upsert `.select()` is awaited directly (fulfillments) OR
+      // chained into `.single()` (the customers upsert), so the returned
+      // promise carries a `single` of its own.
+      const result = {
+        data: scenario.upsertRows ?? [{ id: 'f_1' }],
+        error: scenario.upsertError ?? null,
+      }
+      const p = Promise.resolve(result) as Promise<typeof result> & {
+        single?: () => Promise<{ data: unknown; error: unknown }>
+      }
+      p.single = () =>
+        Promise.resolve({ data: { id: 'customer_row_1' }, error: null })
+      return p
+    })
     builder.eq = vi.fn(() =>
       didUpdate ? Promise.resolve({ error: null }) : builder,
     )
@@ -244,5 +256,112 @@ describe('mapStripeStatus', () => {
   it('preserves past_due and paused distinctly', () => {
     expect(mapStripeStatus('past_due')).toBe('past_due')
     expect(mapStripeStatus('paused')).toBe('paused')
+  })
+})
+
+// --- Address persistence --------------------------------------------------
+// The mailing address is collected on our own form and travels in `mail_*`
+// session metadata. If it does not land on the subscription row, Joe has no
+// address to mail tokens to.
+
+function subscriptionSession(
+  metaOverrides: Record<string, string> = {},
+  extra: Record<string, unknown> = {},
+) {
+  return {
+    id: 'cs_sub_1',
+    mode: 'subscription',
+    subscription: 'sub_123',
+    customer: 'cus_123',
+    customer_email: 'pat@example.com',
+    customer_details: { email: 'pat@example.com', phone: '', address: null, name: 'Pat' },
+    metadata: {
+      plan: 'weekly',
+      tokens_per_cycle: '4',
+      wash_value: '9',
+      customer_name: 'Pat Driver',
+      mail_line1: '7802 Madison St',
+      mail_line2: 'Apt 2B',
+      mail_city: 'Forest Park',
+      mail_state: 'IL',
+      mail_postal_code: '60130',
+      mail_list_subscribed: 'false',
+      ...metaOverrides,
+    },
+    ...extra,
+  } as never
+}
+
+describe('persistSubscriptionFromSession', () => {
+  it('writes the mailing address and chosen token onto the subscription row', async () => {
+    const { upsertCalls } = makeSupabase({ sub: ACTIVE_SUB })
+    await persistSubscriptionFromSession(subscriptionSession())
+
+    const sub = upsertCalls.find((c) => c.table === 'subscriptions')
+    expect(sub?.row).toMatchObject({
+      stripe_subscription_id: 'sub_123',
+      plan: 'weekly',
+      tokens_per_cycle: 4,
+      wash_value: '9',
+      ship_line1: '7802 Madison St',
+      ship_line2: 'Apt 2B',
+      ship_city: 'Forest Park',
+      ship_state: 'IL',
+      ship_postal_code: '60130',
+      ship_country: 'US',
+    })
+  })
+
+  it('mirrors the address onto the customer record too', async () => {
+    const { upsertCalls } = makeSupabase({ sub: ACTIVE_SUB })
+    await persistSubscriptionFromSession(subscriptionSession())
+
+    const cust = upsertCalls.find((c) => c.table === 'customers')
+    expect(cust?.row).toMatchObject({
+      email: 'pat@example.com',
+      mailing_line1: '7802 Madison St',
+      mailing_city: 'Forest Park',
+    })
+  })
+
+  it('falls back to Stripe shipping details when metadata has no address', async () => {
+    // Covers sessions created before the form collected the address itself.
+    const { upsertCalls } = makeSupabase({ sub: ACTIVE_SUB })
+    await persistSubscriptionFromSession(
+      subscriptionSession(
+        { mail_line1: '', mail_city: '', mail_state: '', mail_postal_code: '' },
+        {
+          collected_information: {
+            shipping_details: {
+              address: {
+                line1: '1 Fallback Ave',
+                city: 'Oak Park',
+                state: 'IL',
+                postal_code: '60302',
+              },
+            },
+          },
+        },
+      ),
+    )
+
+    const sub = upsertCalls.find((c) => c.table === 'subscriptions')
+    expect(sub?.row).toMatchObject({
+      ship_line1: '1 Fallback Ave',
+      ship_city: 'Oak Park',
+    })
+  })
+
+  it('never creates a fulfillment — invoice.paid owns that', async () => {
+    const { upsertCalls } = makeSupabase({ sub: ACTIVE_SUB })
+    await persistSubscriptionFromSession(subscriptionSession())
+    expect(upsertCalls.some((c) => c.table === 'fulfillments')).toBe(false)
+  })
+
+  it('does nothing when Supabase is unconfigured', async () => {
+    getSupabaseAdmin.mockReturnValue(null)
+    await expect(
+      persistSubscriptionFromSession(subscriptionSession()),
+    ).resolves.toBeUndefined()
   })
 })

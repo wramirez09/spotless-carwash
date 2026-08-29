@@ -65,17 +65,21 @@ export function getSinglePriceId(v: WashValue): string | undefined {
 }
 
 /**
- * Recurring Price ID for a subscription plan (e.g. 'WEEKLY' →
- * PROD_/DEV_STRIPE_PRICE_SUB_WEEKLY). Throws on Vercel Production when unset —
- * a silent sandbox fallback there would surface as an opaque Stripe error at
- * checkout rather than at deploy time.
+ * Recurring Price ID for a subscription plan at a given token denomination
+ * (e.g. 'WEEKLY' + '12' → PROD_/DEV_STRIPE_PRICE_SUB_WEEKLY_12). Subscribers
+ * choose which wash token they receive, so each plan has one Price per
+ * denomination — mirroring how DEV_STRIPE_PRICE_PACK_<v> is keyed.
+ *
+ * Throws on Vercel Production when unset: a silent sandbox fallback there would
+ * surface as an opaque Stripe error at checkout rather than at deploy time.
  */
 export function getSubscriptionPriceId(
   plan: SubscriptionPlanEnvKey,
+  washValue: WashValue,
 ): string | undefined {
   return pickEnvOrThrowOnProd(
-    `PROD_STRIPE_PRICE_SUB_${plan}`,
-    `DEV_STRIPE_PRICE_SUB_${plan}`,
+    `PROD_STRIPE_PRICE_SUB_${plan}_${washValue}`,
+    `DEV_STRIPE_PRICE_SUB_${plan}_${washValue}`,
   )
 }
 

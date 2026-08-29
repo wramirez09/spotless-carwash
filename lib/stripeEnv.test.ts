@@ -38,20 +38,20 @@ describe('stripeEnv — blank values are treated as unset', () => {
   it('applies the same rule to seasonal coupons and price ids', async () => {
     vi.stubEnv('DEV_STRIPE_COUPON_LABOR_DAY_2026', '')
     vi.stubEnv('DEV_STRIPE_PRICE_PACK_12', '')
-    vi.stubEnv('DEV_STRIPE_PRICE_SUB_WEEKLY', '')
+    vi.stubEnv('DEV_STRIPE_PRICE_SUB_WEEKLY_12', '')
     const mod = await import('./stripeEnv')
     expect(mod.getSeasonalCouponId('LABOR_DAY_2026')).toBeUndefined()
     expect(mod.getPackPriceId('12')).toBeUndefined()
-    expect(mod.getSubscriptionPriceId('WEEKLY')).toBeUndefined()
+    expect(mod.getSubscriptionPriceId('WEEKLY', '12')).toBeUndefined()
   })
 
   it('still throws on Vercel Production when a required id is blank', async () => {
     // Blank must not read as "configured" in production — the throw is what
     // stops a sandbox fallback reaching real customers.
     vi.stubEnv('VERCEL_ENV', 'production')
-    vi.stubEnv('PROD_STRIPE_PRICE_SUB_WEEKLY', '')
+    vi.stubEnv('PROD_STRIPE_PRICE_SUB_WEEKLY_12', '')
     const { getSubscriptionPriceId } = await import('./stripeEnv')
-    expect(() => getSubscriptionPriceId('WEEKLY')).toThrow(/required on Vercel Production/)
+    expect(() => getSubscriptionPriceId('WEEKLY', '12')).toThrow(/required on Vercel Production/)
   })
 
   it('leaves secrets soft — unset returns undefined, not a throw', async () => {

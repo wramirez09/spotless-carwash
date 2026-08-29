@@ -12,8 +12,8 @@ production still runs the previous commit until `dev` is merged and deployed.
 
 ## Why this isn't already done
 
-The three recurring Stripe Prices have never been created, and there is no
-working Stripe credential on this machine to create them with:
+The recurring Stripe Prices have never been created, and there is no working
+Stripe credential on this machine to create them with:
 
 | Route | State |
 |---|---|
@@ -30,30 +30,38 @@ can be done for you in one pass.
 
 ## Step 1 — Create the Stripe Product and Prices
 
-One Product, three monthly recurring Prices, **in both test and live mode**.
+Subscribers choose which wash token they receive, so each plan needs **one Price
+per denomination** — 12 Prices per mode, 24 in total across test and live. One
+Product is enough; the denomination lives on the Price.
 
-| Plan | Amount | Interval | Env suffix |
-|---|---|---|---|
-| Weekly — 4 tokens | `$40.00` (4000) | month | `WEEKLY` |
-| Frequent — 8 tokens | `$76.00` (7600) | month | `FREQUENT` |
-| Family / Fleet — 12 tokens | `$108.00` (10800) | month | `FAMILY` |
+Monthly amounts in dollars:
 
-Currency `usd`. Prices come from the proposal, Section 3.1.
+| Plan | Tokens | $8 | $9 | $10 | $12 |
+|---|---|---|---|---|---|
+| Weekly (`WEEKLY`) | 4 | 24 | 28 | 32 | **40** |
+| Frequent (`FREQUENT`) | 8 | 44 | 52 | 60 | **76** |
+| Family / Fleet (`FAMILY`) | 12 | 60 | 72 | 84 | **108** |
 
-Via the CLI once logged in (repeat with `--live` for live mode):
+The **$12 column is the proposal, unchanged**. The rest come from a per-token
+discount off the list wash price — $2.00 / $2.50 / $3.00 by plan — which keeps
+every cell on a whole dollar and beats the equivalent one-time 4-pack at every
+denomination. The source of truth is `PLAN_PER_TOKEN_DISCOUNT_CENTS` in
+`lib/subscriptionPricing.ts`, pinned by `lib/subscriptionPricing.test.ts`.
+
+Currency `usd`, `recurring.interval = month`.
 
 ```bash
 stripe products create --name "Spotless Wash Token Subscription" --description "Wash tokens mailed monthly"
 ```
 
-Then, using the returned `prod_…` id:
+Then one Price per cell, using the returned `prod_…`:
 
 ```bash
-stripe prices create --product prod_XXX --currency usd --unit-amount 4000 --recurring.interval month --nickname "Weekly · 4 tokens"
+stripe prices create --product prod_XXX --currency usd --unit-amount 4000 --recurring.interval month --nickname "Weekly · 4 × \$12"
 ```
 
-Repeat for 7600 (Frequent) and 10800 (Family). Keep the six resulting `price_…`
-ids — three from test mode, three from live.
+Repeat for all 12 amounts, then again with `--live`. Keep every `price_…` id
+against its plan + denomination.
 
 ## Step 2 — Configure the Customer Portal
 
@@ -64,18 +72,22 @@ to the account default when `*_STRIPE_BILLING_PORTAL_CONFIG` is unset.
 
 ## Step 3 — Set the Vercel env vars
 
-Project `spotless-carwash`, scope `spotless-carwash`. Six required, two optional.
+Project `spotless-carwash`, scope `spotless-carwash`. Twenty-four required, two optional.
 
 | Variable | Value | Environments |
 |---|---|---|
-| `DEV_STRIPE_PRICE_SUB_WEEKLY` | test `price_…` | Preview, Production |
-| `DEV_STRIPE_PRICE_SUB_FREQUENT` | test `price_…` | Preview, Production |
-| `DEV_STRIPE_PRICE_SUB_FAMILY` | test `price_…` | Preview, Production |
-| `PROD_STRIPE_PRICE_SUB_WEEKLY` | live `price_…` | Preview, Production |
-| `PROD_STRIPE_PRICE_SUB_FREQUENT` | live `price_…` | Preview, Production |
-| `PROD_STRIPE_PRICE_SUB_FAMILY` | live `price_…` | Preview, Production |
+| `DEV_STRIPE_PRICE_SUB_<PLAN>_<WASH>` | test `price_…` | Preview, Production |
+| `PROD_STRIPE_PRICE_SUB_<PLAN>_<WASH>` | live `price_…` | Preview, Production |
 | `DEV_STRIPE_BILLING_PORTAL_CONFIG` | test `bpc_…` *(optional)* | Preview, Production |
 | `PROD_STRIPE_BILLING_PORTAL_CONFIG` | live `bpc_…` *(optional)* | Preview, Production |
+
+`<PLAN>` is `WEEKLY` | `FREQUENT` | `FAMILY`; `<WASH>` is `8` | `9` | `10` | `12`
+— e.g. `DEV_STRIPE_PRICE_SUB_FAMILY_10`. That is 24 price vars in total, keyed
+the same way the existing `DEV_STRIPE_PRICE_PACK_<v>` vars already are.
+
+Any variant left unset simply falls back to the computed price for display and
+returns "Subscriptions not configured" at checkout, so you can configure one
+denomination at a time.
 
 Both prefixes go on both environments, matching how the existing
 `DEV_`/`PROD_STRIPE_PRICE_PACK_*` vars are already set. `lib/stripeEnv.ts`
@@ -83,7 +95,7 @@ selects by prefix at runtime: `VERCEL_ENV === 'production'` reads `PROD_*`,
 everything else reads `DEV_*` — so Preview deploys stay on the sandbox account.
 
 ```bash
-vercel env add DEV_STRIPE_PRICE_SUB_WEEKLY preview
+vercel env add DEV_STRIPE_PRICE_SUB_WEEKLY_12 preview
 ```
 
 **Gotcha:** piping a value into `vercel env add` via stdin has silently saved an

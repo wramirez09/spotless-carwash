@@ -2,7 +2,7 @@ import 'server-only'
 import type Stripe from 'stripe'
 import { getSupabaseAdmin } from './supabase'
 import { subscribeToPromotions } from './promotions'
-import { SUBSCRIPTION_WASH_VALUE } from './subscriptionPricing'
+import { DEFAULT_SUBSCRIPTION_WASH_VALUE } from './subscriptionPricing'
 
 // Write-side of the Wash Token Subscription. Mirrors the contract used by the
 // one-time order persistence in app/api/stripe-webhook: every function is
@@ -46,6 +46,25 @@ function toShipAddress(address: Stripe.Address | null | undefined): ShipAddress 
     state: address.state || null,
     postalCode: address.postal_code || null,
     country: address.country || 'US',
+  }
+}
+
+/**
+ * Shipping address from the `mail_*` session metadata our own form writes.
+ * Returns null when line1 is absent so the caller can fall back.
+ */
+function metaShipAddress(
+  meta: Record<string, string> | null | undefined,
+): ShipAddress | null {
+  const line1 = meta?.mail_line1?.trim()
+  if (!line1) return null
+  return {
+    line1,
+    line2: meta?.mail_line2?.trim() || null,
+    city: meta?.mail_city?.trim() || null,
+    state: meta?.mail_state?.trim() || null,
+    postalCode: meta?.mail_postal_code?.trim() || null,
+    country: 'US',
   }
 }
 
@@ -115,8 +134,15 @@ export async function persistSubscriptionFromSession(
   const meta = session.metadata ?? {}
   const name = meta.customer_name ?? session.customer_details?.name ?? ''
   const phone = session.customer_details?.phone ?? meta.customer_phone ?? ''
-  const shipping = session.collected_information?.shipping_details ?? null
-  const ship = toShipAddress(shipping?.address)
+  // The mailing address comes from OUR form, carried in session metadata — the
+  // same `mail_*` convention the one-time order flow uses. Stripe's own
+  // shipping step is disabled, but fall back to it (and then to the billing
+  // address) so a session created before this change still persists somewhere.
+  const ship = metaShipAddress(meta) ??
+    toShipAddress(
+      session.collected_information?.shipping_details?.address ??
+        session.customer_details?.address,
+    )
   const mailingListSubscribed = meta.mail_list_subscribed === 'true'
 
   try {
@@ -181,7 +207,7 @@ export async function persistSubscriptionFromSession(
         phone: phone || null,
         plan: meta.plan ?? null,
         tokens_per_cycle: Number(meta.tokens_per_cycle ?? 0) || null,
-        wash_value: meta.wash_value ?? SUBSCRIPTION_WASH_VALUE,
+        wash_value: meta.wash_value ?? DEFAULT_SUBSCRIPTION_WASH_VALUE,
         status: 'active' satisfies SubscriptionStatus,
         ship_line1: ship.line1,
         ship_line2: ship.line2,
@@ -271,7 +297,7 @@ export async function recordFulfillmentForInvoice(
           period_start: new Date(invoice.period_start * 1000).toISOString(),
           period_end: new Date(invoice.period_end * 1000).toISOString(),
           tokens_count: tokensCount,
-          wash_value: sub?.wash_value ?? snapshot.wash_value ?? SUBSCRIPTION_WASH_VALUE,
+          wash_value: sub?.wash_value ?? snapshot.wash_value ?? DEFAULT_SUBSCRIPTION_WASH_VALUE,
           status: 'pending',
         },
         { onConflict: 'stripe_invoice_id', ignoreDuplicates: true },

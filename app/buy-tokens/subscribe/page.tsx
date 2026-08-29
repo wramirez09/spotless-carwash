@@ -1,7 +1,10 @@
 import type { Metadata } from 'next'
 import SubscribeClient, { type SubscribeCopy } from './SubscribeClient'
 import { sanityFetch } from '@/lib/sanityFetch'
-import { getSubscriptionPricing } from '@/lib/subscriptionPricing'
+import {
+  DEFAULT_SUBSCRIPTION_WASH_VALUE,
+  getSubscriptionPricing,
+} from '@/lib/subscriptionPricing'
 
 const SUBSCRIBE_FALLBACK: SubscribeCopy = {
   metaTitle: 'Wash Token Subscription',
@@ -24,6 +27,10 @@ const SUBSCRIBE_FALLBACK: SubscribeCopy = {
   perMonthSuffix: '/ mo',
   perTokenSuffix: 'per wash',
   tokensSuffix: 'tokens a month',
+  washPickerKicker: 'Token type',
+  washPickerTitle: 'Which wash?',
+  washPickerHelp:
+    'Your tokens are good for this wash every time. Pick the tier you actually use — the price above updates to match.',
 
   step2Number: '02',
   step2Kicker: 'Step two',
@@ -38,13 +45,21 @@ const SUBSCRIBE_FALLBACK: SubscribeCopy = {
   phonePlaceholder: '(708) 555-0100',
   requiredMark: '*',
   mailingListLabel: 'Email me Spotless deals and seasonal offers.',
+  addressHeading: 'Where should we mail your tokens?',
+  addressLine1Label: 'Street address',
+  addressLine1Placeholder: '123 Madison St',
+  addressLine2Label: 'Apt, suite, unit',
+  addressLine2Placeholder: 'Apt 2B',
+  cityLabel: 'City',
+  stateLabel: 'State',
+  postalCodeLabel: 'ZIP code',
 
   step3Number: '03',
   step3Kicker: 'Step three',
   step3Title: 'How delivery works.',
   deliveryHeading: 'Mailed to your door',
   deliveryBody:
-    "Your tokens go out by USPS after each monthly payment clears. Add your mailing address on the next screen — Stripe collects it as part of checkout.",
+    'Your tokens go out by USPS to the address above after each monthly payment clears. Nothing to reorder — they just turn up.',
   deliveryChips: ['Both Forest Park locations', 'Tokens never expire', 'Cancel anytime'],
 
   summaryHeading: 'Your plan',
@@ -56,7 +71,7 @@ const SUBSCRIBE_FALLBACK: SubscribeCopy = {
   submittingLabel: 'Redirecting to Stripe…',
   erroredLabel: 'Try again',
   submitDisclaimer:
-    "You'll be redirected to Stripe to enter payment and shipping details. No card details are stored on our site.",
+    "You'll be redirected to Stripe to enter payment details. No card details are stored on our site.",
   checkoutErrorMessage:
     'Something went wrong. Please try again or call (708) 771-2945.',
 
@@ -77,11 +92,15 @@ const QUERY = `*[_type == "subscriptionPage"][0]{
   headingPrefix, headingHighlight, headingSuffix, subhead,
   step1Number, step1Kicker, step1Title, mostPopularLabel,
   perMonthSuffix, perTokenSuffix, tokensSuffix,
+  washPickerKicker, washPickerTitle, washPickerHelp,
   step2Number, step2Kicker, step2Title,
   emailLabel, emailPlaceholder, emailHelper,
   nameLabel, namePlaceholder,
   phoneLabel, phoneOptionalLabel, phonePlaceholder, requiredMark,
   mailingListLabel,
+  addressHeading, addressLine1Label, addressLine1Placeholder,
+  addressLine2Label, addressLine2Placeholder,
+  cityLabel, stateLabel, postalCodeLabel,
   step3Number, step3Kicker, step3Title,
   deliveryHeading, deliveryBody, deliveryChips,
   summaryHeading, summaryBadge, billedLabel, billedValue, totalLabel,
@@ -120,5 +139,11 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function SubscribePage() {
   const [copy, pricing] = await Promise.all([loadCopy(), getSubscriptionPricing()])
-  return <SubscribeClient copy={copy} plans={pricing.plans} />
+  return (
+    <SubscribeClient
+      copy={copy}
+      plans={pricing.plans}
+      defaultWashValue={DEFAULT_SUBSCRIPTION_WASH_VALUE}
+    />
+  )
 }

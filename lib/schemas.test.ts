@@ -7,9 +7,15 @@ import { firstIssueMessage, subscriptionCheckoutBodySchema } from './schemas'
 
 const VALID = {
   plan: 'weekly',
+  washValue: '12',
   email: 'pat@example.com',
   name: 'Pat Driver',
   phone: '(708) 555-0100',
+  mailingLine1: '7802 Madison St',
+  mailingLine2: '',
+  mailingCity: 'Forest Park',
+  mailingState: 'il',
+  mailingPostalCode: '60130',
   mailingListSubscribed: true,
 }
 
@@ -59,6 +65,31 @@ describe('subscriptionCheckoutBodySchema', () => {
     const result = parse({ name: '   ' })
     expect(result.success).toBe(false)
     if (!result.success) expect(firstIssueMessage(result.error)).toBe('Name required')
+  })
+
+  it('requires a token denomination', () => {
+    const result = parse({ washValue: '' })
+    expect(result.success).toBe(false)
+    if (!result.success) expect(firstIssueMessage(result.error)).toBe('Choose a token')
+  })
+
+  it('requires a complete mailing address', () => {
+    for (const field of ['mailingLine1', 'mailingCity', 'mailingState', 'mailingPostalCode']) {
+      const result = parse({ [field]: '  ' })
+      expect(result.success, `${field} should be required`).toBe(false)
+      if (!result.success) {
+        expect(firstIssueMessage(result.error)).toBe('Complete mailing address required')
+      }
+    }
+  })
+
+  it('allows a blank address line 2', () => {
+    expect(parse({ mailingLine2: '' }).success).toBe(true)
+  })
+
+  it('uppercases the state so it is stored consistently', () => {
+    const result = parse({ mailingState: 'il' })
+    expect(result.success && result.data.mailingState).toBe('IL')
   })
 
   it('requires a plan', () => {

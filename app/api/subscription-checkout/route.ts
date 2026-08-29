@@ -3,7 +3,9 @@ import Stripe from 'stripe'
 import { getStripeSecretKey } from '@/lib/stripeEnv'
 import {
   getSubscriptionPlan,
+  getSubscriptionVariant,
   isSubscriptionPlanId,
+  isSubscriptionWashValue,
   subscriptionPriceId,
 } from '@/lib/subscriptionPricing'
 import { firstIssueMessage, subscriptionCheckoutBodySchema } from '@/lib/schemas'
@@ -17,8 +19,9 @@ export const runtime = 'nodejs'
 //   - The pack coupons in /api/checkout are `duration: 'once'` and would only
 //     ever discount the first invoice; subscription discounts belong in the
 //     recurring Price itself, so no coupon is applied here.
-//   - The mailing address is collected by Stripe on its hosted page instead of
-//     the site's own form, so there are no `mail_*` metadata fields.
+//   - Like /api/checkout it collects the mailing address on our own form and
+//     carries it in `mail_*` session metadata, so Stripe's own shipping step is
+//     left off — asking twice would be pure friction.
 // It is also distinct from /api/subscribe, which is the newsletter signup.
 
 export async function POST(req: Request) {
@@ -53,11 +56,15 @@ export async function POST(req: Request) {
   if (!isSubscriptionPlanId(b.plan)) {
     return NextResponse.json({ error: 'Bad plan' }, { status: 400 })
   }
+  if (!isSubscriptionWashValue(b.washValue)) {
+    return NextResponse.json({ error: 'Bad token value' }, { status: 400 })
+  }
   const plan = getSubscriptionPlan(b.plan)
+  const variant = getSubscriptionVariant(b.plan, b.washValue)
 
   let priceId: string | undefined
   try {
-    priceId = subscriptionPriceId(plan.id)
+    priceId = subscriptionPriceId(plan.id, variant.washValue)
   } catch (err) {
     // getSubscriptionPriceId throws on Vercel Production when the PROD_* var is
     // unset. Surface it as a controlled 500 rather than an unhandled crash.
@@ -77,9 +84,6 @@ export async function POST(req: Request) {
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${siteUrl}/buy-tokens/subscribe/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/buy-tokens/subscribe`,
-      // Tokens ship by USPS, so Stripe collects the mailing address on its own
-      // page. The webhook reads it back from `shipping_details`.
-      shipping_address_collection: { allowed_countries: ['US'] },
       billing_address_collection: 'required',
       phone_number_collection: { enabled: true },
       allow_promotion_codes: true,
@@ -93,18 +97,30 @@ export async function POST(req: Request) {
         metadata: {
           plan: plan.id,
           tokens_per_cycle: String(plan.tokensPerCycle),
-          wash_value: plan.washValue,
+          wash_value: variant.washValue,
           customer_name: b.name,
           customer_phone: b.phone,
+          // Mailing address for the monthly shipment — read back in the webhook
+          // and stored on the subscription row.
+          mail_line1: b.mailingLine1,
+          mail_line2: b.mailingLine2,
+          mail_city: b.mailingCity,
+          mail_state: b.mailingState,
+          mail_postal_code: b.mailingPostalCode,
           mail_list_subscribed: b.mailingListSubscribed ? 'true' : 'false',
         },
       },
       metadata: {
         plan: plan.id,
         tokens_per_cycle: String(plan.tokensPerCycle),
-        wash_value: plan.washValue,
+        wash_value: variant.washValue,
         customer_name: b.name,
         customer_phone: b.phone,
+        mail_line1: b.mailingLine1,
+        mail_line2: b.mailingLine2,
+        mail_city: b.mailingCity,
+        mail_state: b.mailingState,
+        mail_postal_code: b.mailingPostalCode,
         mail_list_subscribed: b.mailingListSubscribed ? 'true' : 'false',
       },
     })
