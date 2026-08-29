@@ -136,7 +136,9 @@ export default async function Tokens() {
                     <div className="mt-3 pt-3 border-t border-blue-700/20 flex flex-wrap gap-1.5">
                       {coupons.map((c) => (
                         <span
-                          key={c.id}
+                          // id + label: two chips can share an id if a seasonal
+                          // coupon ever degrades to the base one.
+                          key={`${c.id}-${c.label}`}
                           className="inline-flex items-center gap-1.5 bg-blue-700 text-yellow-400 text-[10px] md:text-[11px] font-extrabold tracking-[0.1em] uppercase px-2.5 py-1 rounded-full"
                         >
                           <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>

@@ -33,6 +33,7 @@ import email from './singletons/email'
 import faqPage from './singletons/faqPage'
 import buyTokensPage from './singletons/buyTokensPage'
 import buyTokensSuccessPage from './singletons/buyTokensSuccessPage'
+import subscriptionPage from './singletons/subscriptionPage'
 import privacyPage from './singletons/privacyPage'
 import termsPage from './singletons/termsPage'
 import seoAuditPage from './singletons/seoAuditPage'
@@ -63,6 +64,7 @@ export const SINGLETON_TYPES = [
   'faqPage',
   'buyTokensPage',
   'buyTokensSuccessPage',
+  'subscriptionPage',
   'privacyPage',
   'termsPage',
   'seoAuditPage',
@@ -101,6 +103,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
   faqPage,
   buyTokensPage,
   buyTokensSuccessPage,
+  subscriptionPage,
   privacyPage,
   termsPage,
   seoAuditPage,

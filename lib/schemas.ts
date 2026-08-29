@@ -90,6 +90,24 @@ export const checkoutBodySchema = z.object({
 })
 export type CheckoutBody = z.infer<typeof checkoutBodySchema>
 
+// ---------------------------------------------------------------------------
+// POST /api/subscription-checkout
+// ---------------------------------------------------------------------------
+// Deliberately lighter than checkoutBodySchema: Stripe collects the shipping
+// address on its own hosted page (`shipping_address_collection`), so there are
+// no mailing fields to validate here. The plan id is checked in the route via
+// isSubscriptionPlanId, which owns the list of valid plans.
+export const subscriptionCheckoutBodySchema = z.object({
+  plan: requiredStr('Choose a plan'),
+  email: z.preprocess(trimmed, z.string().regex(EMAIL_RE, 'Valid email required')),
+  name: requiredStr('Name required'),
+  // Optional here, unlike the one-time checkout — Stripe also collects a phone
+  // on the hosted page, so a blank field must not block signup.
+  phone: usPhoneOptional,
+  mailingListSubscribed: strictBool,
+})
+export type SubscriptionCheckoutBody = z.infer<typeof subscriptionCheckoutBodySchema>
+
 // First validation message from a failed safeParse, for a 400 response.
 export function firstIssueMessage(error: z.ZodError, fallback = 'Invalid request.'): string {
   return error.issues[0]?.message ?? fallback

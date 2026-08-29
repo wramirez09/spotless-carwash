@@ -252,3 +252,164 @@ export async function sendOwnerSaleNotification(sale: SaleNotification): Promise
     })
   }
 }
+
+export type SubscriptionNotification = {
+  /** 'new' = signup, 'renewal' = a monthly invoice cleared. */
+  kind: 'new' | 'renewal'
+  customerEmail: string
+  customerName?: string
+  plan?: string
+  tokensCount: number
+  amountTotal: number | null
+  currency: string | null
+  /** Checkout Session id for a signup, Invoice id for a renewal. */
+  reference: string
+  address?: MailingAddress | null
+}
+
+/**
+ * Tell Joe a Wash Token Subscription needs fulfilling — either a brand-new
+ * subscriber or a monthly renewal that just cleared. Same best-effort contract
+ * as sendOwnerSaleNotification: a missing RESEND_API_KEY logs and returns so
+ * the webhook still 200s.
+ *
+ * Deliberately plainer than the sale notification: this one is a work order.
+ * The queue at /admin/fulfillments is the system of record; the email exists so
+ * a shipment can't sit unnoticed.
+ */
+export async function sendOwnerSubscriptionNotification(
+  sub: SubscriptionNotification,
+): Promise<void> {
+  const resend = getResend()
+  if (!resend) {
+    console.warn('[email] RESEND_API_KEY not set — skipping subscription notification', {
+      reference: sub.reference,
+    })
+    return
+  }
+
+  const amount = formatAmount(sub.amountTotal, sub.currency)
+  const isNew = sub.kind === 'new'
+  const who = sub.customerName || sub.customerEmail
+  const subject = isNew
+    ? `New wash club subscriber — ${who}`
+    : `Wash club renewal — ship ${sub.tokensCount} tokens to ${who}`
+
+  const addressLines = formatAddressLines(sub.address ?? null)
+  const addressHtml = addressLines.length
+    ? addressLines.map((l) => escapeHtml(l)).join('<br>')
+    : '—'
+
+  const siteUrl = getSiteUrl()
+  const queueUrl = `${siteUrl}/admin/fulfillments`
+  const emailLink = sub.customerEmail
+    ? `<a href="mailto:${escapeHtml(sub.customerEmail)}" style="color:${BRAND.blue};text-decoration:none;">${escapeHtml(sub.customerEmail)}</a>`
+    : '—'
+
+  const detailRow = (label: string, valueHtml: string, alt: boolean): string => `
+    <tr>
+      <td style="padding:11px 16px;background:${alt ? BRAND.paper : BRAND.white};border-bottom:1px solid ${BRAND.line};font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:${BRAND.muted};white-space:nowrap;vertical-align:top;">${escapeHtml(label)}</td>
+      <td style="padding:11px 16px;background:${alt ? BRAND.paper : BRAND.white};border-bottom:1px solid ${BRAND.line};font-size:15px;color:${BRAND.ink};">${valueHtml}</td>
+    </tr>`
+
+  const rows: [string, string][] = [
+    ['Customer', escapeHtml(sub.customerName || '—')],
+    ['Email', emailLink],
+    ['Ship to', addressHtml],
+    ['Tokens to mail', `<strong>${sub.tokensCount}</strong>`],
+  ]
+  if (sub.plan) rows.push(['Plan', escapeHtml(sub.plan)])
+  rows.push(['Amount', `<strong>${escapeHtml(amount)}</strong>`])
+  rows.push([
+    isNew ? 'Stripe session' : 'Stripe invoice',
+    `<span style="font-family:'Courier New',monospace;font-size:13px;color:${BRAND.muted};">${escapeHtml(sub.reference)}</span>`,
+  ])
+
+  const detailRows = rows
+    .map(([label, value], i) => detailRow(label, value, i % 2 === 1))
+    .join('')
+
+  const html = `
+  <!DOCTYPE html>
+  <html lang="en">
+  <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(subject)}</title></head>
+  <body style="margin:0;padding:0;background:${BRAND.paper};">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(String(sub.tokensCount))} tokens to mail for ${escapeHtml(who)}.</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BRAND.paper};padding:24px 12px;">
+      <tr><td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:${BRAND.white};border-radius:14px;overflow:hidden;box-shadow:0 2px 10px rgba(8,24,63,.08);">
+
+          <tr><td style="background:${BRAND.navy};padding:30px 32px;text-align:center;">
+            <img src="cid:${LOGO_CID}" width="112" height="126" alt="Spotless Car Wash" style="display:inline-block;width:112px;height:auto;border:0;outline:none;text-decoration:none;">
+            <div style="font-family:'Trebuchet MS',Arial,sans-serif;font-size:42px;font-weight:800;letter-spacing:.14em;color:${BRAND.white};text-transform:uppercase;margin-top:14px;">SPOTLESS<span style="color:${BRAND.yellow};">.</span></div>
+            <div style="font-family:'Trebuchet MS',Arial,sans-serif;font-size:18px;font-weight:700;letter-spacing:.34em;color:${BRAND.yellow};text-transform:uppercase;margin-top:5px;">Car Wash</div>
+          </td></tr>
+          <tr><td style="height:4px;background:${BRAND.yellow};font-size:0;line-height:0;">&nbsp;</td></tr>
+
+          <tr><td style="padding:32px 32px 8px;font-family:Arial,Helvetica,sans-serif;">
+            <div style="font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:${BRAND.blue};">${isNew ? 'New subscriber' : 'Monthly renewal'}</div>
+            <div style="font-size:26px;font-weight:800;color:${BRAND.ink};margin:6px 0 4px;">Mail ${sub.tokensCount} tokens</div>
+            <div style="font-size:15px;color:${BRAND.muted};">${isNew ? 'Someone just joined the wash club. Their first shipment is due now.' : 'A monthly payment cleared. This subscriber is due their tokens.'}</div>
+          </td></tr>
+
+          <tr><td style="padding:20px 32px 8px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${BRAND.line};border-radius:10px;overflow:hidden;font-family:Arial,Helvetica,sans-serif;border-collapse:separate;">
+              ${detailRows}
+            </table>
+          </td></tr>
+
+          <tr><td style="padding:8px 32px 32px;text-align:center;font-family:Arial,Helvetica,sans-serif;">
+            <a href="${escapeHtml(queueUrl)}" style="display:inline-block;padding:14px 28px;background:${BRAND.blue};color:${BRAND.white};font-size:15px;font-weight:700;text-decoration:none;border-radius:999px;">Open the shipping queue</a>
+          </td></tr>
+
+          <tr><td style="background:${BRAND.paper};border-top:1px solid ${BRAND.line};padding:24px 32px;text-align:center;font-family:Arial,Helvetica,sans-serif;">
+            <div style="font-size:13px;color:${BRAND.muted};line-height:1.6;">
+              7802 Madison St &amp; 7343 Roosevelt Rd, Forest Park, IL<br>
+              Open 7am–10pm daily
+            </div>
+          </td></tr>
+
+        </table>
+      </td></tr>
+    </table>
+  </body>
+  </html>`
+
+  const text = [
+    isNew ? 'New Spotless wash club subscriber' : 'Spotless wash club renewal',
+    '',
+    `Customer: ${sub.customerName || '—'}`,
+    `Email: ${sub.customerEmail}`,
+    `Ship to: ${addressLines.length ? addressLines.join(', ') : '—'}`,
+    `Tokens to mail: ${sub.tokensCount}`,
+    ...(sub.plan ? [`Plan: ${sub.plan}`] : []),
+    `Amount: ${amount}`,
+    `${isNew ? 'Stripe session' : 'Stripe invoice'}: ${sub.reference}`,
+    '',
+    `Shipping queue: ${queueUrl}`,
+  ].join('\n')
+
+  const { error } = await resend.emails.send({
+    from: getFromAddress(),
+    to: getOwnerEmail(),
+    replyTo: sub.customerEmail || undefined,
+    subject,
+    html,
+    text,
+    attachments: [
+      {
+        filename: 'spotless-logo.png',
+        content: SPOTLESS_LOGO_BASE64,
+        contentType: 'image/png',
+        contentId: LOGO_CID,
+      },
+    ],
+  })
+
+  if (error) {
+    console.error('[email] subscription notification failed', {
+      reference: sub.reference,
+      error,
+    })
+  }
+}

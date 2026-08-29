@@ -751,7 +751,12 @@ export default function BuyTokensClient({
                 {savings > 0 && (
                   <div className="py-3 border-b border-white/15 text-[14px] space-y-2">
                     {selected.coupons.map((c) => (
-                      <div key={c.id} className="flex items-center justify-between">
+                      // id + label: two chips can share an id if a seasonal
+                      // coupon ever degrades to the base one.
+                      <div
+                        key={`${c.id}-${c.label}`}
+                        className="flex items-center justify-between"
+                      >
                         <span className="inline-flex items-center gap-2 text-blue-100">
                           <span className="inline-flex items-center bg-yellow-400/15 text-yellow-400 text-[10px] font-extrabold tracking-[0.1em] uppercase px-2 py-0.5 rounded-full">
                             Coupon
@@ -808,6 +813,36 @@ export default function BuyTokensClient({
                 </p>
               </div>
             </div>
+
+            {/* Subscription cross-sell. Static copy rather than a Sanity field
+                so adding the entry point doesn't require a Studio edit first. */}
+            <Link
+              href="/buy-tokens/subscribe"
+              className="mt-4 flex items-center justify-between gap-3 rounded-2xl border-2 border-blue-500 bg-white p-4 transition hover:bg-paper2"
+            >
+              <span>
+                <span className="block mono text-[10px] font-bold uppercase tracking-[0.16em] text-blue-500">
+                  Buy them every month?
+                </span>
+                <span className="block mt-1 text-[13px] font-extrabold leading-snug text-ink">
+                  Subscribe and we&apos;ll mail your tokens automatically.
+                </span>
+              </span>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="shrink-0 text-blue-500"
+                aria-hidden="true"
+              >
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+            </Link>
 
             {/* Trust strip */}
             <div className="mt-4 bg-white border border-line rounded-2xl p-4 grid grid-cols-3 gap-2 text-center">

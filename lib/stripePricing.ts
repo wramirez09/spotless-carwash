@@ -205,6 +205,11 @@ function splitCouponBreakdown(
   if (totalSave <= BUNDLE_BASE_DISCOUNT_CENTS) {
     return [{ id: saleCouponId, label: sale.label, amountOffCents: totalSave }]
   }
+  // NOTE: both chips can carry the SAME id — `seasonalCouponId` degrades to the
+  // base pack coupon when the sale's coupon can't be resolved. That's fine for
+  // display (the split is presentational; only one coupon is ever applied at
+  // checkout), but it means `id` alone is not a unique React key. Render sites
+  // key on id + label — see src/components/Tokens.tsx.
   return [
     {
       id: PACK_DISCOUNT_COUPON_ID,

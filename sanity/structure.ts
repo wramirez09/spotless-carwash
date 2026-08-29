@@ -19,6 +19,7 @@ const SINGLETON_LABELS: Record<string, string> = {
   faqPage: 'FAQ page',
   buyTokensPage: 'Buy tokens page',
   buyTokensSuccessPage: 'Buy tokens — success',
+  subscriptionPage: 'Token subscription page',
   privacyPage: 'Privacy page',
   termsPage: 'Terms page',
   seoAuditPage: 'SEO Audit page',

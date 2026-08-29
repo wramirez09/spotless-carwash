@@ -2,6 +2,9 @@ import 'server-only'
 
 type WashValue = '8' | '9' | '10' | '12'
 
+/** Subscription plan ids, uppercased for the env-var suffix. */
+type SubscriptionPlanEnvKey = 'WEEKLY' | 'FREQUENT' | 'FAMILY'
+
 // VERCEL_ENV is auto-set by Vercel: 'production' | 'preview' | 'development'.
 // Locally it's undefined. We swap to PROD_* only on Vercel Production so that
 // Preview deploys and local dev stay on the sandbox (DEV_*) account.
@@ -10,7 +13,15 @@ function isProductionEnv(): boolean {
 }
 
 function pickEnv(prodKey: string, devKey: string): string | undefined {
-  return isProductionEnv() ? process.env[prodKey] : process.env[devKey]
+  const raw = isProductionEnv() ? process.env[prodKey] : process.env[devKey]
+  // Treat a present-but-empty value as unset. Both Vercel and .env files make
+  // it easy to declare a key with no value, and `''` is not nullish — so every
+  // `?? fallback` downstream would be skipped and the empty string handed to
+  // Stripe as a price or coupon id. That surfaces far from the cause: an empty
+  // coupon id breaks checkout, and two empty ids collide as React keys on the
+  // pack cards.
+  const trimmed = raw?.trim()
+  return trimmed ? trimmed : undefined
 }
 
 /**
@@ -50,6 +61,33 @@ export function getSinglePriceId(v: WashValue): string | undefined {
   return pickEnvOrThrowOnProd(
     `PROD_STRIPE_PRICE_SINGLE_${v}`,
     `DEV_STRIPE_PRICE_SINGLE_${v}`,
+  )
+}
+
+/**
+ * Recurring Price ID for a subscription plan (e.g. 'WEEKLY' →
+ * PROD_/DEV_STRIPE_PRICE_SUB_WEEKLY). Throws on Vercel Production when unset —
+ * a silent sandbox fallback there would surface as an opaque Stripe error at
+ * checkout rather than at deploy time.
+ */
+export function getSubscriptionPriceId(
+  plan: SubscriptionPlanEnvKey,
+): string | undefined {
+  return pickEnvOrThrowOnProd(
+    `PROD_STRIPE_PRICE_SUB_${plan}`,
+    `DEV_STRIPE_PRICE_SUB_${plan}`,
+  )
+}
+
+/**
+ * Optional Customer Portal configuration ID. Unset is fine — Stripe falls back
+ * to the account's default portal configuration — so this uses the soft
+ * `pickEnv` rather than throwing on production.
+ */
+export function getBillingPortalConfigId(): string | undefined {
+  return pickEnv(
+    'PROD_STRIPE_BILLING_PORTAL_CONFIG',
+    'DEV_STRIPE_BILLING_PORTAL_CONFIG',
   )
 }
 
