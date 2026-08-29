@@ -109,12 +109,36 @@ leaves the feature off. Verify rather than assume.
 
 ## Step 4 — Apply the database migration
 
-`supabase/migrations/20260828_subscriptions.sql`, by hand, to **both** projects:
-`spotless-customers` (prod) and `spotless-customers-dev`. There is no migration
-runner in this repo.
+> **Both Spotless Supabase projects appear to be paused.** As of 28 Aug 2026
+> neither hostname resolves in DNS:
+>
+> ```
+> cqvrttglajxfvhxmqcvk.supabase.co   (spotless-customers, PROD)  NO DNS
+> etomasuqljisemfsxlvc.supabase.co   (spotless-customers-dev)    NO DNS
+> ```
+>
+> This is not a local network problem — an unrelated Supabase host resolves fine
+> from the same machine. A paused free-tier project stops resolving, and these
+> were paused once before (restored 3 Jul 2026).
+>
+> **This means production persistence is failing right now.** Both the webhook
+> and `subscribeToPromotions` are deliberately best-effort — they log a warning
+> and still return 200 — so email signups and token orders on the live site are
+> being accepted and silently dropped, with no error surfaced to the customer.
+> Worth checking before anything else here.
 
-Check first whether `orders` exists — it was missing from both projects at last
-check, which also breaks one-time token persistence.
+Restore both projects, then apply `supabase/migrations/20260828_subscriptions.sql`
+by hand to **each**. There is no migration runner in this repo.
+
+Check at the same time whether `orders` exists — it was missing from both
+projects at last check, which also breaks one-time token persistence.
+
+Applying this from a Claude session is currently blocked on every route: the
+Supabase MCP connector is authenticated to the NoteDoctorAi account (neither
+Spotless project is listed), `.env.local` has no `DEV_`/`PROD_SUPABASE_*` values,
+and `supabase.com` is blocked by browser policy in both browser surfaces. It
+needs the dashboard, or the MCP connector re-scoped to the spotless-carwash
+account.
 
 ## Step 5 — Add the webhook events
 
