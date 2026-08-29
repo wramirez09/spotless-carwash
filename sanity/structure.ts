@@ -15,6 +15,7 @@ const SINGLETON_LABELS: Record<string, string> = {
   instructions: 'Self-serve dial',
   otherServices: 'Other services',
   tokens: 'Wash tokens',
+  subscriptionSection: 'Subscription — section',
   emailSection: 'Email signup',
   faqPage: 'FAQ page',
   buyTokensPage: 'Buy tokens page',

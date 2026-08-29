@@ -39,6 +39,7 @@ const FOOTER_FALLBACK: FooterData = {
         { href: '/#washes', label: 'Wash packages' },
         { href: '/#bays', label: 'Bays' },
         { href: '/#tokens', label: 'Wash tokens' },
+        { href: '/buy-tokens/subscribe', label: 'Token subscription' },
         { href: '/#how', label: 'How it works' },
         { href: '/faq', label: 'FAQ' },
       ],
@@ -56,12 +57,37 @@ const FOOTER_FALLBACK: FooterData = {
   kicker: 'Keep it clean.',
 }
 
+const SUBSCRIBE_ITEM = { href: '/buy-tokens/subscribe', label: 'Token subscription' }
+
+/**
+ * Guarantee the wash-club link is in the footer.
+ *
+ * Footer columns come from Sanity whenever the document has any, so the
+ * fallback above never reaches the live site on its own. This appends the link
+ * to the first column that doesn't already contain it — preferring a column
+ * titled "Site" — and no-ops once it exists in Sanity, handing control back to
+ * the Studio.
+ */
+function withSubscribeItem(columns: Col[]): Col[] {
+  const already = columns.some((c) =>
+    (c.items ?? []).some((i) => (i.href ?? '').includes('/buy-tokens/subscribe')),
+  )
+  if (already) return columns
+  const targetIdx = columns.findIndex((c) => /site/i.test(c.title ?? ''))
+  const idx = targetIdx === -1 ? 0 : targetIdx
+  return columns.map((c, i) =>
+    i === idx ? { ...c, items: [...(c.items ?? []), SUBSCRIBE_ITEM] } : c,
+  )
+}
+
 export default async function Footer() {
   const data = await sanityFetch<Partial<FooterData>>(FOOTER_QUERY)
   const footer: FooterData = {
     ...FOOTER_FALLBACK,
     ...(data ?? {}),
-    columns: data?.columns?.length ? data.columns : FOOTER_FALLBACK.columns,
+    columns: withSubscribeItem(
+      data?.columns?.length ? data.columns : FOOTER_FALLBACK.columns,
+    ),
   }
 
   return (
