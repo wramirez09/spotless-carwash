@@ -1,8 +1,21 @@
 import Link from 'next/link'
-import { getActiveSeasonalSale } from '@/lib/salesSchedule'
+import { getPricingSnapshot } from '@/lib/pricingStore'
+import { pickActiveSale, saleEndLabel } from '@/lib/pricing/model'
 
-export default function SalesBanner() {
-  const sale = getActiveSeasonalSale()
+function formatUSD(cents: number): string {
+  return cents % 100 === 0 ? `$${cents / 100}` : `$${(cents / 100).toFixed(2)}`
+}
+
+// Async server component: the banner renders in the root layout, so it reads
+// through the pricing store's cache rather than hitting Supabase per request.
+export default async function SalesBanner() {
+  const { sales, settings } = await getPricingSnapshot()
+  const sale = pickActiveSale(sales)
+  // Advertise the real numbers. Hardcoded "$5 OFF" copy was correct only for
+  // as long as the discount stayed $5 — which is exactly what /admin/pricing
+  // now lets someone change without touching this file.
+  const baseOff = formatUSD(settings.baseDiscountCents)
+  const extraOff = sale ? formatUSD(sale.extraDiscountCents) : null
 
   return (
     <aside className="sale-banner" role="region" aria-label="Promotional banner">
@@ -25,13 +38,13 @@ export default function SalesBanner() {
 
         {sale ? (
           <span className="sale-msg">
-            Extra <b>$5 OFF</b> every 4-pack
+            Extra <b>{extraOff} OFF</b> every 4-pack
             <span className="sep">·</span>
-            Now through {sale.endLabel}
+            Now through {saleEndLabel(sale)}
           </span>
         ) : (
           <span className="sale-msg">
-            <b>$5 OFF</b> every 4-pack
+            <b>{baseOff} OFF</b> every 4-pack
             <span className="sep">·</span>
             Auto-applied at checkout
           </span>

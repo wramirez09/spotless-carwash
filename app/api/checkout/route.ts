@@ -1,12 +1,6 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import {
-  PACK_PRICES,
-  SINGLE_PRICES,
-  activePackCouponId,
-  getActiveSeasonalSale,
-  type WashValue,
-} from '@/lib/stripePricing'
+import { resolveCheckoutConfig, type WashValue } from '@/lib/stripePricing'
 import { getStripeSecretKey } from '@/lib/stripeEnv'
 import { checkoutBodySchema, firstIssueMessage } from '@/lib/schemas'
 
@@ -111,16 +105,28 @@ export async function POST(req: Request) {
 
   const stripe = new Stripe(secret)
 
+  // Prices and the active sale are resolved per-request from admin-managed
+  // config (lib/pricingStore.ts) rather than read from module constants, so a
+  // price change or a newly scheduled sale takes effect on the next checkout
+  // without a deploy. Falls back to the env-var Price IDs when Supabase is
+  // unavailable.
+  const config = await resolveCheckoutConfig()
+
   const priceId =
-    purchaseMode === 'single' ? SINGLE_PRICES[washValue] : PACK_PRICES[pkg]
+    purchaseMode === 'single' ? config.singlePriceIds[washValue] : config.packPriceIds[pkg]
   const skuWash = purchaseMode === 'single' ? washValue : pkg
 
+  if (!priceId) {
+    console.error('[api/checkout] no Stripe Price configured', { purchaseMode, skuWash })
+    return NextResponse.json({ error: 'That pack is not available right now.' }, { status: 500 })
+  }
+
   const applyPackDiscount = purchaseMode === 'pack'
-  const activeSale = applyPackDiscount ? getActiveSeasonalSale() : null
+  const activeSale = applyPackDiscount ? config.sale : null
   // Scale the auto-applied pack coupon to the order quantity so every pack
   // gets the discount, not just the first (see couponForQuantity above).
   const packCoupon = applyPackDiscount
-    ? await couponForQuantity(stripe, activePackCouponId(), quantity)
+    ? await couponForQuantity(stripe, config.packCouponId, quantity)
     : ''
 
   try {
@@ -171,7 +177,8 @@ export async function POST(req: Request) {
         mode: purchaseMode,
         wash_value: skuWash,
         pack_discount: applyPackDiscount
-          ? activeSale?.discountMetadata ?? '5_off'
+          ? activeSale?.discountMetadata ??
+            `${Math.round(config.baseDiscountCents / 100)}_off`
           : '',
       },
     })

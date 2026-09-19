@@ -2,7 +2,6 @@ import Link from 'next/link'
 import { sanityFetch } from '@/lib/sanityFetch'
 import { renderHighlight } from '@/lib/renderHighlight'
 import { getCheckoutPricing } from '@/lib/stripePricing'
-import { getActiveSeasonalSale } from '@/lib/salesSchedule'
 
 type TokensCopy = {
   eyebrow: string
@@ -46,7 +45,10 @@ export default async function Tokens() {
     sanityFetch<Partial<TokensCopy>>(COPY_QUERY),
     getCheckoutPricing(),
   ])
-  const sale = pricing.activeSale ?? getActiveSeasonalSale()
+  // `getCheckoutPricing` already resolves the active sale from admin-managed
+  // config (with the legacy schedule as its own fallback), so there is nothing
+  // left to second-guess here.
+  const sale = pricing.activeSale
 
   const t: TokensCopy = {
     ...FALLBACK,

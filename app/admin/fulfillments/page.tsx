@@ -87,6 +87,12 @@ export default async function FulfillmentsDashboardPage({
           </div>
           <div className="flex items-center gap-3">
             <a
+              href="/admin/pricing"
+              className="rounded-full border border-line px-4 py-2.5 text-sm font-bold text-blue-700 transition hover:border-blue-500"
+            >
+              Pricing &amp; sales
+            </a>
+            <a
               href="/admin/signups"
               className="rounded-full border border-line px-4 py-2.5 text-sm font-bold text-blue-700 transition hover:border-blue-500"
             >

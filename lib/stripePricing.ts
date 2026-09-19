@@ -12,6 +12,13 @@ import {
   getSinglePriceId,
 } from './stripeEnv'
 import Stripe from 'stripe'
+import { getPricingSnapshot } from './pricingStore'
+import {
+  discountMetadata,
+  pickActiveSale,
+  saleEndLabel,
+  type SaleRecord,
+} from './pricing/model'
 
 export { getActiveSeasonalSale, isSeasonalSaleActive }
 export type { SeasonalSale }
@@ -72,12 +79,12 @@ export function seasonalCouponId(sale: SeasonalSale): string {
   }
 }
 
-// The "base" 4-pack bundle discount that a seasonal coupon stacks on top of,
-// in cents. Stripe Checkout only applies one coupon per session, so the
-// seasonal coupon in Stripe is configured as the COMBINED amount
-// (base + sale). This constant is used purely to split the displayed savings
-// into two chips on the FE.
-const BUNDLE_BASE_DISCOUNT_CENTS = 500
+// Fallback for the "base" 4-pack bundle discount a sale's coupon stacks on
+// top of, in cents. The live value now comes from `pricing_settings` via the
+// store; this is what's used when Supabase is unreachable, and it matches the
+// $5 the site shipped with. Used purely to split the displayed savings into
+// two chips on the FE — Stripe still applies exactly one coupon per session.
+const BUNDLE_BASE_DISCOUNT_FALLBACK_CENTS = 500
 
 export const WASH_VALUES = ['8', '9', '10', '12'] as const
 export type WashValue = (typeof WASH_VALUES)[number]
@@ -122,7 +129,7 @@ export type CheckoutPricing = {
   activeSale: ActiveSaleInfo | null
 }
 
-function toSaleInfo(sale: SeasonalSale | null): ActiveSaleInfo | null {
+function toSaleInfo(sale: ResolvedSale | null): ActiveSaleInfo | null {
   if (!sale) return null
   const { id, label, badge, emoji, endLabel } = sale
   return { id, label, badge, emoji, endLabel }
@@ -143,10 +150,90 @@ const SINGLE_FALLBACK_CENTS: Record<WashValue, number> = {
   '12': 1200,
 }
 
-const FALLBACK_SAVE_CENTS = {
-  base: 500, // always-on 4-pack bundle
-  seasonal: 1000, // combined base + sale
-} as const
+/**
+ * A sale flattened to exactly what the storefront needs: copy, the single
+ * coupon ID checkout will apply, and the extra discount it represents.
+ * Deliberately not a `SaleRecord` — nothing downstream should care whether the
+ * sale came from Supabase or from the legacy hardcoded schedule.
+ */
+export type ResolvedSale = {
+  id: string
+  label: string
+  badge: string
+  emoji: string
+  endLabel: string
+  couponId: string
+  extraDiscountCents: number
+  /** Value written to the Stripe session's `pack_discount` metadata. */
+  discountMetadata: string
+}
+
+function toResolvedSale(
+  sale: SaleRecord,
+  baseCouponId: string,
+  baseDiscountCents: number,
+): ResolvedSale {
+  return {
+    id: sale.slug,
+    label: sale.label,
+    badge: sale.badge,
+    emoji: sale.emoji,
+    endLabel: saleEndLabel(sale),
+    // Degrade to the always-on bundle coupon rather than failing checkout when
+    // a sale row exists but was never provisioned in Stripe.
+    couponId: sale.stripeCouponId ?? baseCouponId,
+    extraDiscountCents: sale.extraDiscountCents,
+    discountMetadata: discountMetadata(sale, baseDiscountCents),
+  }
+}
+
+export type CheckoutConfig = {
+  packPriceIds: Record<WashValue, string>
+  singlePriceIds: Record<WashValue, string>
+  /** The one coupon Stripe Checkout will actually apply to a pack. */
+  packCouponId: string
+  sale: ResolvedSale | null
+  baseDiscountCents: number
+  baseCouponId: string
+}
+
+/**
+ * Everything checkout and the pack cards need, resolved from admin-managed
+ * config with the env vars as the fallback.
+ *
+ * This is the seam that removed the deploy: scheduling a sale or changing a
+ * price writes a row, and the next call here picks it up. The store's own
+ * fallback means an unconfigured or unreachable Supabase lands back on exactly
+ * the env-var behavior the site had before.
+ */
+export async function resolveCheckoutConfig(
+  now = Date.now(),
+): Promise<CheckoutConfig> {
+  const snapshot = await getPricingSnapshot()
+  const baseCouponId = snapshot.settings.baseCouponId ?? PACK_DISCOUNT_COUPON_ID
+  const record = pickActiveSale(snapshot.sales, now)
+  const sale = record
+    ? toResolvedSale(record, baseCouponId, snapshot.settings.baseDiscountCents)
+    : null
+
+  const idsFor = (kind: 'pack' | 'single'): Record<WashValue, string> =>
+    Object.fromEntries(
+      WASH_VALUES.map((v) => [
+        v,
+        snapshot.prices[kind][v].stripePriceId ||
+          (kind === 'pack' ? PACK_PRICES[v] : SINGLE_PRICES[v]),
+      ]),
+    ) as Record<WashValue, string>
+
+  return {
+    packPriceIds: idsFor('pack'),
+    singlePriceIds: idsFor('single'),
+    packCouponId: sale ? sale.couponId : baseCouponId,
+    sale,
+    baseDiscountCents: snapshot.settings.baseDiscountCents,
+    baseCouponId,
+  }
+}
 
 /** Single coupon ID actually applied at Stripe checkout. */
 export function activePackCouponId(now = Date.now()): string {
@@ -193,16 +280,16 @@ function couponAmountOffFor(
  */
 function splitCouponBreakdown(
   totalSave: number,
-  sale: SeasonalSale | null,
+  sale: ResolvedSale | null,
+  baseDiscountCents = BUNDLE_BASE_DISCOUNT_FALLBACK_CENTS,
+  baseCouponId = PACK_DISCOUNT_COUPON_ID,
 ): CouponBreakdownItem[] {
   if (totalSave <= 0) return []
   if (!sale) {
-    return [
-      { id: PACK_DISCOUNT_COUPON_ID, label: '4-Pack bundle', amountOffCents: totalSave },
-    ]
+    return [{ id: baseCouponId, label: '4-Pack bundle', amountOffCents: totalSave }]
   }
-  const saleCouponId = seasonalCouponId(sale)
-  if (totalSave <= BUNDLE_BASE_DISCOUNT_CENTS) {
+  const saleCouponId = sale.couponId
+  if (totalSave <= baseDiscountCents) {
     return [{ id: saleCouponId, label: sale.label, amountOffCents: totalSave }]
   }
   // NOTE: both chips can carry the SAME id — `seasonalCouponId` degrades to the
@@ -212,14 +299,14 @@ function splitCouponBreakdown(
   // key on id + label — see src/components/Tokens.tsx.
   return [
     {
-      id: PACK_DISCOUNT_COUPON_ID,
+      id: baseCouponId,
       label: '4-Pack bundle',
-      amountOffCents: BUNDLE_BASE_DISCOUNT_CENTS,
+      amountOffCents: baseDiscountCents,
     },
     {
       id: saleCouponId,
       label: sale.label,
-      amountOffCents: totalSave - BUNDLE_BASE_DISCOUNT_CENTS,
+      amountOffCents: totalSave - baseDiscountCents,
     },
   ]
 }
@@ -228,28 +315,22 @@ export async function getCheckoutPricing(
   nowOverrideMs?: number,
 ): Promise<CheckoutPricing> {
   const now = nowOverrideMs ?? Date.now()
-  const sale = getActiveSeasonalSale(now)
-  const couponId = activePackCouponId(now)
+  const config = await resolveCheckoutConfig(now)
+  const { sale, baseDiscountCents, baseCouponId } = config
   const stripe = getStripe()
 
   if (!stripe) {
-    return fallbackPricing(sale)
+    return fallbackPricing(sale, baseDiscountCents, baseCouponId)
   }
 
   try {
-    const packIds = (Object.keys(PACK_PRICES) as WashValue[]).map((id) => ({
-      id,
-      priceId: PACK_PRICES[id],
-    }))
-    const singleIds = (Object.keys(SINGLE_PRICES) as WashValue[]).map((id) => ({
-      id,
-      priceId: SINGLE_PRICES[id],
-    }))
+    const packIds = WASH_VALUES.map((id) => ({ id, priceId: config.packPriceIds[id] }))
+    const singleIds = WASH_VALUES.map((id) => ({ id, priceId: config.singlePriceIds[id] }))
 
     const [packPrices, singlePrices, coupon] = await Promise.all([
       Promise.all(packIds.map((p) => stripe.prices.retrieve(p.priceId))),
       Promise.all(singleIds.map((p) => stripe.prices.retrieve(p.priceId))),
-      stripe.coupons.retrieve(couponId).catch(() => null),
+      stripe.coupons.retrieve(config.packCouponId).catch(() => null),
     ])
 
     const packs: PackPricing[] = packIds.map((p, i) => {
@@ -265,7 +346,7 @@ export async function getCheckoutPricing(
         perToken: Math.round(cents / tokens),
         label: `$${p.id} wash · 4-pack`,
         featured: p.id === '12',
-        coupons: splitCouponBreakdown(save, sale),
+        coupons: splitCouponBreakdown(save, sale, baseDiscountCents, baseCouponId),
       }
     })
 
@@ -281,12 +362,21 @@ export async function getCheckoutPricing(
 
     return { packs, singles, packCouponAmountOff, activeSale: toSaleInfo(sale) }
   } catch {
-    return fallbackPricing(sale)
+    return fallbackPricing(sale, baseDiscountCents, baseCouponId)
   }
 }
 
-function fallbackPricing(sale: SeasonalSale | null): CheckoutPricing {
-  const saveCents = sale ? FALLBACK_SAVE_CENTS.seasonal : FALLBACK_SAVE_CENTS.base
+function fallbackPricing(
+  sale: ResolvedSale | null,
+  baseDiscountCents = BUNDLE_BASE_DISCOUNT_FALLBACK_CENTS,
+  baseCouponId = PACK_DISCOUNT_COUPON_ID,
+): CheckoutPricing {
+  // With Stripe unreachable the coupon's real amount is unknown, so the
+  // displayed saving is reconstructed from config: base alone outside a sale,
+  // base + the sale's extra during one.
+  const saveCents = sale
+    ? baseDiscountCents + sale.extraDiscountCents
+    : baseDiscountCents
   const packs: PackPricing[] = (Object.keys(PACK_FALLBACK_CENTS) as WashValue[]).map(
     (id) => {
       const cents = PACK_FALLBACK_CENTS[id]
@@ -300,7 +390,7 @@ function fallbackPricing(sale: SeasonalSale | null): CheckoutPricing {
         perToken: Math.round(cents / tokens),
         label: `$${id} wash · 4-pack`,
         featured: id === '12',
-        coupons: splitCouponBreakdown(save, sale),
+        coupons: splitCouponBreakdown(save, sale, baseDiscountCents, baseCouponId),
       }
     },
   )

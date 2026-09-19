@@ -43,3 +43,7 @@ pnpm-debug.log*
 .claude/tmp/
 .vercel
 .env*.local
+
+# Output of `yarn build:verify` — a throwaway build dir that keeps a
+# verification build from clobbering a running dev server's .next
+.next-verify

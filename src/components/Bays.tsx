@@ -157,7 +157,7 @@ function Card({
         )}
         {!showImage && (
           <span className="absolute top-4 left-4 mono text-[11px] text-white/60 bg-black/40 px-2.5 py-1.5 rounded z-10">
-            // photo: bay-{index + 1}.jpg
+            {`// photo: bay-${index + 1}.jpg`}
           </span>
         )}
       </div>

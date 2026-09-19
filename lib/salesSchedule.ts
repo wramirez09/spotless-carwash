@@ -1,4 +1,12 @@
-// Seasonal sale windows, expressed in America/Chicago wall time and converted
+// LEGACY seasonal sale windows — now the FALLBACK, not the source of truth.
+//
+// Sales are scheduled from /admin/pricing and stored in Supabase (see
+// lib/pricingStore.ts). These hardcoded windows are what the storefront falls
+// back to when Supabase is unconfigured or unreachable, so a database outage
+// during a live sale leaves the sale running instead of silently dropping the
+// discount. Don't add new sales here — add them in the admin.
+//
+// Windows are expressed in America/Chicago wall time and converted
 // to UTC ms via Date.UTC. Chicago is CDT (UTC-5) from March to November, which
 // covers every window defined here.
 //
@@ -55,7 +63,6 @@ export const SEASONAL_SALES: readonly SeasonalSale[] = [
     badge: 'LABOR DAY',
     emoji: '🛠️',
     endLabel: 'Mon, Sep 7',
-    // eslint-disable-next-line no-inline-comments -- see window notes above
     startMs: LABOR_DAY_SALE_START_MS,
     endMs: LABOR_DAY_SALE_END_MS,
     couponEnvSuffix: 'LABOR_DAY_2026',

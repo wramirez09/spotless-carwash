@@ -3,8 +3,6 @@ import { test, expect, type Page } from '@playwright/test'
 // The wash-club feature block on the home page, its nav/footer links, and the
 // sticky-nav ribbon that collapses on scroll.
 
-const RIBBON = /Forest Park's car wash for 30 years/i
-
 // Measure the collapsing wrapper: the yellow bar inside keeps its own height
 // while clipped, so its bounding box never reaches zero.
 function ribbon(page: Page) {
