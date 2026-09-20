@@ -48,3 +48,4 @@ pnpm-debug.log*
 # and the Playwright e2e server from clobbering a running dev server's .next
 .next-verify
 .next-e2e
+.next-flagcheck

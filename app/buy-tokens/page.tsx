@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import BuyTokensClient, { type BuyTokensCopy } from './BuyTokensClient'
 import { sanityFetch } from '@/lib/sanityFetch'
 import { getCheckoutPricing } from '@/lib/stripePricing'
+import { subscriptionsEnabled } from '@/lib/featureFlags'
 
 const BUY_TOKENS_FALLBACK: BuyTokensCopy = {
   metaTitle: 'Buy Wash Tokens',
@@ -157,5 +158,11 @@ export default async function BuyTokensPage({
     loadCopy(),
     getCheckoutPricing(nowOverrideMs),
   ])
-  return <BuyTokensClient copy={copy} pricing={pricing} />
+  return (
+    <BuyTokensClient
+      copy={copy}
+      pricing={pricing}
+      showSubscribeLink={subscriptionsEnabled()}
+    />
+  )
 }

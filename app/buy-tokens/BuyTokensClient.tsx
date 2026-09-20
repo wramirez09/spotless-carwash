@@ -115,9 +115,13 @@ type Mode = 'pack' | 'single'
 export default function BuyTokensClient({
   copy,
   pricing,
+  showSubscribeLink,
 }: {
   copy: BuyTokensCopy
   pricing: PricingProp
+  /** Resolved on the server — this is a client component, so it can't read
+   *  VERCEL_ENV itself. See lib/featureFlags. */
+  showSubscribeLink: boolean
 }) {
   const PACKAGES = pricing.packs
   // Single-token purchase was removed; pack is the only purchase mode. The
@@ -815,7 +819,9 @@ export default function BuyTokensClient({
             </div>
 
             {/* Subscription cross-sell. Static copy rather than a Sanity field
-                so adding the entry point doesn't require a Studio edit first. */}
+                so adding the entry point doesn't require a Studio edit first.
+                Hidden while the subscription is gated off. */}
+            {showSubscribeLink && (
             <Link
               href="/buy-tokens/subscribe"
               className="mt-4 flex items-center justify-between gap-3 rounded-2xl border-2 border-blue-500 bg-white p-4 transition hover:bg-paper2"
@@ -843,6 +849,7 @@ export default function BuyTokensClient({
                 <path d="M5 12h14M13 6l6 6-6 6" />
               </svg>
             </Link>
+            )}
 
             {/* Trust strip */}
             <div className="mt-4 bg-white border border-line rounded-2xl p-4 grid grid-cols-3 gap-2 text-center">

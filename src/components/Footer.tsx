@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { sanityFetch } from '@/lib/sanityFetch'
 import type { ImageWithAlt } from '@/lib/sanityImage'
 import SanityImage from './SanityImage'
+import { isSubscribeHref, subscriptionsEnabled } from '@/lib/featureFlags'
 
 type Item = { href: string; label: string; external?: boolean }
 type Col = { title: string; items: Item[] }
@@ -69,8 +70,15 @@ const SUBSCRIBE_ITEM = { href: '/buy-tokens/subscribe', label: 'Token subscripti
  * the Studio.
  */
 function withSubscribeItem(columns: Col[]): Col[] {
+  // Gated off: strip any subscribe item, including one authored in Sanity.
+  if (!subscriptionsEnabled()) {
+    return columns.map((c) => ({
+      ...c,
+      items: (c.items ?? []).filter((i) => !isSubscribeHref(i.href)),
+    }))
+  }
   const already = columns.some((c) =>
-    (c.items ?? []).some((i) => (i.href ?? '').includes('/buy-tokens/subscribe')),
+    (c.items ?? []).some((i) => isSubscribeHref(i.href)),
   )
   if (already) return columns
   const targetIdx = columns.findIndex((c) => /site/i.test(c.title ?? ''))

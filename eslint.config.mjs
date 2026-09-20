@@ -15,6 +15,7 @@ const config = [
       // Throwaway build dirs (build:verify, Playwright) — artifacts, not source.
       '.next-verify/**',
       '.next-e2e/**',
+      '.next-flagcheck/**',
       'node_modules/**',
       'playwright-report/**',
       'test-results/**',

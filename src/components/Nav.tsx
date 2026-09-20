@@ -1,5 +1,6 @@
 import NavClient, { type NavData } from './NavClient'
 import { sanityFetch } from '@/lib/sanityFetch'
+import { isSubscribeHref, subscriptionsEnabled } from '@/lib/featureFlags'
 
 const NAV_QUERY = `*[_type == "navbar"][0]{
   logo,
@@ -28,7 +29,11 @@ const SUBSCRIBE_LINK = { label: 'Subscribe', href: '/buy-tokens/subscribe' }
  * no-op and the Studio is back in control.
  */
 function withSubscribeLink<T extends { href?: string }>(links: T[]): T[] {
-  const present = links.some((l) => (l.href ?? '').includes('/buy-tokens/subscribe'))
+  // When the feature is gated off, REMOVE any subscribe link rather than just
+  // skipping the injection — the Studio may already contain one, and skipping
+  // would leave it on the live site.
+  if (!subscriptionsEnabled()) return links.filter((l) => !isSubscribeHref(l.href))
+  const present = links.some((l) => isSubscribeHref(l.href))
   return present ? links : [...links, SUBSCRIBE_LINK as unknown as T]
 }
 

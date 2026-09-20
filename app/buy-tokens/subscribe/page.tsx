@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import SubscribeClient, { type SubscribeCopy } from './SubscribeClient'
+import { subscriptionsEnabled } from '@/lib/featureFlags'
 import { sanityFetch } from '@/lib/sanityFetch'
 import {
   DEFAULT_SUBSCRIPTION_WASH_VALUE,
@@ -138,6 +140,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function SubscribePage() {
+  // Gating the links is presentation; this is the actual gate. The URL is
+  // public, was in the sitemap, and may already be indexed — so the route
+  // itself has to refuse, not just the things that point at it.
+  if (!subscriptionsEnabled()) notFound()
+
   const [copy, pricing] = await Promise.all([loadCopy(), getSubscriptionPricing()])
   return (
     <SubscribeClient

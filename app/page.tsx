@@ -14,6 +14,7 @@ import LocalBusinessSchema from '@/src/components/seo/LocalBusinessSchema'
 import OfferCatalogSchema from '@/src/components/seo/OfferCatalogSchema'
 import HowToSchema from '@/src/components/seo/HowToSchema'
 import { locations } from '@/src/data/locations'
+import { subscriptionsEnabled } from '@/lib/featureFlags'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,7 +38,7 @@ export default function HomePage() {
       <Instructions />
       <OtherServices />
       <Tokens />
-      <Subscription />
+      {subscriptionsEnabled() && <Subscription />}
 
     </>
   )
