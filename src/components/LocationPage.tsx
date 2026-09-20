@@ -5,6 +5,7 @@ import Tokens from './Tokens'
 import Email from './Email'
 import SanityImage from './SanityImage'
 import { directionsUrl, fullAddress, type Location } from '@/src/data/locations'
+import MapEmbed from './MapEmbed'
 import { getSiteSettings } from '@/lib/siteSettings'
 import { sanityFetch } from '@/lib/sanityFetch'
 
@@ -184,13 +185,11 @@ export default async function LocationPage({ location }: { location: Location })
         </div>
         <div className="max-w-[1240px] mx-auto px-5 md:px-7 mt-10">
           <div className="rounded-2xl overflow-hidden border border-line shadow-[0_8px_24px_rgba(8,24,63,.08)]">
-            <iframe
-              title={`Map of Spotless Carwash on ${location.name}`}
-              src={`https://maps.google.com/maps?q=${encodeURIComponent(fullAddress(location))}&t=&z=16&ie=UTF8&iwloc=&output=embed`}
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
+            <MapEmbed
+              address={fullAddress(location)}
+              locationName={location.name}
+              directionsUrl={directionsUrl(location)}
               className="w-full h-[360px] md:h-[420px] block border-0"
-              allowFullScreen
             />
           </div>
         </div>

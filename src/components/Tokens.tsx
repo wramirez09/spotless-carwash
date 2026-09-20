@@ -125,7 +125,8 @@ export default async function Tokens() {
                     </span>
                     <span className="ml-auto flex flex-col items-end leading-none">
                       {hasDiscount && (
-                        <span className="text-[12px] md:text-[13px] font-semibold text-blue-700/60 line-through mb-1">
+                        <span // 60% opacity resolved to 3.7:1 on the yellow chip; 80% reaches 6.1:1.
+                        className="text-[12px] md:text-[13px] font-semibold text-blue-700/80 line-through mb-1">
                           {formatUSD(pack.price)}
                         </span>
                       )}

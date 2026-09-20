@@ -8,7 +8,11 @@ export default defineConfig({
     environment: 'jsdom',
     globals: false,
     // Exclude Playwright e2e specs — those run under the separate `yarn test:e2e`.
-    include: ['lib/**/*.test.{ts,tsx}', 'app/**/*.test.{ts,tsx}'],
+    include: [
+      'lib/**/*.test.{ts,tsx}',
+      'app/**/*.test.{ts,tsx}',
+      'src/**/*.test.{ts,tsx}',
+    ],
     exclude: ['node_modules', '.next', 'e2e'],
     coverage: {
       provider: 'v8',
