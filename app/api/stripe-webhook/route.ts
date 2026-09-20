@@ -4,6 +4,14 @@ import { getStripeSecretKey, getStripeWebhookSecret } from '@/lib/stripeEnv'
 import { sendOwnerSaleNotification } from '@/lib/email'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { subscribeToPromotions } from '@/lib/promotions'
+import {
+  markSubscriptionStatus,
+  persistSubscriptionFromSession,
+  recordFulfillmentForInvoice,
+  syncShippingAddress,
+  syncSubscription,
+} from '@/lib/subscriptions'
+import { sendOwnerSubscriptionNotification } from '@/lib/email'
 
 export const runtime = 'nodejs'
 
@@ -188,8 +196,89 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `Webhook signature failed: ${message}` }, { status: 400 })
   }
 
+  // ---------------------------------------------------------------------
+  // Wash Token Subscription events.
+  // ---------------------------------------------------------------------
+  // `invoice.paid` is the ONLY shipment trigger. Stripe fires both it and
+  // `checkout.session.completed` for a subscription's first payment, so
+  // fulfilling in the session handler too would ship cycle one twice.
+  if (event.type === 'invoice.paid') {
+    const invoice = event.data.object as Stripe.Invoice
+    const result = await recordFulfillmentForInvoice(invoice)
+    if (result?.isNew) {
+      await sendOwnerSubscriptionNotification({
+        kind: 'renewal',
+        customerEmail: result.email,
+        tokensCount: result.tokensCount,
+        amountTotal: invoice.amount_paid,
+        currency: invoice.currency,
+        reference: invoice.id ?? '',
+      })
+    }
+    return NextResponse.json({ received: true })
+  }
+
+  if (event.type === 'invoice.payment_failed') {
+    const invoice = event.data.object as Stripe.Invoice
+    const subId = invoice.parent?.subscription_details?.subscription
+    const id = typeof subId === 'string' ? subId : (subId?.id ?? null)
+    if (id) await markSubscriptionStatus(id, 'past_due')
+    return NextResponse.json({ received: true })
+  }
+
+  if (event.type === 'customer.subscription.updated') {
+    await syncSubscription(event.data.object as Stripe.Subscription)
+    return NextResponse.json({ received: true })
+  }
+
+  if (event.type === 'customer.subscription.deleted') {
+    const subscription = event.data.object as Stripe.Subscription
+    await markSubscriptionStatus(subscription.id, 'canceled')
+    return NextResponse.json({ received: true })
+  }
+
+  // Keeps pending shipments addressed correctly when a subscriber edits their
+  // address in the Stripe Customer Portal.
+  if (event.type === 'customer.updated') {
+    await syncShippingAddress(event.data.object as Stripe.Customer)
+    return NextResponse.json({ received: true })
+  }
+
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
+
+    // Subscription checkouts land here too. They carry none of the one-time
+    // order metadata below (package_size, wash_value, mail_*), so they must
+    // branch out before any of it is read.
+    if (session.mode === 'subscription') {
+      const expandedSub = await stripe.checkout.sessions.retrieve(session.id, {
+        expand: ['subscription', 'customer'],
+      })
+      await persistSubscriptionFromSession(expandedSub)
+      await sendOwnerSubscriptionNotification({
+        kind: 'new',
+        customerEmail:
+          expandedSub.customer_details?.email ?? expandedSub.customer_email ?? '',
+        customerName: expandedSub.metadata?.customer_name ?? '',
+        plan: expandedSub.metadata?.plan ?? '',
+        tokensCount: Number(expandedSub.metadata?.tokens_per_cycle ?? 0),
+        amountTotal: expandedSub.amount_total,
+        currency: expandedSub.currency,
+        reference: expandedSub.id,
+        address: expandedSub.collected_information?.shipping_details?.address
+          ? {
+              line1: expandedSub.collected_information.shipping_details.address.line1,
+              line2: expandedSub.collected_information.shipping_details.address.line2,
+              city: expandedSub.collected_information.shipping_details.address.city,
+              state: expandedSub.collected_information.shipping_details.address.state,
+              postalCode:
+                expandedSub.collected_information.shipping_details.address.postal_code,
+              country: expandedSub.collected_information.shipping_details.address.country,
+            }
+          : null,
+      })
+      return NextResponse.json({ received: true })
+    }
 
     const expanded = await stripe.checkout.sessions.retrieve(session.id, {
       expand: ['line_items'],

@@ -56,6 +56,12 @@ export default async function SignupsDashboardPage({
           </div>
           <div className="flex items-center gap-3">
             <a
+              href="/admin/pricing"
+              className="rounded-full border border-line px-4 py-2.5 text-sm font-bold text-blue-700 transition hover:border-blue-500"
+            >
+              Pricing &amp; sales
+            </a>
+            <a
               href={exportHref}
               className="inline-flex items-center gap-2 rounded-full bg-blue-700 px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-blue-500"
             >

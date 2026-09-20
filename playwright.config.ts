@@ -26,6 +26,11 @@ export default defineConfig({
     },
   ],
   webServer: {
+    // Its own build directory. `next dev` and `next build` both write to
+    // `.next`, so an e2e run that shared it with a developer's already-running
+    // dev server would have the two processes deleting each other's manifests
+    // — which surfaces as every page 500ing, in BOTH servers. See
+    // next.config.mjs, which reads NEXT_DIST_DIR.
     command: `yarn dev --port ${PORT}`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
@@ -33,6 +38,6 @@ export default defineConfig({
     // These specs assert the real site. Force the maintenance gate off so a
     // local UNDER_CONSTRUCTION=true in .env.local doesn't reroute every page
     // to /under-construction and fail the suite. A real env var wins over .env*.
-    env: { UNDER_CONSTRUCTION: 'false' },
+    env: { UNDER_CONSTRUCTION: 'false', NEXT_DIST_DIR: '.next-e2e' },
   },
 })

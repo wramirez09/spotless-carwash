@@ -212,3 +212,64 @@ describe('Labor Day sale — misconfigured coupon regressions', () => {
     }
   })
 })
+
+// --- Coupon-chip identity -------------------------------------------------
+// Regression guard for a duplicate-React-key crash on the pack cards
+// (src/components/Tokens.tsx).
+//
+// The two-chip split is PRESENTATIONAL and intentional: Stripe allows one
+// coupon per Checkout session, so each seasonal coupon is configured as the
+// combined (base + sale) amount and the FE shows it as two chips. That means
+// both chips legitimately describe one coupon — and when the seasonal coupon
+// can't be resolved, both carry the same id. Chips must therefore stay
+// distinguishable by LABEL, which is what the render sites key on.
+
+describe('coupon chip identity during a sale', () => {
+  it('keeps both chips when the seasonal coupon resolves distinctly', async () => {
+    getSeasonalCouponId.mockReturnValue('coupon_labor_day')
+
+    const { packs } = await getCheckoutPricing(INSIDE_WINDOW)
+
+    expect(packs[0].coupons).toHaveLength(2)
+    const ids = packs[0].coupons.map((c) => c.id)
+    expect(new Set(ids).size).toBe(2)
+  })
+
+  it('still shows both chips when the seasonal coupon degrades to the base one', async () => {
+    // The customer-facing split must not silently disappear just because the
+    // sale's coupon env var is unset — the discount is still being applied.
+    getSeasonalCouponId.mockReturnValue(undefined)
+    stubCoupons({ base: 1000 })
+
+    const { packs } = await getCheckoutPricing(INSIDE_WINDOW)
+
+    expect(packs[0].coupons).toHaveLength(2)
+    expect(packs[0].coupons.map((c) => c.label)).toEqual(['4-Pack bundle', 'Labor Day'])
+  })
+
+  it('gives every chip a unique id+label key, even when ids collide', async () => {
+    // This is the exact invariant the render sites depend on. Duplicate keys
+    // are what produced "Encountered two children with the same key".
+    getSeasonalCouponId.mockReturnValue(undefined)
+    stubCoupons({ base: 1000 })
+
+    const { packs } = await getCheckoutPricing(INSIDE_WINDOW)
+
+    for (const pack of packs) {
+      const keys = pack.coupons.map((c) => `${c.id}-${c.label}`)
+      expect(new Set(keys).size).toBe(keys.length)
+    }
+  })
+
+  it('never double-counts: chip amounts sum to the discount actually applied', async () => {
+    getSeasonalCouponId.mockReturnValue(undefined)
+    stubCoupons({ base: 1000 })
+
+    const { packs } = await getCheckoutPricing(INSIDE_WINDOW)
+
+    for (const pack of packs) {
+      const summed = pack.coupons.reduce((n, c) => n + c.amountOffCents, 0)
+      expect(summed).toBe(pack.save)
+    }
+  })
+})

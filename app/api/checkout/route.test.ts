@@ -34,16 +34,29 @@ vi.mock('stripe', () => ({
 
 vi.mock('@/lib/stripeEnv', () => ({ getStripeSecretKey }))
 
+// The route resolves prices, the coupon and the active sale in ONE call now
+// (admin-managed config, see lib/pricingStore.ts), so the mock stands in for
+// that resolver. `getActiveSeasonalSale` remains the per-test switch for
+// whether a sale is running.
 vi.mock('@/lib/stripePricing', () => ({
-  PACK_PRICES: { '8': 'price_pack_8', '9': 'price_pack_9', '10': 'price_pack_10', '12': 'price_pack_12' },
-  SINGLE_PRICES: {
-    '8': 'price_single_8',
-    '9': 'price_single_9',
-    '10': 'price_single_10',
-    '12': 'price_single_12',
-  },
-  activePackCouponId: () => 'coupon_test',
-  getActiveSeasonalSale,
+  resolveCheckoutConfig: async () => ({
+    packPriceIds: {
+      '8': 'price_pack_8',
+      '9': 'price_pack_9',
+      '10': 'price_pack_10',
+      '12': 'price_pack_12',
+    },
+    singlePriceIds: {
+      '8': 'price_single_8',
+      '9': 'price_single_9',
+      '10': 'price_single_10',
+      '12': 'price_single_12',
+    },
+    packCouponId: 'coupon_test',
+    sale: getActiveSeasonalSale(),
+    baseDiscountCents: 500,
+    baseCouponId: 'coupon_test',
+  }),
 }))
 
 import { POST } from './route'

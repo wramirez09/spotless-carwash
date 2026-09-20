@@ -77,7 +77,7 @@ export default function HowClient({ data }: { data: HowData }) {
               <div className={'lamp' + (s.r ? ' on-r' : '')}></div>
             </div>
             <div className="mono text-[11px] tracking-[0.18em] uppercase text-blue-200">
-              // status: {s.t}
+              {`// status: ${s.t}`}
             </div>
           </div>
         </div>

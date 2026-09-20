@@ -43,3 +43,9 @@ pnpm-debug.log*
 .claude/tmp/
 .vercel
 .env*.local
+
+# Throwaway Next build dirs that keep a verification build (`yarn build:verify`)
+# and the Playwright e2e server from clobbering a running dev server's .next
+.next-verify
+.next-e2e
+.next-flagcheck

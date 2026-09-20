@@ -7,14 +7,16 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "seed": "tsx --env-file=.env.local scripts/seed.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:install": "playwright install --with-deps chromium",
     "prepare": "husky",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "lint:fix": "eslint . --fix",
+    "build:verify": "NEXT_DIST_DIR=.next-verify next build"
   },
   "dependencies": {
     "@portabletext/react": "^6.2.0",

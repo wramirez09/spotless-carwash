@@ -23,11 +23,26 @@ export type NavData = {
 
 export default function NavClient({ data, ribbonText }: { data: NavData; ribbonText?: string }) {
   const [open, setOpen] = useState(false)
+  // The nav is sticky (see app/layout.tsx), so the ribbon would otherwise hold
+  // ~37px of the viewport for the whole page. Collapse it once the user starts
+  // scrolling and bring it back at the very top.
+  const [scrolled, setScrolled] = useState(false)
   const pathname = usePathname() ?? ''
   const isActive = (href: string) => {
     if (!href || href.startsWith('/#') || href.startsWith('#')) return false
     return pathname === href || pathname.startsWith(href + '/')
   }
+
+  useEffect(() => {
+    const onScroll = () =>
+      // Hysteresis: hide past 24px, only re-show back under 4px. A single
+      // threshold flip-flops when the scroll position sits right on it, which
+      // reads as a twitch.
+      setScrolled((prev) => (prev ? window.scrollY > 4 : window.scrollY > 24))
+    onScroll() // honour a restored scroll position on load
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : ''
@@ -118,9 +133,25 @@ export default function NavClient({ data, ribbonText }: { data: NavData; ribbonT
       </div>
 
       {ribbonText && (
-        <div className="bg-yellow-400 text-blue-700 border-b-[3px] border-blue-700">
-          <div className="max-w-[1240px] mx-auto px-5 md:px-7 py-2 text-center text-[12px] sm:text-[13px] font-extrabold tracking-[0.14em] uppercase">
-            {ribbonText}
+        <div
+          data-ribbon
+          aria-hidden={scrolled}
+          // Collapse via grid-template-rows 1fr -> 0fr: it animates to the row's
+          // real height, so there's no magic max-height to mismatch the content.
+          // Deliberately NOT animating opacity — fading the bar makes it
+          // translucent mid-transition and the blue hero shows through, which is
+          // the twitch. The border lives inside the clipped row so it collapses
+          // with the content instead of snapping (border-width can't transition).
+          className={`grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none ${
+            scrolled ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'
+          }`}
+        >
+          <div className="overflow-hidden">
+            <div className="bg-yellow-400 text-blue-700 border-b-[3px] border-blue-700">
+              <div className="max-w-[1240px] mx-auto px-5 md:px-7 py-2 text-center text-[12px] sm:text-[13px] font-extrabold tracking-[0.14em] uppercase">
+                {ribbonText}
+              </div>
+            </div>
           </div>
         </div>
       )}
