@@ -62,6 +62,38 @@ describe('middleware — /admin Supabase gate', () => {
     expect(res.headers.get('location')).toContain('/admin/signups')
   })
 
+  it('sends a signed-in admin from bare /admin to the dashboard', async () => {
+    // There is no page at /admin, so without this the auth check would pass
+    // and Next would render a 404 for a legitimately signed-in admin.
+    state.user = { email: 'joe@spotlessautowash.com' }
+    const res = await middleware(req('/admin'))
+    expect(res.status).toBe(307)
+    expect(res.headers.get('location')).toContain('/admin/signups')
+  })
+
+  it('sends a signed-out visitor from bare /admin to login via the dashboard', async () => {
+    // Redirected before the session check, so the eventual `next` param points
+    // at a real page rather than at /admin.
+    const res = await middleware(req('/admin'))
+    expect(res.status).toBe(307)
+    expect(res.headers.get('location')).toContain('/admin/signups')
+  })
+
+  it('still gates the dashboard itself after the bare-/admin redirect', async () => {
+    // The redirect target must enforce auth for itself — otherwise the hop
+    // would be a way around the gate.
+    const res = await middleware(req('/admin/signups'))
+    expect(res.status).toBe(307)
+    expect(res.headers.get('location')).toContain('/admin/login')
+  })
+
+  it('does not redirect admin paths that merely start with the prefix', async () => {
+    // Guard against matching '/administrator' or '/admin-tools' by prefix.
+    state.user = { email: 'joe@spotlessautowash.com' }
+    const res = await middleware(req('/admin/pricing'))
+    expect(res.headers.get('location') ?? '').not.toContain('/admin/signups')
+  })
+
   it('keeps the magic-link callback reachable without a session', async () => {
     const res = await middleware(req('/admin/auth/confirm?code=abc'))
     expect(res.status).not.toBe(307)

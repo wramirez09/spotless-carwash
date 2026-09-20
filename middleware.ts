@@ -7,6 +7,7 @@ const UNDER_CONSTRUCTION_PATH = '/under-construction'
 const ADMIN_PREFIX = '/admin'
 const LOGIN_PATH = '/admin/login'
 const AUTH_PREFIX = '/admin/auth' // magic-link callback — reachable without a session
+const ADMIN_HOME = '/admin/signups' // the admin area's landing page
 
 // Toggle the public maintenance page via env. Read at request time so flipping
 // the var (Vercel env / .env.local) takes effect without a code change.
@@ -32,6 +33,18 @@ function isAllowedDuringConstruction(pathname: string): boolean {
 // public Supabase env isn't configured, every protected path bounces to login.
 async function handleAdmin(request: NextRequest, requestHeaders: Headers) {
   const { pathname } = request.nextUrl
+
+  // There is no page at /admin itself, so a signed-in admin landing there
+  // would pass the auth check below and then fall through to a 404. Send the
+  // bare prefix to the admin home instead.
+  //
+  // Done before the session check on purpose: the destination enforces auth
+  // for itself, so this leaks nothing, and a signed-out visitor ends up at
+  // login with a `next` pointing at a real page rather than at /admin.
+  if (pathname === ADMIN_PREFIX) {
+    return NextResponse.redirect(new URL(ADMIN_HOME, request.url))
+  }
+
   const isPublicAdminPath = pathname === LOGIN_PATH || pathname.startsWith(AUTH_PREFIX)
 
   const { url, key } = supabasePublicEnv()
@@ -65,7 +78,7 @@ async function handleAdmin(request: NextRequest, requestHeaders: Headers) {
   if (isPublicAdminPath) {
     // Already signed in? Skip the login page and go to the dashboard.
     if (pathname === LOGIN_PATH && authorized) {
-      return NextResponse.redirect(new URL('/admin/signups', request.url))
+      return NextResponse.redirect(new URL(ADMIN_HOME, request.url))
     }
     return response
   }
