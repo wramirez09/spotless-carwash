@@ -46,13 +46,27 @@ export type PricingSnapshot = {
 // changes (a row edited directly in Supabase) or a window opening.
 const CACHE_TTL_MS = 30_000
 
+// How long to stop calling Supabase after a read fails.
+//
+// A failed read is not free: it still costs a round-trip, and the banner
+// renders in the root layout, so a broken database would otherwise add three
+// failing queries to EVERY page view of the whole site. The fallback snapshot
+// itself is never cached — it is recomputed from env each time, so a recovered
+// database is picked up the moment the breaker closes — but the call that
+// produced the failure is suppressed for this long.
+const DB_FAILURE_BACKOFF_MS = 10_000
+
 let cached: { at: number; snapshot: PricingSnapshot } | null = null
 let inflight: Promise<PricingSnapshot> | null = null
+let dbFailedAt = 0
 
 /** Drop the cache so the next read hits Supabase. Called after every write. */
 export function invalidatePricingCache(): void {
   cached = null
   inflight = null
+  // An admin write means someone is actively trying to fix things — let their
+  // next read reach the database rather than sit behind the breaker.
+  dbFailedAt = 0
 }
 
 // ---------------------------------------------------------------------------
@@ -200,6 +214,11 @@ async function loadSnapshot(): Promise<PricingSnapshot> {
   const supabase = getSupabaseAdmin()
   if (!supabase) return fallbackSnapshot()
 
+  // Breaker is open after a recent failure — skip the round-trip entirely.
+  if (dbFailedAt && Date.now() - dbFailedAt < DB_FAILURE_BACKOFF_MS) {
+    return fallbackSnapshot()
+  }
+
   try {
     const [pricesRes, salesRes, settingsRes] = await Promise.all([
       supabase.from('catalog_prices').select('*').eq('active', true),
@@ -208,6 +227,7 @@ async function loadSnapshot(): Promise<PricingSnapshot> {
     ])
 
     if (pricesRes.error || salesRes.error || settingsRes.error) {
+      dbFailedAt = Date.now()
       console.error('[pricingStore] read failed; using env fallback', {
         prices: pricesRes.error,
         sales: salesRes.error,
@@ -249,8 +269,10 @@ async function loadSnapshot(): Promise<PricingSnapshot> {
         }
       : envSettings
 
+    dbFailedAt = 0
     return { prices, sales, settings, source: 'db' }
   } catch (err) {
+    dbFailedAt = Date.now()
     console.error('[pricingStore] read threw; using env fallback', err)
     return fallbackSnapshot()
   }

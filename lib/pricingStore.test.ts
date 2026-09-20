@@ -216,6 +216,81 @@ describe('reading from the database', () => {
   })
 })
 
+describe('failure backoff', () => {
+  it('stops calling a failing database on every render', async () => {
+    // The banner renders in the root layout, so without this a broken
+    // database would add three failing round-trips to EVERY page view.
+    const client = makeSupabase({ error: { message: 'boom' } })
+    getSupabaseAdmin.mockReturnValue(client)
+
+    await getPricingSnapshot()
+    const afterFirst = client.calls.count
+    expect(afterFirst).toBeGreaterThan(0)
+
+    vi.setSystemTime(NOW + 1_000)
+    const second = await getPricingSnapshot()
+
+    expect(second.source).toBe('fallback')
+    expect(client.calls.count).toBe(afterFirst)
+  })
+
+  it('still recomputes the fallback each time, so env changes are not frozen', async () => {
+    // The breaker suppresses the QUERY, not the fallback snapshot — that is
+    // recomputed from env on every call.
+    getSupabaseAdmin.mockReturnValue(makeSupabase({ error: { message: 'boom' } }))
+    await getPricingSnapshot()
+
+    envs.pack = (v: string) => `changed_pack_${v}`
+    vi.setSystemTime(NOW + 1_000)
+    const snap = await getPricingSnapshot()
+
+    expect(snap.prices.pack['12'].stripePriceId).toBe('changed_pack_12')
+    envs.pack = (v: string) => `env_price_pack_${v}`
+  })
+
+  it('retries once the backoff expires', async () => {
+    const client = makeSupabase({ error: { message: 'boom' } })
+    getSupabaseAdmin.mockReturnValue(client)
+
+    await getPricingSnapshot()
+    const afterFirst = client.calls.count
+
+    vi.setSystemTime(NOW + 11_000)
+    await getPricingSnapshot()
+
+    expect(client.calls.count).toBeGreaterThan(afterFirst)
+  })
+
+  it('lets an admin write punch through the backoff immediately', async () => {
+    // Someone is actively trying to fix things; don't make them wait it out.
+    const client = makeSupabase({ error: { message: 'boom' } })
+    getSupabaseAdmin.mockReturnValue(client)
+
+    await getPricingSnapshot()
+    const afterFirst = client.calls.count
+
+    invalidatePricingCache()
+    await getPricingSnapshot()
+
+    expect(client.calls.count).toBeGreaterThan(afterFirst)
+  })
+
+  it('closes the breaker after a successful read', async () => {
+    const failing = makeSupabase({ error: { message: 'boom' } })
+    getSupabaseAdmin.mockReturnValue(failing)
+    await getPricingSnapshot()
+
+    vi.setSystemTime(NOW + 11_000)
+    const healthy = makeSupabase({ sales: [saleRow()] })
+    getSupabaseAdmin.mockReturnValue(healthy)
+    expect((await getPricingSnapshot()).source).toBe('db')
+
+    invalidatePricingCache()
+    vi.setSystemTime(NOW + 12_000)
+    expect((await getPricingSnapshot()).source).toBe('db')
+  })
+})
+
 describe('caching', () => {
   it('serves a second read from cache instead of re-querying', async () => {
     // The banner renders in the root layout — an uncached read would add a
