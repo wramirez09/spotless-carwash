@@ -305,7 +305,7 @@ export default async function Page() {
                 />
               ) : (
                 <Image
-                  src="/images/madison-hero.png"
+                  src="/images/madison-hero.jpg"
                   alt="Spotless Carwash Madison St storefront"
                   fill
                   priority

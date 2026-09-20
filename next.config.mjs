@@ -12,6 +12,12 @@ const nextConfig = {
     // SanityImage renders at quality 80; Next 16 requires every quality used
     // to be declared here or it throws instead of warning.
     qualities: [80],
+    // Serve AVIF where the browser accepts it, falling back to WebP. AVIF is
+    // roughly 20-30% smaller than WebP at the same visual quality; the first
+    // request for each size pays a slower transform, every one after is a
+    // cache hit. Order matters — Next picks the first format the client
+    // advertises support for.
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
         protocol: 'https',
