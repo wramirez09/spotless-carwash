@@ -36,6 +36,21 @@ function Row({ row }: { row: PriceRowView }) {
   // string comparison would leave Save enabled on an unchanged row.
   const typedCents = parseDollarsToCents(value)
   const dirty = typedCents != null && typedCents !== row.cents
+
+  // Saving is blocked when there is nothing to save — every save creates a
+  // real Stripe Price, so a no-op write is not free. But a button that just
+  // greys out reads as broken, especially after typing a value back to what
+  // it was. Say which of the two reasons applies.
+  const blockedReason =
+    dirty || pending
+      ? null
+      : typedCents == null
+        ? value.trim() === ''
+          ? 'Enter an amount'
+          : 'Not a valid amount'
+        : 'Same as the current price'
+
+  const edited = value.trim() !== (row.cents != null ? (row.cents / 100).toFixed(2) : '')
   const perToken =
     row.kind === 'pack' && row.cents != null ? formatCents(Math.round(row.cents / 4)) : null
 
@@ -103,7 +118,22 @@ function Row({ row }: { row: PriceRowView }) {
           >
             {pending ? 'Saving…' : 'Save'}
           </button>
+          {edited && !pending && (
+            <button
+              type="button"
+              onClick={() => {
+                setFeedback(null)
+                setValue(row.cents != null ? (row.cents / 100).toFixed(2) : '')
+              }}
+              className="text-xs font-bold text-slate-500 underline underline-offset-2 hover:text-blue-700"
+            >
+              Reset
+            </button>
+          )}
         </form>
+        {blockedReason && (
+          <p className="mt-1 text-[11px] font-semibold text-slate-400">{blockedReason}</p>
+        )}
         {feedback && (
           <p
             role="status"
