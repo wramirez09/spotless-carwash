@@ -110,7 +110,12 @@ export async function POST(req: Request) {
   // price change or a newly scheduled sale takes effect on the next checkout
   // without a deploy. Falls back to the env-var Price IDs when Supabase is
   // unavailable.
-  const config = await resolveCheckoutConfig()
+  // `fresh` on purpose: this resolves what the customer is charged. The
+  // pricing cache is per serverless instance, so without it a checkout handled
+  // by an instance that has not yet expired its snapshot could bill the price
+  // an admin replaced minutes ago. One extra round trip on a low-volume, high-
+  // value path is a good trade.
+  const config = await resolveCheckoutConfig(Date.now(), { fresh: true })
 
   const priceId =
     purchaseMode === 'single' ? config.singlePriceIds[washValue] : config.packPriceIds[pkg]

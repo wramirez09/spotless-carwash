@@ -40,7 +40,10 @@ export default async function PricingAdminPage() {
   // being charged — including SKUs still priced from the deploy config, whose
   // amounts live only in Stripe.
   const [snapshot, sales, catalog, pricing, user] = await Promise.all([
-    getPricingSnapshot(),
+    // Always a fresh read here. The cache is per serverless instance, so the
+    // re-render after a save can land on an instance that still holds the old
+    // snapshot — which would show the admin the price they just replaced.
+    getPricingSnapshot({ fresh: true }),
     listAllSales(),
     listCatalogPrices(),
     getCheckoutPricing(),

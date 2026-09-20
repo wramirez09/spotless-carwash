@@ -202,14 +202,20 @@ export type CheckoutConfig = {
  * config with the env vars as the fallback.
  *
  * This is the seam that removed the deploy: scheduling a sale or changing a
- * price writes a row, and the next call here picks it up. The store's own
+ * price writes a row, and the next call here picks it up.
+ *
+ * `fresh: true` skips the per-instance cache. Display paths leave it off — a
+ * pack card up to 30s behind is harmless. The checkout route turns it on,
+ * because that is the call that decides what a customer is actually charged,
+ * and a stale Price ID there would bill last week's price. The store's own
  * fallback means an unconfigured or unreachable Supabase lands back on exactly
  * the env-var behavior the site had before.
  */
 export async function resolveCheckoutConfig(
   now = Date.now(),
+  { fresh = false }: { fresh?: boolean } = {},
 ): Promise<CheckoutConfig> {
-  const snapshot = await getPricingSnapshot()
+  const snapshot = await getPricingSnapshot({ fresh })
   const baseCouponId = snapshot.settings.baseCouponId ?? PACK_DISCOUNT_COUPON_ID
   const record = pickActiveSale(snapshot.sales, now)
   const sale = record
