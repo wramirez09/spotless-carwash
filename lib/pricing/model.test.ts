@@ -2,6 +2,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   combinedCouponAmountCents,
+  effectivePriceCents,
+  priceSaveState,
   couponDrift,
   discountMetadata,
   findWindowConflict,
@@ -249,5 +251,126 @@ describe('formatCents', () => {
   it('always renders two decimal places', () => {
     expect(formatCents(500)).toBe('$5.00')
     expect(formatCents(3250)).toBe('$32.50')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Admin price-row state
+// ---------------------------------------------------------------------------
+
+describe('effectivePriceCents', () => {
+  it('uses the server value when nothing has been saved here', () => {
+    expect(effectivePriceCents(4800, null)).toBe(4800)
+  })
+
+  it('prefers the just-saved value while the server still reports the old one', () => {
+    // The reported bug: save $9.00, the row keeps showing $10.00 because the
+    // re-render hit an instance whose cache had not expired.
+    expect(effectivePriceCents(1000, { from: 1000, to: 900 })).toBe(900)
+  })
+
+  it('falls back to the server once it agrees', () => {
+    expect(effectivePriceCents(900, { from: 1000, to: 900 })).toBe(900)
+  })
+
+  it('defers to the server when the price changed somewhere else', () => {
+    // Someone else edited it, or Stripe was changed directly. Our stale save
+    // must not mask a newer value.
+    expect(effectivePriceCents(1200, { from: 1000, to: 900 })).toBe(1200)
+  })
+
+  it('handles a SKU that had no price before the save', () => {
+    expect(effectivePriceCents(null, { from: null, to: 900 })).toBe(900)
+  })
+
+  it('passes through a null with no pending save', () => {
+    expect(effectivePriceCents(null, null)).toBeNull()
+  })
+})
+
+describe('priceSaveState', () => {
+  const base = { rawValue: '48.00', typedCents: 4800, effectiveCents: 4800, pending: false }
+
+  it('blocks a value identical to the current price, and says so', () => {
+    // Every save mints a new Stripe Price, so a no-op write is not free.
+    expect(priceSaveState(base)).toEqual({
+      canSave: false,
+      reason: 'Same as the current price',
+    })
+  })
+
+  it('allows a genuine change', () => {
+    expect(priceSaveState({ ...base, rawValue: '45.00', typedCents: 4500 })).toEqual({
+      canSave: true,
+      reason: null,
+    })
+  })
+
+  it('treats the just-saved amount as current, so Save does not re-arm', () => {
+    // This is the screenshot bug: server says 1000, we saved 900. Comparing
+    // against the server would leave Save enabled and invite a duplicate.
+    const effective = effectivePriceCents(1000, { from: 1000, to: 900 })
+    expect(priceSaveState({
+      rawValue: '9.00',
+      typedCents: 900,
+      effectiveCents: effective,
+      pending: false,
+    })).toEqual({ canSave: false, reason: 'Same as the current price' })
+  })
+
+  it('re-arms Save when the value is edited again after a save', () => {
+    const effective = effectivePriceCents(1000, { from: 1000, to: 900 })
+    expect(priceSaveState({
+      rawValue: '8.50',
+      typedCents: 850,
+      effectiveCents: effective,
+      pending: false,
+    }).canSave).toBe(true)
+  })
+
+  it('prompts for an amount when the field is empty', () => {
+    expect(priceSaveState({ ...base, rawValue: '', typedCents: null })).toEqual({
+      canSave: false,
+      reason: 'Enter an amount',
+    })
+  })
+
+  it('treats whitespace as empty', () => {
+    expect(priceSaveState({ ...base, rawValue: '   ', typedCents: null }).reason).toBe(
+      'Enter an amount',
+    )
+  })
+
+  it.each(['32.', 'abc', '-5', '32.555'])(
+    'reports %s as an invalid amount rather than silently disabling',
+    (rawValue) => {
+      expect(priceSaveState({ ...base, rawValue, typedCents: null })).toEqual({
+        canSave: false,
+        reason: 'Not a valid amount',
+      })
+    },
+  )
+
+  it('blocks while a save is in flight, with no reason text', () => {
+    // The button already reads "Saving…"; a hint underneath would be noise.
+    expect(priceSaveState({ ...base, typedCents: 4500, pending: true })).toEqual({
+      canSave: false,
+      reason: null,
+    })
+  })
+
+  it('allows the first price for a SKU that has none', () => {
+    expect(priceSaveState({
+      rawValue: '9.00',
+      typedCents: 900,
+      effectiveCents: null,
+      pending: false,
+    })).toEqual({ canSave: true, reason: null })
+  })
+
+  it('never reports a reason when it allows saving', () => {
+    const s = priceSaveState({ ...base, typedCents: 1 })
+    expect(s.canSave).toBe(true)
+    expect(s.reason).toBeNull()
   })
 })

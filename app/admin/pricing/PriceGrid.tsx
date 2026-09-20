@@ -2,8 +2,11 @@
 
 import { useState, useTransition } from 'react'
 import {
+  effectivePriceCents,
   formatCents,
   parseDollarsToCents,
+  priceSaveState,
+  type PendingSave,
   type PriceKind,
   type WashValue,
 } from '@/lib/pricing/model'
@@ -29,30 +32,28 @@ function Row({ row }: { row: PriceRowView }) {
     row.cents != null ? (row.cents / 100).toFixed(2) : '',
   )
   const [feedback, setFeedback] = useState<{ ok: boolean; message: string } | null>(null)
+  // What this browser last saved, held until the server data catches up.
+  const [savedHere, setSavedHere] = useState<PendingSave>(null)
   const [pending, startTransition] = useTransition()
 
-  const current = row.cents != null ? formatCents(row.cents) : 'Not set'
+  // Behave as if the row holds the value we just saved, even when the
+  // re-render lands on an instance whose cache still reports the old one.
+  const cents = effectivePriceCents(row.cents, savedHere)
+  const current = cents != null ? formatCents(cents) : 'Not set'
   // Compare in cents, not text: "32" and "32.00" are the same price, and a
   // string comparison would leave Save enabled on an unchanged row.
   const typedCents = parseDollarsToCents(value)
-  const dirty = typedCents != null && typedCents !== row.cents
+  const { canSave, reason: blockedReason } = priceSaveState({
+    rawValue: value,
+    typedCents,
+    effectiveCents: cents,
+    pending,
+  })
 
-  // Saving is blocked when there is nothing to save — every save creates a
-  // real Stripe Price, so a no-op write is not free. But a button that just
-  // greys out reads as broken, especially after typing a value back to what
-  // it was. Say which of the two reasons applies.
-  const blockedReason =
-    dirty || pending
-      ? null
-      : typedCents == null
-        ? value.trim() === ''
-          ? 'Enter an amount'
-          : 'Not a valid amount'
-        : 'Same as the current price'
-
-  const edited = value.trim() !== (row.cents != null ? (row.cents / 100).toFixed(2) : '')
+  const asInput = (c: number | null) => (c != null ? (c / 100).toFixed(2) : '')
+  const edited = value.trim() !== asInput(cents)
   const perToken =
-    row.kind === 'pack' && row.cents != null ? formatCents(Math.round(row.cents / 4)) : null
+    row.kind === 'pack' && cents != null ? formatCents(Math.round(cents / 4)) : null
 
   return (
     <tr className="border-t border-line align-middle">
@@ -93,6 +94,12 @@ function Row({ row }: { row: PriceRowView }) {
               setFeedback(null)
               const res = await setPrice(formData)
               setFeedback(res)
+              // Remember what we saved. Without this the row keeps comparing
+              // against the pre-save amount and leaves Save enabled, which
+              // invites a duplicate save — and every save mints a new Price.
+              if (res.ok && typedCents != null) {
+                setSavedHere({ from: row.cents, to: typedCents })
+              }
               // The server action revalidates, so a success leaves the input
               // matching what was just saved; only clear it on failure to let
               // the admin correct the value they typed.
@@ -113,7 +120,7 @@ function Row({ row }: { row: PriceRowView }) {
           />
           <button
             type="submit"
-            disabled={pending || !dirty}
+            disabled={!canSave}
             className="rounded-full bg-blue-700 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-white transition hover:bg-blue-500 disabled:opacity-40"
           >
             {pending ? 'Saving…' : 'Save'}
@@ -123,7 +130,7 @@ function Row({ row }: { row: PriceRowView }) {
               type="button"
               onClick={() => {
                 setFeedback(null)
-                setValue(row.cents != null ? (row.cents / 100).toFixed(2) : '')
+                setValue(asInput(cents))
               }}
               className="text-xs font-bold text-slate-500 underline underline-offset-2 hover:text-blue-700"
             >

@@ -221,3 +221,67 @@ export function parseDollarsToCents(input: string): number | null {
   const cents = Math.round(Number(cleaned) * 100)
   return Number.isFinite(cents) ? cents : null
 }
+
+// ---------------------------------------------------------------------------
+// Admin price-row state
+// ---------------------------------------------------------------------------
+
+/**
+ * A save this browser has completed but the server data has not caught up to.
+ *
+ * `from` is what the row reported before the save, `to` is what was saved.
+ * Keeping the "from" lets the row tell two situations apart: the server is
+ * merely lagging (still reporting `from`, so trust `to`), versus the value
+ * genuinely changed somewhere else (reporting neither, so trust the server).
+ */
+export type PendingSave = { from: number | null; to: number } | null
+
+/**
+ * The price the row should behave as if it holds.
+ *
+ * The pricing cache is per serverless instance, so the re-render after a save
+ * can be served by an instance that still reports the old amount. Without
+ * this the row shows the superseded price AND leaves Save enabled, because
+ * the typed value still differs from what the server reported — which reads
+ * as "the save did not work" and invites a duplicate save. Every save creates
+ * a real Stripe Price, so a duplicate is not harmless.
+ */
+export function effectivePriceCents(
+  rowCents: number | null,
+  pending: PendingSave,
+): number | null {
+  if (!pending) return rowCents
+  // Server still reporting the pre-save value — it is behind, so trust ours.
+  if (rowCents === pending.from) return pending.to
+  // Server agrees, or reports something else entirely (changed elsewhere).
+  return rowCents
+}
+
+export type SaveState = { canSave: boolean; reason: string | null }
+
+/**
+ * Whether the Save button is enabled, and why not when it isn't.
+ *
+ * A button that greys out silently reads as a broken form, so every blocked
+ * case carries a reason. Saving is blocked when there is nothing to save
+ * because each save creates a Stripe Price object.
+ */
+export function priceSaveState(args: {
+  rawValue: string
+  typedCents: number | null
+  effectiveCents: number | null
+  pending: boolean
+}): SaveState {
+  const { rawValue, typedCents, effectiveCents, pending } = args
+  if (pending) return { canSave: false, reason: null }
+  if (typedCents == null) {
+    return {
+      canSave: false,
+      reason: rawValue.trim() === '' ? 'Enter an amount' : 'Not a valid amount',
+    }
+  }
+  if (typedCents === effectiveCents) {
+    return { canSave: false, reason: 'Same as the current price' }
+  }
+  return { canSave: true, reason: null }
+}
