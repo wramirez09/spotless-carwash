@@ -16,6 +16,21 @@ export type PriceKind = (typeof PRICE_KINDS)[number]
 /** Tokens included per purchased unit. A "pack" has always been 4 tokens. */
 export const PACK_TOKEN_COUNT = 4
 
+/**
+ * Stable identifier for a SKU, stamped on the Stripe Product's metadata.
+ *
+ * This is what makes Stripe the source of truth: the app finds a SKU's Product
+ * by this key and takes whatever that Product's `default_price` currently is,
+ * rather than trusting an ID recorded in our own database. Change the price in
+ * the Stripe dashboard and the site follows.
+ *
+ * Never change the format — it is matched against Products already created in
+ * both the live and sandbox accounts.
+ */
+export function skuLookupKey(kind: PriceKind, washValue: WashValue): string {
+  return `spotless_${kind}_${washValue}`
+}
+
 export type SaleStatus = 'draft' | 'scheduled' | 'canceled'
 
 /** A row of `public.sales`, normalized to ms for comparison against Date.now(). */

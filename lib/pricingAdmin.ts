@@ -17,6 +17,7 @@ import {
   type WashValue,
 } from './pricing/model'
 import { formatSaleEndLabel } from './pricing/time'
+import { adoptSku } from './stripeCatalog'
 
 // The WRITE side of admin-managed pricing: the services behind the buttons on
 // /admin/pricing. Every function here does two things that must stay in step —
@@ -178,6 +179,12 @@ export async function updateCatalogPrice(
     })
     newPriceId = created.id
 
+    // Point the Product at the new Price and stamp the SKU lookup key. This is
+    // what makes the change authoritative: the app resolves prices from the
+    // Product's default_price, so until this runs the new Price exists but
+    // nothing is using it.
+    await adoptSku(stripe, { productId, priceId: newPriceId, kind, washValue })
+
     // Archive the SUPERSEDED price only when this system created it. The
     // env-var Price IDs are the fallback the storefront reverts to when
     // Supabase is unreachable (see lib/pricingStore.ts) — archiving one would
@@ -245,6 +252,58 @@ export async function updateCatalogPrice(
     ok: true,
     message: `$${washValue} ${kind} is now ${formatCents(unitAmountCents)}.`,
     data: { stripePriceId: newPriceId },
+  }
+}
+
+/**
+ * Make Stripe authoritative for a SKU without changing its price.
+ *
+ * Takes whatever Price the SKU currently resolves to, stamps the lookup key on
+ * its Product and sets that Price as `default_price`. From then on the app
+ * reads the price from Stripe, so editing it in the Stripe dashboard takes
+ * effect on the site.
+ *
+ * Needed because the original Products were created by hand, long before this
+ * tool existed — they carry no lookup key, so nothing can find them. Adoption
+ * is idempotent and safe to re-run.
+ */
+export async function adoptCatalogSku(
+  kind: PriceKind,
+  washValue: WashValue,
+  actorEmail: string | null,
+): Promise<AdminResult> {
+  const stripe = getStripe()
+  if (!stripe) return { ok: false, message: 'Stripe is not configured for this deployment.' }
+
+  const snapshot = await getPricingSnapshot()
+  const current = snapshot.prices[kind][washValue]
+  if (!current?.stripePriceId) {
+    return {
+      ok: false,
+      message: `The $${washValue} ${kind} has no Stripe price yet — set a price first.`,
+    }
+  }
+
+  try {
+    const price = await stripe.prices.retrieve(current.stripePriceId)
+    const productId = typeof price.product === 'string' ? price.product : price.product.id
+    await adoptSku(stripe, { productId, priceId: price.id, kind, washValue })
+    await audit(actorEmail, 'price.adopt', {
+      kind,
+      washValue,
+      productId,
+      priceId: price.id,
+    })
+  } catch (err) {
+    const message = stripeMessage(err)
+    await audit(actorEmail, 'price.adopt', { kind, washValue, error: message }, false)
+    return { ok: false, message: `Stripe rejected the change: ${message}` }
+  }
+
+  invalidatePricingCache()
+  return {
+    ok: true,
+    message: `The $${washValue} ${kind} now reads its price from Stripe.`,
   }
 }
 

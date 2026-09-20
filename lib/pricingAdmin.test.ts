@@ -17,6 +17,7 @@ const {
   couponsDel,
   productsSearch,
   productsCreate,
+  productsUpdate,
   getSupabaseAdmin,
   getStripeSecretKey,
   getPricingSnapshot,
@@ -30,6 +31,7 @@ const {
   couponsDel: vi.fn(),
   productsSearch: vi.fn(),
   productsCreate: vi.fn(),
+  productsUpdate: vi.fn(),
   getSupabaseAdmin: vi.fn(),
   getStripeSecretKey: vi.fn<() => string | undefined>(() => 'sk_test_fake'),
   getPricingSnapshot: vi.fn(),
@@ -43,7 +45,11 @@ vi.mock('stripe', () => {
   const FakeStripe = class {
     prices = { retrieve: pricesRetrieve, create: pricesCreate, update: pricesUpdate }
     coupons = { create: couponsCreate, del: couponsDel }
-    products = { search: productsSearch, create: productsCreate }
+    products = {
+      search: productsSearch,
+      create: productsCreate,
+      update: productsUpdate,
+    }
   } as unknown as { new (): unknown; errors: { StripeError: typeof StripeError } }
   FakeStripe.errors = { StripeError }
   return { default: FakeStripe }
@@ -59,6 +65,7 @@ vi.mock('./pricingStore', async () => {
 })
 
 import {
+  adoptCatalogSku,
   cancelSale,
   publishSale,
   reprovisionSale,
@@ -187,6 +194,7 @@ beforeEach(() => {
   pricesUpdate.mockResolvedValue({})
   couponsCreate.mockImplementation(async () => ({ id: 'coupon_new' }))
   couponsDel.mockResolvedValue({})
+  productsUpdate.mockResolvedValue({})
   vi.useFakeTimers()
   vi.setSystemTime(NOW)
 })
@@ -381,6 +389,77 @@ describe('updateCatalogPrice', () => {
     expect(res).toMatchObject({ ok: false })
     expect(res.message).toMatch(/not configured/i)
     expect(pricesCreate).not.toHaveBeenCalled()
+  })
+})
+
+// =========================================================================
+describe('adoptCatalogSku', () => {
+  it('points the Product at the current Price and stamps the lookup key', async () => {
+    // Adoption is how a SKU created by hand, long before this tool existed,
+    // becomes Stripe-authoritative WITHOUT changing its price.
+    const res = await adoptCatalogSku('pack', '12', 'will@example.com')
+
+    expect(res.ok).toBe(true)
+    expect(productsUpdate).toHaveBeenCalledWith(
+      'prod_12',
+      expect.objectContaining({
+        default_price: 'price_pack_12',
+        metadata: expect.objectContaining({ lookup_key: 'spotless_pack_12' }),
+      }),
+    )
+    expect(invalidatePricingCache).toHaveBeenCalled()
+  })
+
+  it('never creates a new Price — the amount must not change', async () => {
+    await adoptCatalogSku('pack', '12', null)
+    expect(pricesCreate).not.toHaveBeenCalled()
+  })
+
+  it('refuses when the SKU has no Stripe price to adopt', async () => {
+    getPricingSnapshot.mockResolvedValue({
+      ...SNAPSHOT,
+      prices: {
+        ...SNAPSHOT.prices,
+        pack: { ...SNAPSHOT.prices.pack, '12': { stripePriceId: '', cents: null } },
+      },
+    })
+    const res = await adoptCatalogSku('pack', '12', null)
+    expect(res.ok).toBe(false)
+    expect(productsUpdate).not.toHaveBeenCalled()
+  })
+
+  it('reports a Stripe failure instead of claiming success', async () => {
+    productsUpdate.mockRejectedValue(new Error('permission denied'))
+    const res = await adoptCatalogSku('pack', '12', null)
+    expect(res.ok).toBe(false)
+    expect(res.message).toContain('permission denied')
+  })
+
+  it('fails closed when Stripe is not configured', async () => {
+    vi.resetModules()
+    getStripeSecretKey.mockReturnValue(undefined)
+    const fresh = await import('./pricingAdmin')
+    const res = await fresh.adoptCatalogSku('pack', '12', null)
+    expect(res.ok).toBe(false)
+    expect(res.message).toMatch(/not configured/i)
+  })
+})
+
+// =========================================================================
+describe('updateCatalogPrice — Stripe adoption', () => {
+  it('sets the new Price as the Product default so the site actually uses it', async () => {
+    // Without this the new Price exists in Stripe but nothing points at it.
+    await updateCatalogPrice({
+      kind: 'pack',
+      washValue: '12',
+      unitAmountCents: 4500,
+      actorEmail: null,
+    })
+
+    expect(productsUpdate).toHaveBeenCalledWith(
+      'prod_12',
+      expect.objectContaining({ default_price: 'price_new' }),
+    )
   })
 })
 

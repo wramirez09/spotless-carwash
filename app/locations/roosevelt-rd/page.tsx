@@ -12,6 +12,7 @@ import SanityImage from '@/src/components/SanityImage'
 import { locations } from '@/src/data/locations'
 import { sanityFetch } from '@/lib/sanityFetch'
 import type { ImageWithAlt } from '@/lib/sanityImage'
+import MapEmbed from '@/src/components/MapEmbed'
 
 const loc = locations.find((l) => l.slug === 'roosevelt-rd')!
 
@@ -350,13 +351,11 @@ export default async function Page() {
 
           <div className="grid lg:grid-cols-[1.45fr_1fr] gap-5 md:gap-6">
             <div className="rounded-2xl overflow-hidden border border-line shadow-[0_8px_24px_rgba(8,24,63,.08)] order-2 lg:order-1">
-              <iframe
-                title={`Map of Spotless Carwash on ${loc.name}`}
-                src={`https://maps.google.com/maps?q=${encodeURIComponent(FULL_ADDRESS)}&t=&z=16&ie=UTF8&iwloc=&output=embed`}
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
+              <MapEmbed
+                address={FULL_ADDRESS}
+                locationName={loc.name}
+                directionsUrl={DIRECTIONS_URL}
                 className="w-full h-[400px] md:h-[520px] block border-0"
-                allowFullScreen
               />
             </div>
             <div className="bg-white rounded-2xl border border-line p-7 md:p-8 flex flex-col gap-5 order-1 lg:order-2">

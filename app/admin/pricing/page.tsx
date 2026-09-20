@@ -64,12 +64,15 @@ export default async function PricingAdminPage() {
       const resolved = snapshot.prices[kind][washValue]
       const liveCents =
         kind === 'pack' ? livePackCents.get(washValue) : liveSingleCents.get(washValue)
+      // Prefer the resolved amount over the catalog row's stored copy: when
+      // Stripe is authoritative for this SKU it is the live number, and the
+      // stored copy is only a record of what it was set to here.
       return {
         kind,
         washValue,
-        cents: row?.unitAmountCents ?? resolved.cents ?? liveCents ?? null,
-        stripePriceId: row?.stripePriceId ?? resolved.stripePriceId,
-        source: row ? 'db' : 'env',
+        cents: resolved.cents ?? liveCents ?? row?.unitAmountCents ?? null,
+        stripePriceId: resolved.stripePriceId || (row?.stripePriceId ?? ''),
+        source: resolved.source,
       }
     }),
   )

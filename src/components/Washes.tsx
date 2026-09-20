@@ -36,11 +36,16 @@ function Check({ className }: { className: string }) {
   )
 }
 
+// Badge backgrounds are a shade darker than `colorAccent` on purpose. These
+// carry 10px bold white text, which WCAG AA holds to 4.5:1, and the 500
+// weights come in at 2.5-4.0:1 — the 700s clear it (5.5-7.0:1). The accent
+// bar below keeps the brighter 500 because it is decorative: contrast rules
+// apply to text, not to a 6px stripe.
 const colorBadge: Record<WashColor, string> = {
-  red: 'bg-red-500 text-white',
-  green: 'bg-emerald-500 text-white',
-  purple: 'bg-purple-500 text-white',
-  blue: 'bg-sky-500 text-white',
+  red: 'bg-red-700 text-white',
+  green: 'bg-emerald-700 text-white',
+  purple: 'bg-purple-700 text-white',
+  blue: 'bg-sky-700 text-white',
 }
 
 const colorAccent: Record<WashColor, string> = {

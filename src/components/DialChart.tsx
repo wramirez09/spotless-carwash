@@ -1,6 +1,8 @@
 // Self-serve dial chart — the colored arrow-row settings reference shown on the
 // Instructions section. Visual port of the standalone dial-chart.html mock.
 
+import { accessiblePair } from '@/lib/contrast'
+
 type Variant = 'default' | 'lustra' | 'stop'
 
 type Row = {
@@ -55,9 +57,17 @@ function toRow(r: SanityDialRow): Row {
     </>
   )
 
+  // Colours are authored in Sanity, so an editor can pick any swatch. Several
+  // of the ones that mirror the physical dial fail WCAG AA against white text
+  // (the light blue sits at 2.3:1), and correcting them in this file would be
+  // undone by the next Studio edit. Derive a readable pair instead: the
+  // background is preserved wherever a text colour can clear the bar, so the
+  // on-screen dial keeps matching the real one.
+  const { bg, fg } = accessiblePair(r.bgColor ?? undefined, r.fgColor ?? undefined)
+
   return {
-    bg: r.bgColor ?? undefined,
-    fg: r.fgColor ?? undefined,
+    bg,
+    fg,
     label,
     instruction,
     variant,
@@ -94,7 +104,10 @@ const ROWS: Row[] = [
     ),
   },
   {
-    bg: '#e6157a',
+    // Nudged from #e6157a, which cleared no text colour (4.42:1 white, 3.92:1
+    // ink). Three steps darker reaches 4.75:1 with white and is visually
+    // indistinguishable from the dial it mirrors.
+    bg: '#dd1375',
     fg: '#fff',
     label: (
       <span>
@@ -111,7 +124,9 @@ const ROWS: Row[] = [
   },
   {
     bg: '#f08a17',
-    fg: '#fff',
+    // Ink rather than white: white on this orange is 2.5:1. The background is
+    // left alone because it matches the real dial on the bay.
+    fg: '#08183F',
     label: (
       <span>
         <SpectrumMark /> High Pressure Detergent
@@ -182,7 +197,9 @@ const ROWS: Row[] = [
   },
   {
     bg: '#3fb5e6',
-    fg: '#fff',
+    // Ink rather than white: white on this blue is 2.3:1. Background matches
+    // the real dial, so only the text changes.
+    fg: '#08183F',
     label: <span>Spot Free Rinse</span>,
     instruction: (
       <>

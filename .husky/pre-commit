@@ -1,0 +1,32 @@
+#!/usr/bin/env sh
+
+# Pre-commit: run the full unit test suite (with coverage thresholds) and a
+# typecheck before the commit is written.
+#
+# Deliberately NOT here: the Playwright e2e suite (~45s) and the production
+# build (~20s). Those run in pre-push, where the cost is paid once per push
+# rather than once per commit — a pre-commit hook that takes a minute gets
+# bypassed with --no-verify, which is worse than not having one.
+#
+# Skip a single commit with `git commit --no-verify` when you genuinely need
+# to (e.g. committing a known-broken WIP on a scratch branch).
+
+echo "→ Typechecking..."
+if ! npx tsc --noEmit; then
+  echo ""
+  echo "✖ Typecheck failed. Commit aborted."
+  exit 1
+fi
+
+echo ""
+echo "→ Running unit tests (with coverage thresholds)..."
+if ! yarn test:coverage; then
+  echo ""
+  echo "✖ Tests or coverage thresholds failed. Commit aborted."
+  echo "  Fix the failures, or lower the thresholds in vitest.config.ts if"
+  echo "  that is genuinely the right call."
+  exit 1
+fi
+
+echo ""
+echo "✓ Typecheck and tests passed."
