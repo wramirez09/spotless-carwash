@@ -12,8 +12,9 @@ const config = [
   {
     ignores: [
       '.next/**',
-      // Output of `yarn build:verify` — build artifacts, not source.
+      // Throwaway build dirs (build:verify, Playwright) — artifacts, not source.
       '.next-verify/**',
+      '.next-e2e/**',
       'node_modules/**',
       'playwright-report/**',
       'test-results/**',
