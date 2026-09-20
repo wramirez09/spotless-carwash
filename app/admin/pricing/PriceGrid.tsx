@@ -7,15 +7,19 @@ import {
   type PriceKind,
   type WashValue,
 } from '@/lib/pricing/model'
-import { setPrice } from './actions'
+import { adoptSkuFromStripe, setPrice } from './actions'
 
 export type PriceRowView = {
   kind: PriceKind
   washValue: WashValue
   cents: number | null
   stripePriceId: string
-  /** 'db' once this SKU has been priced here; 'env' while it still comes from config. */
-  source: 'db' | 'env'
+  /**
+   * 'stripe' — the price is read from this SKU's Stripe Product (authoritative).
+   * 'db'     — priced here before, but the Product isn't keyed yet.
+   * 'env'    — still resolving from the deploy-time env var.
+   */
+  source: 'stripe' | 'db' | 'env'
 }
 
 type Props = { rows: PriceRowView[] }
@@ -42,8 +46,23 @@ function Row({ row }: { row: PriceRowView }) {
           ${row.washValue} wash {row.kind === 'pack' ? '· 4-pack' : '· single'}
         </p>
         <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-slate-400">
-          {row.source === 'env' ? 'From deploy config' : row.stripePriceId}
+          {row.source === 'stripe' ? `Stripe · ${row.stripePriceId}` : 'From deploy config'}
         </p>
+        {row.source !== 'stripe' && (
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() =>
+              startTransition(async () => {
+                setFeedback(null)
+                setFeedback(await adoptSkuFromStripe(row.kind, row.washValue))
+              })
+            }
+            className="mt-1 text-[11px] font-bold text-blue-500 underline underline-offset-2 disabled:opacity-40"
+          >
+            Read this price from Stripe
+          </button>
+        )}
       </td>
       <td className="py-3 pr-4">
         <p className="display text-[22px] leading-none text-blue-700">{current}</p>

@@ -7,6 +7,9 @@ import {
   getSinglePriceId,
 } from './stripeEnv'
 import { SEASONAL_SALES } from './salesSchedule'
+import { getStripeSecretKey } from './stripeEnv'
+import { catalogKey, loadStripeCatalog } from './stripeCatalog'
+import Stripe from 'stripe'
 import {
   WASH_VALUES,
   pickActiveSale,
@@ -32,8 +35,17 @@ import {
 //     short TTL cache is enough: sale windows turn over on a schedule measured
 //     in weeks, and admin writes invalidate the cache directly.
 
+/** Where a SKU's price came from, highest precedence first. */
+export type PriceSource = 'stripe' | 'db' | 'env'
+
+export type PriceEntry = {
+  stripePriceId: string
+  cents: number | null
+  source: PriceSource
+}
+
 export type PricingSnapshot = {
-  prices: Record<PriceKind, Record<WashValue, { stripePriceId: string; cents: number | null }>>
+  prices: Record<PriceKind, Record<WashValue, PriceEntry>>
   sales: SaleRecord[]
   settings: PricingSettings
   /** 'db' when Supabase answered, 'fallback' when env config was used. */
@@ -130,14 +142,19 @@ function envPriceId(kind: PriceKind, v: WashValue): string {
 function fallbackPrices(): PricingSnapshot['prices'] {
   const build = (kind: PriceKind) =>
     Object.fromEntries(
-      WASH_VALUES.map((v) => [v, { stripePriceId: envPriceId(kind, v), cents: null }]),
-    ) as Record<WashValue, { stripePriceId: string; cents: number | null }>
+      WASH_VALUES.map((v) => [
+        v,
+        { stripePriceId: envPriceId(kind, v), cents: null, source: 'env' as PriceSource },
+      ]),
+    ) as Record<WashValue, PriceEntry>
   return { pack: build('pack'), single: build('single') }
 }
 
-function fallbackSnapshot(): PricingSnapshot {
+async function fallbackSnapshot(): Promise<PricingSnapshot> {
   return {
-    prices: fallbackPrices(),
+    // Stripe still answers for prices even with the database unavailable —
+    // it is a separate system, and the whole point is that it is authoritative.
+    prices: await applyStripeCatalog(fallbackPrices()),
     sales: fallbackSales(),
     settings: fallbackSettings(),
     source: 'fallback',
@@ -147,6 +164,51 @@ function fallbackSnapshot(): PricingSnapshot {
 // ---------------------------------------------------------------------------
 // Row mapping
 // ---------------------------------------------------------------------------
+
+// Stripe client used purely to resolve the catalog. Separate from the one in
+// stripePricing so a missing key degrades here without touching that path.
+let stripeSingleton: Stripe | null = null
+function getStripe(): Stripe | null {
+  if (stripeSingleton) return stripeSingleton
+  const key = getStripeSecretKey()
+  if (!key) return null
+  stripeSingleton = new Stripe(key)
+  return stripeSingleton
+}
+
+/**
+ * Overlay Stripe's answer on top of whatever the database and env said.
+ *
+ * Precedence is Stripe > database > env. Stripe wins because it is the system
+ * actually charging the customer: a Product's `default_price` is the live
+ * truth, while a stored Price ID is a snapshot that goes stale the moment
+ * someone edits prices in the Stripe dashboard.
+ *
+ * A SKU Stripe doesn't know about (never adopted, or Stripe unreachable) keeps
+ * the lower-precedence value, so adoption can happen one SKU at a time.
+ */
+async function applyStripeCatalog(
+  prices: PricingSnapshot['prices'],
+): Promise<PricingSnapshot['prices']> {
+  const stripe = getStripe()
+  if (!stripe) return prices
+
+  const catalog = await loadStripeCatalog(stripe)
+  if (catalog.size === 0) return prices
+
+  for (const kind of ['pack', 'single'] as PriceKind[]) {
+    for (const v of WASH_VALUES) {
+      const sku = catalog.get(catalogKey(kind, v))
+      if (!sku) continue
+      prices[kind][v] = {
+        stripePriceId: sku.stripePriceId,
+        cents: sku.cents,
+        source: 'stripe',
+      }
+    }
+  }
+  return prices
+}
 
 type SaleRow = {
   id: string
@@ -233,7 +295,7 @@ async function loadSnapshot(): Promise<PricingSnapshot> {
         sales: salesRes.error,
         settings: settingsRes.error,
       })
-      return fallbackSnapshot()
+      return await fallbackSnapshot()
     }
 
     const fallback = fallbackPrices()
@@ -245,6 +307,7 @@ async function loadSnapshot(): Promise<PricingSnapshot> {
       kindBucket[row.washValue] = {
         stripePriceId: row.stripePriceId,
         cents: row.unitAmountCents,
+        source: 'db',
       }
     }
 
@@ -270,11 +333,11 @@ async function loadSnapshot(): Promise<PricingSnapshot> {
       : envSettings
 
     dbFailedAt = 0
-    return { prices, sales, settings, source: 'db' }
+    return { prices: await applyStripeCatalog(prices), sales, settings, source: 'db' }
   } catch (err) {
     dbFailedAt = Date.now()
     console.error('[pricingStore] read threw; using env fallback', err)
-    return fallbackSnapshot()
+    return await fallbackSnapshot()
   }
 }
 

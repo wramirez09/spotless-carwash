@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createServerSupabase } from '@/lib/supabase/authServer'
 import { isAdminEmail } from '@/lib/adminAccess'
 import {
+  adoptCatalogSku,
   cancelSale as cancelSaleService,
   publishSale as publishSaleService,
   reprovisionSale as reprovisionSaleService,
@@ -37,6 +38,9 @@ async function requireAdmin(): Promise<string | null> {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user || !isAdminEmail(user.email)) return null
+  // `?? null` matters: the return type is `string | null`, and an admin with
+  // no email on the account would otherwise leak `undefined` into the actor
+  // field of every audit-log row.
   return user.email ?? null
 }
 
@@ -86,6 +90,21 @@ export async function setPrice(formData: FormData): Promise<ActionResult> {
     unitAmountCents: cents,
     actorEmail: actor,
   })
+  if (result.ok) revalidateStorefront()
+  return toResult(result)
+}
+
+/** Make Stripe authoritative for a SKU that still resolves from deploy config. */
+export async function adoptSkuFromStripe(
+  kind: PriceKind,
+  washValue: WashValue,
+): Promise<ActionResult> {
+  const actor = await requireAdmin()
+  if (!actor) return { ok: false, message: EXPIRED }
+  if (!PRICE_KINDS.includes(kind) || !WASH_VALUES.includes(washValue)) {
+    return { ok: false, message: 'That is not a valid product.' }
+  }
+  const result = await adoptCatalogSku(kind, washValue, actor)
   if (result.ok) revalidateStorefront()
   return toResult(result)
 }

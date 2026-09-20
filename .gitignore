@@ -49,3 +49,6 @@ pnpm-debug.log*
 .next-verify
 .next-e2e
 .next-flagcheck
+
+# Vitest coverage output
+coverage

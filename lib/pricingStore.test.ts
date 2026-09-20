@@ -6,8 +6,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 // must degrade to the env-var + hardcoded config the site ran on before
 // /admin/pricing existed, never take checkout down.
 
-const { getSupabaseAdmin, envs } = vi.hoisted(() => ({
+const { getSupabaseAdmin, productsList, stripeSecret, envs } = vi.hoisted(() => ({
   getSupabaseAdmin: vi.fn(),
+  productsList: vi.fn(),
+  stripeSecret: vi.fn<() => string | undefined>(() => undefined),
   envs: {
     pack: (v: string) => `env_price_pack_${v}`,
     single: (v: string) => `env_price_single_${v}`,
@@ -22,6 +24,15 @@ vi.mock('./stripeEnv', () => ({
   getSinglePriceId: (v: string) => envs.single(v),
   getPackDiscountCouponId: () => envs.packCoupon(),
   getSeasonalCouponId: (s: string) => envs.seasonal(s),
+  // The store builds its own Stripe client to resolve the catalog. Default is
+  // "no key", so most tests exercise the database/env path without Stripe.
+  getStripeSecretKey: () => stripeSecret(),
+}))
+
+vi.mock('stripe', () => ({
+  default: class FakeStripe {
+    products = { list: productsList }
+  },
 }))
 
 import {
@@ -107,6 +118,8 @@ function makeSupabase({
 
 beforeEach(() => {
   vi.clearAllMocks()
+  stripeSecret.mockReturnValue(undefined)
+  productsList.mockResolvedValue({ data: [] })
   invalidatePricingCache()
   vi.useFakeTimers()
   vi.setSystemTime(NOW)
@@ -174,6 +187,7 @@ describe('reading from the database', () => {
     expect(snap.prices.pack['12']).toEqual({
       stripePriceId: 'price_db_pack_12',
       cents: 4500,
+      source: 'db',
     })
     expect(snap.settings).toEqual({
       baseDiscountCents: 500,
@@ -336,6 +350,113 @@ describe('caching', () => {
     const [a, b] = await Promise.all([getPricingSnapshot(), getPricingSnapshot()])
 
     expect(a).toBe(b)
+  })
+})
+
+describe('Stripe precedence', () => {
+  function stripeProduct(kind: string, wash: string, priceId: string, cents: number) {
+    return {
+      id: `prod_${kind}_${wash}`,
+      metadata: { lookup_key: `spotless_${kind}_${wash}` },
+      default_price: { id: priceId, active: true, unit_amount: cents },
+    }
+  }
+
+  beforeEach(() => {
+    stripeSecret.mockReturnValue('sk_test_fake')
+  })
+
+  it('lets Stripe override the price ID stored in the database', async () => {
+    // The stored ID is a snapshot; Stripe is the system actually charging the
+    // customer. If someone repoints the Product in the Stripe dashboard, the
+    // site must follow rather than keep using a stale (possibly archived) ID.
+    getSupabaseAdmin.mockReturnValue(makeSupabase({ prices: [priceRow()] }))
+    productsList.mockResolvedValue({
+      data: [stripeProduct('pack', '12', 'price_from_stripe', 4200)],
+    })
+
+    const snap = await getPricingSnapshot()
+
+    expect(snap.prices.pack['12']).toEqual({
+      stripePriceId: 'price_from_stripe',
+      cents: 4200,
+      source: 'stripe',
+    })
+  })
+
+  it('lets Stripe override the env fallback', async () => {
+    getSupabaseAdmin.mockReturnValue(null)
+    productsList.mockResolvedValue({
+      data: [stripeProduct('single', '8', 'price_stripe_s8', 850)],
+    })
+
+    const snap = await getPricingSnapshot()
+
+    expect(snap.prices.single['8']).toMatchObject({
+      stripePriceId: 'price_stripe_s8',
+      cents: 850,
+      source: 'stripe',
+    })
+  })
+
+  it('leaves un-adopted SKUs on their lower-precedence value', async () => {
+    // Adoption happens one SKU at a time; a mixed catalog must keep working.
+    getSupabaseAdmin.mockReturnValue(makeSupabase({ prices: [priceRow()] }))
+    productsList.mockResolvedValue({
+      data: [stripeProduct('pack', '8', 'price_stripe_8', 3100)],
+    })
+
+    const snap = await getPricingSnapshot()
+
+    expect(snap.prices.pack['8'].source).toBe('stripe')
+    expect(snap.prices.pack['12'].source).toBe('db')
+    expect(snap.prices.pack['9'].source).toBe('env')
+  })
+
+  it('falls back cleanly when Stripe cannot answer', async () => {
+    // Stripe being unreachable must not blank out prices.
+    getSupabaseAdmin.mockReturnValue(makeSupabase({ prices: [priceRow()] }))
+    productsList.mockRejectedValue(new Error('stripe down'))
+
+    const snap = await getPricingSnapshot()
+
+    expect(snap.prices.pack['12']).toEqual({
+      stripePriceId: 'price_db_pack_12',
+      cents: 4500,
+      source: 'db',
+    })
+  })
+
+  it('does not call Stripe at all when no secret key is set', async () => {
+    // The Stripe client is a module-scoped singleton (the secret can't change
+    // at runtime in production), so this needs a freshly imported module
+    // rather than just a re-stubbed env getter.
+    vi.resetModules()
+    stripeSecret.mockReturnValue(undefined)
+    getSupabaseAdmin.mockReturnValue(makeSupabase({ prices: [priceRow()] }))
+
+    const fresh = await import('./pricingStore')
+    fresh.invalidatePricingCache()
+    await fresh.getPricingSnapshot()
+
+    expect(productsList).not.toHaveBeenCalled()
+  })
+
+  it('resolves prices from Stripe even while the database is down', async () => {
+    // The two are independent systems — a Supabase outage must not drag the
+    // authoritative price source down with it.
+    getSupabaseAdmin.mockReturnValue(makeSupabase({ error: { message: 'boom' } }))
+    productsList.mockResolvedValue({
+      data: [stripeProduct('pack', '12', 'price_stripe_12', 4700)],
+    })
+
+    const snap = await getPricingSnapshot()
+
+    expect(snap.source).toBe('fallback')
+    expect(snap.prices.pack['12']).toMatchObject({
+      stripePriceId: 'price_stripe_12',
+      source: 'stripe',
+    })
   })
 })
 

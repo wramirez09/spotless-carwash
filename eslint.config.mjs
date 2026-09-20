@@ -16,6 +16,7 @@ const config = [
       '.next-verify/**',
       '.next-e2e/**',
       '.next-flagcheck/**',
+      'coverage/**',
       'node_modules/**',
       'playwright-report/**',
       'test-results/**',
