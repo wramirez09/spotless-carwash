@@ -38,8 +38,10 @@ vi.mock('@/lib/stripeEnv', () => ({ getStripeSecretKey }))
 // (admin-managed config, see lib/pricingStore.ts), so the mock stands in for
 // that resolver. `getActiveSeasonalSale` remains the per-test switch for
 // whether a sale is running.
+const resolveSpy = vi.hoisted(() => ({ calls: [] as unknown[][] }))
+
 vi.mock('@/lib/stripePricing', () => ({
-  resolveCheckoutConfig: async () => ({
+  resolveCheckoutConfig: async (...args: unknown[]) => (resolveSpy.calls.push(args), {
     packPriceIds: {
       '8': 'price_pack_8',
       '9': 'price_pack_9',
@@ -370,5 +372,18 @@ describe('POST /api/checkout — discounts & quantity', () => {
       'https://spotless.test/buy-tokens/success?session_id={CHECKOUT_SESSION_ID}',
     )
     expect(session.cancel_url).toBe('https://spotless.test/buy-tokens')
+  })
+})
+
+describe('POST /api/checkout — pricing freshness', () => {
+  it('resolves pricing with the cache bypassed', async () => {
+    // The pricing cache is per serverless instance. Without `fresh`, a
+    // checkout served by an instance that has not expired its snapshot would
+    // bill the Price an admin already replaced.
+    resolveSpy.calls.length = 0
+    await callPost({ ...VALID_PACK, quantity: 1 })
+
+    expect(resolveSpy.calls).toHaveLength(1)
+    expect(resolveSpy.calls[0][1]).toEqual({ fresh: true })
   })
 })

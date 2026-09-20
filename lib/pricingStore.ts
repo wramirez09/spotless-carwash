@@ -341,9 +341,27 @@ async function loadSnapshot(): Promise<PricingSnapshot> {
   }
 }
 
-/** Cached pricing snapshot. Concurrent callers share one in-flight read. */
-export async function getPricingSnapshot(): Promise<PricingSnapshot> {
+/**
+ * Cached pricing snapshot. Concurrent callers share one in-flight read.
+ *
+ * `fresh: true` bypasses the cache and refills it. The cache is module scope,
+ * which on Vercel means PER SERVERLESS INSTANCE — so `invalidatePricingCache()`
+ * after an admin write only clears the instance that handled the write. The
+ * re-render that follows can be served by a different instance still holding a
+ * snapshot up to CACHE_TTL_MS old, which shows the admin the price they just
+ * replaced. Anything that must display the truth immediately asks for a fresh
+ * read; the storefront keeps the cache and is eventually consistent within the
+ * TTL.
+ */
+export async function getPricingSnapshot(
+  { fresh = false }: { fresh?: boolean } = {},
+): Promise<PricingSnapshot> {
   const now = Date.now()
+  if (fresh) {
+    cached = null
+    inflight = null
+    dbFailedAt = 0
+  }
   if (cached && now - cached.at < CACHE_TTL_MS) return cached.snapshot
   if (inflight) return inflight
 

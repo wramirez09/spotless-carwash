@@ -460,6 +460,65 @@ describe('Stripe precedence', () => {
   })
 })
 
+describe('fresh reads — propagating an admin price change', () => {
+  it('bypasses the cache when asked', async () => {
+    // The cache is per serverless instance, so invalidatePricingCache() after
+    // a write only clears the instance that handled it. The admin screen and
+    // the checkout route ask for a fresh read so neither can serve the price
+    // that was just replaced.
+    const client = makeSupabase({ prices: [priceRow()] })
+    getSupabaseAdmin.mockReturnValue(client)
+
+    await getPricingSnapshot()
+    const afterFirst = client.calls.count
+
+    await getPricingSnapshot({ fresh: true })
+
+    expect(client.calls.count).toBeGreaterThan(afterFirst)
+  })
+
+  it('still serves the cache to callers that did not ask for fresh', async () => {
+    // Display paths must not pay a round trip per render.
+    const client = makeSupabase({ prices: [priceRow()] })
+    getSupabaseAdmin.mockReturnValue(client)
+
+    await getPricingSnapshot()
+    const afterFirst = client.calls.count
+    await getPricingSnapshot()
+
+    expect(client.calls.count).toBe(afterFirst)
+  })
+
+  it('refills the cache, so the next cached read sees the new value', async () => {
+    getSupabaseAdmin.mockReturnValue(makeSupabase({ prices: [priceRow()] }))
+    await getPricingSnapshot()
+
+    // An admin changes the price on another instance.
+    getSupabaseAdmin.mockReturnValue(
+      makeSupabase({ prices: [priceRow({ unit_amount_cents: 3000, stripe_price_id: 'price_new' })] }),
+    )
+
+    const fresh = await getPricingSnapshot({ fresh: true })
+    expect(fresh.prices.pack['12'].cents).toBe(3000)
+
+    const next = await getPricingSnapshot()
+    expect(next.prices.pack['12'].cents).toBe(3000)
+  })
+
+  it('clears a failure breaker so a retry is not blocked', async () => {
+    // An admin hitting refresh after an outage should reach the database.
+    const failing = makeSupabase({ error: { message: 'boom' } })
+    getSupabaseAdmin.mockReturnValue(failing)
+    await getPricingSnapshot()
+
+    const healthy = makeSupabase({ prices: [priceRow()] })
+    getSupabaseAdmin.mockReturnValue(healthy)
+    const snap = await getPricingSnapshot({ fresh: true })
+
+    expect(snap.source).toBe('db')
+  })
+})
+
 describe('admin listings', () => {
   it('lists every sale regardless of status', async () => {
     getSupabaseAdmin.mockReturnValue(
