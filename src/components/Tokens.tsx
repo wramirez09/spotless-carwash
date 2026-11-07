@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { sanityFetch } from '@/lib/sanityFetch'
 import { renderHighlight } from '@/lib/renderHighlight'
 import { getCheckoutPricing } from '@/lib/stripePricing'
+import { fillDiscountCopy, fillPricing, formatUSD, pricingFacts } from '@/lib/pricingCopy'
 
 type TokensCopy = {
   eyebrow: string
@@ -35,11 +36,6 @@ const FALLBACK: TokensCopy = {
   saleHeadline: 'Extra **{saleDiscount} off** every pack.',
 }
 
-function formatUSD(cents: number): string {
-  if (cents % 100 === 0) return `$${cents / 100}`
-  return `$${(cents / 100).toFixed(2)}`
-}
-
 export default async function Tokens() {
   const [copyData, pricing] = await Promise.all([
     sanityFetch<Partial<TokensCopy>>(COPY_QUERY),
@@ -56,26 +52,23 @@ export default async function Tokens() {
     cta: { ...FALLBACK.cta, ...(copyData?.cta ?? {}) },
   }
 
-  // Copy can name the live discount with `{discount}` (the everyday bundle
-  // saving) and `{saleDiscount}` (a sale's extra), so the headline follows
-  // whatever is set in /admin/pricing instead of a number typed into the CMS.
-  // During a sale the first chip is the bundle part and the second the sale's
-  // extra (see splitCouponBreakdown); outside one the single chip is the base.
-  const chips = pricing.packs[0]?.coupons ?? []
-  const totalOff = pricing.packCouponAmountOff
-  const baseOff = sale && chips.length === 2 ? chips[0].amountOffCents : totalOff
-  const saleOff = sale && chips.length === 2 ? chips[1].amountOffCents : totalOff
-  const fill = (text: string) =>
-    text
-      .replaceAll('{discount}', formatUSD(baseOff))
-      .replaceAll('{saleDiscount}', formatUSD(saleOff))
+  // Prices come from Stripe, never from the copy. The headline, description
+  // and sale headline have only ever quoted the pack discount, so any dollar
+  // figure in them — including a stale "$5" typed into the CMS — is rewritten
+  // to the live amount. Every field also accepts the {placeholders} listed in
+  // lib/pricingCopy.ts.
+  const facts = pricingFacts(pricing)
   const t: TokensCopy = {
     ...merged,
-    headlineLine1: fill(merged.headlineLine1),
-    headlineLine2: fill(merged.headlineLine2),
-    valueLine: fill(merged.valueLine),
-    description: fill(merged.description),
-    saleHeadline: fill(merged.saleHeadline),
+    headlineLine1: fillPricing(merged.headlineLine1, facts),
+    headlineLine2: fillDiscountCopy(merged.headlineLine2, facts),
+    valueLine: fillPricing(merged.valueLine, facts),
+    description: fillDiscountCopy(merged.description, facts),
+    saleHeadline: fillDiscountCopy(
+      merged.saleHeadline,
+      facts,
+      facts.saleExtraCents ?? facts.discountCents,
+    ),
   }
 
   // Biggest denomination first, then biggest pack — the premium option leads.

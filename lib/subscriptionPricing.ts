@@ -3,6 +3,7 @@ import Stripe from 'stripe'
 import { getStripeSecretKey, getSubscriptionPriceId } from './stripeEnv'
 import { loadSubscriptionPrices } from './stripeCatalog'
 import { subscriptionLookupKey } from './pricing/model'
+import { getPricingSnapshot } from './pricingStore'
 
 // Wash Token Subscription pricing.
 //
@@ -112,26 +113,35 @@ export function subscriptionMonthlyCents(
   return perToken * PLAN_TOKENS[plan]
 }
 
+/** Live single-token price per denomination, cents — the "vs" figure. */
+type ListPrices = Partial<Record<SubscriptionWashValue, number>>
+
 function buildVariant(
   plan: SubscriptionPlanId,
   washValue: SubscriptionWashValue,
   overrideCents?: number,
+  listPrices?: ListPrices,
 ): SubscriptionVariant {
   const tokens = PLAN_TOKENS[plan]
   const price = overrideCents ?? subscriptionMonthlyCents(plan, washValue)
   const perToken = Math.round(price / tokens)
+  // What a subscriber is compared against: one token bought outright, at the
+  // price Stripe charges for it today. The static table only stands in when
+  // Stripe has no single token of that value.
+  const list = listPrices?.[washValue] ?? WASH_LIST_CENTS[washValue]
   return {
     washValue,
     price,
     perToken,
-    listPerToken: WASH_LIST_CENTS[washValue],
-    savePerToken: WASH_LIST_CENTS[washValue] - perToken,
+    listPerToken: list,
+    savePerToken: list - perToken,
   }
 }
 
 function buildPlan(
   id: SubscriptionPlanId,
   overrides?: Partial<Record<SubscriptionWashValue, number>>,
+  listPrices?: ListPrices,
 ): SubscriptionPlan {
   return {
     id,
@@ -140,7 +150,7 @@ function buildPlan(
     blurb: PLAN_COPY[id].blurb,
     featured: id === 'frequent',
     variants: SUBSCRIPTION_WASH_VALUES.map((w) =>
-      buildVariant(id, w, overrides?.[w]),
+      buildVariant(id, w, overrides?.[w], listPrices),
     ),
   }
 }
@@ -192,6 +202,25 @@ function getStripe(): Stripe | null {
   if (!key) return null
   stripeSingleton = new Stripe(key)
   return stripeSingleton
+}
+
+/**
+ * Single-token prices from the Stripe catalog. Read through the pricing store
+ * (not lib/stripePricing) so none of the one-time sale/coupon logic can reach
+ * a recurring charge — this only feeds the "vs" comparison on the cards.
+ */
+async function liveSingleTokenPrices(): Promise<ListPrices> {
+  try {
+    const { catalog } = await getPricingSnapshot()
+    const out: ListPrices = {}
+    for (const s of catalog) {
+      if (s.kind !== 'single' || s.cents == null) continue
+      if (isSubscriptionWashValue(s.washValue)) out[s.washValue] = s.cents
+    }
+    return out
+  } catch {
+    return {}
+  }
 }
 
 /** Map key for one plan × denomination. */
@@ -283,14 +312,17 @@ export async function resolveSubscriptionPriceId(
 export async function getSubscriptionPricing(): Promise<SubscriptionPricing> {
   if (!getStripe()) return fallbackSubscriptionPricing()
   try {
-    const resolved = await resolveSubscriptionPrices()
+    const [resolved, listPrices] = await Promise.all([
+      resolveSubscriptionPrices(),
+      liveSingleTokenPrices(),
+    ])
     const plans = SUBSCRIPTION_PLAN_IDS.map((id) => {
       const overrides: Partial<Record<SubscriptionWashValue, number>> = {}
       for (const w of SUBSCRIPTION_WASH_VALUES) {
         const cents = resolved.get(subscriptionVariantKey(id, w))?.cents
         if (cents != null) overrides[w] = cents
       }
-      return buildPlan(id, overrides)
+      return buildPlan(id, overrides, listPrices)
     })
     return { plans }
   } catch {

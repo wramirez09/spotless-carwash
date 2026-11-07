@@ -7,8 +7,17 @@ export default defineType({
   fields: [
     defineField({ name: 'num', type: 'string', title: 'Display number', description: 'e.g. "08", "09", "10", "12"', validation: (r) => r.required() }),
     defineField({ name: 'name', type: 'string', validation: (r) => r.required() }),
-    defineField({ name: 'price', type: 'string', description: 'Display price, e.g. "$9"' }),
-    defineField({ name: 'priceNumber', type: 'number' }),
+    defineField({
+      name: 'price',
+      type: 'string',
+      description:
+        'Shown only if Stripe has no single token of this value — otherwise the site shows the Stripe price.',
+    }),
+    defineField({
+      name: 'priceNumber',
+      type: 'number',
+      description: 'The token value this wash takes (8, 9, 10, 12). Its live price is read from Stripe.',
+    }),
     defineField({
       name: 'color',
       type: 'string',

@@ -270,10 +270,8 @@ export default function BuyTokensClient({
       : pkg.tokens === 4
         ? copy.packTokensSuffix
         : `wash · ${pkg.tokens}-pack`
-  const modePackLabel = copy.modePackLabel.replace(
-    '{discount}',
-    fmtWhole(pricing.packCouponAmountOff),
-  )
+  // Price placeholders are filled on the server (app/buy-tokens/page.tsx).
+  const modePackLabel = copy.modePackLabel
 
   const buttonLabel = useMemo(() => {
     if (submitting) return copy.submittingLabel

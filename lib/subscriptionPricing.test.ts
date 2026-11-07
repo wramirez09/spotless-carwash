@@ -172,3 +172,43 @@ describe('getSubscriptionPricing', () => {
     ])
   })
 })
+
+describe('getSubscriptionPricing — live prices from Stripe', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    vi.unstubAllEnvs()
+    vi.doUnmock('stripe')
+    vi.doUnmock('./pricingStore')
+  })
+
+  it('reads monthly prices from keyed Stripe Prices and the "vs" figure from single tokens', async () => {
+    vi.stubEnv('DEV_STRIPE_SECRET_KEY', 'sk_test_fake')
+    vi.doMock('stripe', () => ({
+      default: class {
+        prices = {
+          list: async ({ lookup_keys }: { lookup_keys: string[] }) => ({
+            data: lookup_keys.includes('spotless_sub_weekly_12')
+              ? [{ id: 'price_w12', lookup_key: 'spotless_sub_weekly_12', unit_amount: 4200, product: 'prod_sub' }]
+              : [],
+          }),
+          retrieve: async () => null,
+        }
+      },
+    }))
+    vi.doMock('./pricingStore', () => ({
+      getPricingSnapshot: async () => ({
+        catalog: [{ kind: 'single', washValue: '12', cents: 1300 }],
+      }),
+    }))
+
+    const mod = await import('./subscriptionPricing')
+    const weekly = (await mod.getSubscriptionPricing()).plans.find((p) => p.id === 'weekly')!
+    const at12 = weekly.variants.find((v) => v.washValue === '12')!
+
+    expect(at12.price).toBe(4200) // from Stripe, not the computed $40
+    expect(at12.listPerToken).toBe(1300) // a $12 token currently sells for $13
+    expect(at12.savePerToken).toBe(1300 - 1050)
+    // A denomination with no single token on sale keeps the static list price.
+    expect(weekly.variants.find((v) => v.washValue === '8')!.listPerToken).toBe(800)
+  })
+})

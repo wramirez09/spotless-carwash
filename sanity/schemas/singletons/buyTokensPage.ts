@@ -87,7 +87,9 @@ export default defineType({
       name: 'modePackLabel',
       type: 'string',
       group: 'step1',
-      initialValue: '4-Pack · Save $5',
+      initialValue: 'Token packs · Save {discount}',
+      description:
+        'Any dollar amount here is replaced with the live pack discount from Stripe. Prefer {discount}.',
     }),
     defineField({
       name: 'modeSingleLabel',

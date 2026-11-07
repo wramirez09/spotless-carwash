@@ -3,6 +3,8 @@ import { faqs as fallbackFaqs, type FAQ } from '@/src/data/faq'
 import FAQPageSchema from '@/src/components/seo/FAQPageSchema'
 import BreadcrumbSchema from '@/src/components/seo/BreadcrumbSchema'
 import { sanityFetch } from '@/lib/sanityFetch'
+import { getCheckoutPricing } from '@/lib/stripePricing'
+import { fillFaqs, pricingFacts } from '@/lib/pricingCopy'
 
 const FAQ_QUERY = `{
   "page": *[_type == "faqPage"][0]{
@@ -24,9 +26,17 @@ const FALLBACK = {
 type FAQPageData = typeof FALLBACK
 
 async function loadFaq() {
-  const data = await sanityFetch<{ page?: Partial<FAQPageData>; faqs?: FAQ[] }>(FAQ_QUERY)
+  const [data, pricing] = await Promise.all([
+    sanityFetch<{ page?: Partial<FAQPageData>; faqs?: FAQ[] }>(FAQ_QUERY),
+    getCheckoutPricing(),
+  ])
   const page = { ...FALLBACK, ...(data?.page ?? {}) }
-  const faqs = data?.faqs?.length ? data.faqs : fallbackFaqs
+  // Token prices in answers come from Stripe (lib/pricingCopy.ts).
+  const faqs = fillFaqs(
+    data?.faqs?.length ? data.faqs : fallbackFaqs,
+    fallbackFaqs,
+    pricingFacts(pricing),
+  )
   return { page, faqs }
 }
 
@@ -48,7 +58,7 @@ export default async function Page() {
 
   return (
     <>
-      <FAQPageSchema />
+      <FAQPageSchema faqs={faqs} />
       <BreadcrumbSchema
         items={[
           { name: 'Home', path: '/' },

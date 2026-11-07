@@ -1,6 +1,9 @@
 import { sanityFetch } from '@/lib/sanityFetch'
 import { renderHighlight } from '@/lib/renderHighlight'
 import { packages as fallbackPackages, type Pkg, type WashColor } from '@/src/data/washes'
+import { getCheckoutPricing } from '@/lib/stripePricing'
+import { formatUSD, liveWashPriceCents, pricingFacts } from '@/lib/pricingCopy'
+import OfferCatalogSchema from '@/src/components/seo/OfferCatalogSchema'
 
 type WashesData = {
   eyebrow: string
@@ -131,16 +134,28 @@ function Card({ pkg }: { pkg: Pkg }) {
 }
 
 export default async function Washes() {
-  const data = await sanityFetch<{
-    section?: Partial<WashesData>
-    packages?: Pkg[]
-  }>(WASHES_QUERY)
+  const [data, pricing] = await Promise.all([
+    sanityFetch<{
+      section?: Partial<WashesData>
+      packages?: Pkg[]
+    }>(WASHES_QUERY),
+    getCheckoutPricing(),
+  ])
 
   const section = { ...WASHES_FALLBACK, ...(data?.section ?? {}) }
-  const packages: Pkg[] = data?.packages?.length ? data.packages : fallbackPackages
+  const cmsPackages: Pkg[] = data?.packages?.length ? data.packages : fallbackPackages
+  // A wash costs what one token of its value costs, and that price lives in
+  // Stripe. The CMS `priceNumber` names WHICH token (8, 9, 10, 12); the amount
+  // shown is Stripe's. A tier with no single token on sale keeps its CMS price.
+  const facts = pricingFacts(pricing)
+  const packages: Pkg[] = cmsPackages.map((pkg) => {
+    const cents = liveWashPriceCents(pkg.priceNumber, facts)
+    return cents == null ? pkg : { ...pkg, price: formatUSD(cents), priceNumber: cents / 100 }
+  })
 
   return (
     <section id="washes" className="py-16 md:py-24">
+      <OfferCatalogSchema packages={packages} packs={pricing.packs} />
       <div className="max-w-[1240px] mx-auto px-5 md:px-7">
         <div className="flex items-end justify-between gap-10 mb-10 md:mb-12 flex-wrap">
           <div>
