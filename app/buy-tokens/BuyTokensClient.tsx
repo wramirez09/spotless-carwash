@@ -4,14 +4,16 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { checkoutBodySchema, firstIssueMessage } from '@/lib/schemas'
 
-type PkgId = '8' | '9' | '10' | '12'
 type CouponBreakdownItem = {
   id: string
   label: string
   amountOffCents: number
 }
 type Pkg = {
-  id: PkgId
+  /** SKU id (the Stripe Product's lookup key) — sent to checkout as-is. */
+  id: string
+  /** Whole-dollar wash denomination, e.g. '12'. */
+  washValue: string
   tokens: number
   price: number // cents
   save: number // cents
@@ -23,7 +25,7 @@ type Pkg = {
 
 export type PricingProp = {
   packs: Pkg[]
-  singles: { id: PkgId; price: number }[]
+  singles: { id: string; washValue: string; price: number; label: string; featured?: boolean }[]
   packCouponAmountOff: number
   /** The seasonal sale in effect, or null outside every sale window. */
   activeSale: {
@@ -123,11 +125,30 @@ export default function BuyTokensClient({
    *  VERCEL_ENV itself. See lib/featureFlags. */
   showSubscribeLink: boolean
 }) {
-  const PACKAGES = pricing.packs
-  // Single-token purchase was removed; pack is the only purchase mode. The
-  // payload still carries `mode` so the checkout API contract is unchanged.
-  const mode: Mode = 'pack'
-  const [selectedId, setSelectedId] = useState<Pkg['id']>('12')
+  // Both lists come straight from the Stripe catalog, so whatever is set up in
+  // /admin/pricing is exactly what's offered here. Single tokens only appear
+  // when at least one is on sale.
+  const singleItems: Pkg[] = pricing.singles.map((s) => ({
+    id: s.id,
+    washValue: s.washValue,
+    tokens: 1,
+    price: s.price,
+    save: 0,
+    label: s.label,
+    perToken: s.price,
+    featured: s.featured,
+    coupons: [],
+  }))
+  const hasPacks = pricing.packs.length > 0
+  const hasSingles = singleItems.length > 0
+  const [mode, setMode] = useState<Mode>(hasPacks || !hasSingles ? 'pack' : 'single')
+  const PACKAGES = mode === 'single' ? singleItems : pricing.packs
+  const defaultIdFor = (items: Pkg[]) =>
+    (items.find((p) => p.featured) ?? items[items.length - 1])?.id ?? ''
+  const [selectedPackId, setSelectedPackId] = useState<string>(defaultIdFor(pricing.packs))
+  const [selectedSingleId, setSelectedSingleId] = useState<string>(defaultIdFor(singleItems))
+  const selectedId = mode === 'single' ? selectedSingleId : selectedPackId
+  const setSelectedId = mode === 'single' ? setSelectedSingleId : setSelectedPackId
   const [quantity, setQuantity] = useState<number>(1)
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
@@ -232,16 +253,27 @@ export default function BuyTokensClient({
     setShowSuggestions(false)
   }
 
-  const selected = PACKAGES.find((p) => p.id === selectedId)!
-  const washValue = parseInt(selected.id, 10)
-  const unitPrice = selected.price
-  const unitSavings = selected.save
-  const tokensPerUnit = selected.tokens
+  const selected: Pkg | undefined =
+    PACKAGES.find((p) => p.id === selectedId) ?? PACKAGES[0]
+  const washValue = selected ? parseInt(selected.washValue, 10) : 0
+  const unitPrice = selected?.price ?? 0
+  const unitSavings = selected?.save ?? 0
+  const tokensPerUnit = selected?.tokens ?? 1
   const subtotal = unitPrice * quantity
   const savings = unitSavings * quantity
-  const unitSingular = copy.packSingular
-  const unitPlural = copy.packPlural
+  const unitSingular = mode === 'single' ? copy.tokenSingular : copy.packSingular
+  const unitPlural = mode === 'single' ? copy.tokenPlural : copy.packPlural
   const perUnitPrice = Math.round(unitPrice / tokensPerUnit)
+  const tokensSuffixFor = (pkg: Pkg) =>
+    mode === 'single'
+      ? copy.packTokensSuffixSingle
+      : pkg.tokens === 4
+        ? copy.packTokensSuffix
+        : `wash · ${pkg.tokens}-pack`
+  const modePackLabel = copy.modePackLabel.replace(
+    '{discount}',
+    fmtWhole(pricing.packCouponAmountOff),
+  )
 
   const buttonLabel = useMemo(() => {
     if (submitting) return copy.submittingLabel
@@ -253,7 +285,7 @@ export default function BuyTokensClient({
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (submitting) return
+    if (submitting || !selected) return
     setErrored(false)
 
     const payload = {
@@ -342,6 +374,45 @@ export default function BuyTokensClient({
             <section>
               <StepHead num={copy.step1Number} kicker={copy.step1Kicker} title={copy.step1Title} />
 
+              {hasPacks && hasSingles && (
+                <div className="mb-4">
+                  <div className="text-[12px] font-bold tracking-[0.14em] uppercase text-[#5b6987] mb-2">
+                    {copy.modeHelper}
+                  </div>
+                  <div role="radiogroup" className="inline-flex rounded-full border-2 border-line bg-white p-1">
+                    {(
+                      [
+                        ['pack', modePackLabel],
+                        ['single', copy.modeSingleLabel],
+                      ] as const
+                    ).map(([m, label]) => (
+                      <button
+                        key={m}
+                        type="button"
+                        role="radio"
+                        aria-checked={mode === m}
+                        onClick={() => {
+                          setMode(m)
+                          setQuantity(1)
+                        }}
+                        className={
+                          'px-4 py-2 rounded-full text-[13px] font-extrabold transition ' +
+                          (mode === m ? 'bg-blue-500 text-white' : 'text-[#5b6987] hover:text-blue-500')
+                        }
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {PACKAGES.length === 0 && (
+                <p className="bg-white border border-line rounded-2xl p-5 text-[15px] text-[#5b6987]">
+                  Online token sales are paused right now. Call {copy.contactPhoneDisplay} to order.
+                </p>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {PACKAGES.map((pkg, idx) => {
                   const checked = pkg.id === selectedId
@@ -403,10 +474,10 @@ export default function BuyTokensClient({
                         </span>
                       </div>
                       <div className="display text-[44px] text-ink mt-2 leading-none">
-                        ${pkg.id}
+                        ${pkg.washValue}
                       </div>
                       <div className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#5b6987] mt-3">
-                        {copy.packTokensSuffix}
+                        {tokensSuffixFor(pkg)}
                       </div>
                       <div className="mt-4 pt-4 border-t border-dashed border-line flex flex-col items-start gap-2">
                         {chips.length > 0 && (
@@ -443,10 +514,10 @@ export default function BuyTokensClient({
               <div className="mt-5 bg-white border border-line rounded-2xl p-4 flex items-center justify-between gap-4">
                 <div>
                   <div className="font-extrabold text-[15px]">
-                    {copy.quantityHeading}
+                    {mode === 'single' ? copy.quantityHeadingSingle : copy.quantityHeading}
                   </div>
                   <div className="text-[13px] text-[#5b6987] mt-0.5">
-                    {copy.quantitySubtext}
+                    {mode === 'single' ? copy.quantitySubtextSingle : copy.quantitySubtext}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -465,7 +536,7 @@ export default function BuyTokensClient({
                     max={20}
                     value={quantity}
                     onChange={(e) => setQuantity(clampQty(parseInt(e.target.value, 10) || 1))}
-                    aria-label={copy.quantityInputLabel}
+                    aria-label={mode === 'single' ? copy.quantityInputLabelSingle : copy.quantityInputLabel}
                     className="w-16 px-2 py-2 text-center text-[16px] font-extrabold border-[1.5px] border-line rounded-xl text-ink [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <button
@@ -740,7 +811,7 @@ export default function BuyTokensClient({
                 <div className="flex items-start justify-between gap-3 pb-4 border-b border-white/15">
                   <div>
                     <div className="font-extrabold text-[16px]">
-                      {selected.label}
+                      {selected?.label ?? '—'}
                     </div>
                     <div className="text-[13px] text-blue-200 mt-0.5">
                       {fmt(perUnitPrice)} {copy.perTokenSuffix} · ×{quantity}{' '}
@@ -754,7 +825,7 @@ export default function BuyTokensClient({
 
                 {savings > 0 && (
                   <div className="py-3 border-b border-white/15 text-[14px] space-y-2">
-                    {selected.coupons.map((c) => (
+                    {(selected?.coupons ?? []).map((c) => (
                       // id + label: two chips can share an id if a seasonal
                       // coupon ever degrades to the base one.
                       <div
@@ -793,7 +864,7 @@ export default function BuyTokensClient({
 
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || !selected}
                   className="mt-6 w-full bg-yellow-400 text-blue-700 px-6 py-4 rounded-2xl border-2 border-yellow-400 font-extrabold flex items-center justify-center gap-2.5 hover:bg-white hover:border-white transition disabled:opacity-70 disabled:cursor-wait"
                 >
                   <LockIcon />

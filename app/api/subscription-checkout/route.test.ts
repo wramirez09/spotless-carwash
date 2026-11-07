@@ -26,7 +26,14 @@ vi.mock('@/lib/subscriptionPricing', async () => {
   const actual = await vi.importActual<typeof import('@/lib/subscriptionPricing')>(
     '@/lib/subscriptionPricing',
   )
-  return { ...actual, subscriptionPriceId }
+  // The route asks the async resolver (Stripe lookup key first, env second);
+  // routing it through the sync stub keeps each test's price switch in one place.
+  return {
+    ...actual,
+    subscriptionPriceId,
+    resolveSubscriptionPriceId: async (plan: string, washValue: string) =>
+      subscriptionPriceId(plan, washValue),
+  }
 })
 
 import { POST } from './route'

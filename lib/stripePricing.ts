@@ -12,11 +12,13 @@ import {
   getSinglePriceId,
 } from './stripeEnv'
 import Stripe from 'stripe'
-import { getPricingSnapshot } from './pricingStore'
+import { SANDBOX_PRICE_IDS, getPricingSnapshot } from './pricingStore'
 import {
   discountMetadata,
   pickActiveSale,
   saleEndLabel,
+  skuLabel,
+  type CatalogSku,
   type SaleRecord,
 } from './pricing/model'
 
@@ -29,17 +31,17 @@ export type { SeasonalSale }
 // on Vercel Production the getters throw before the `??` fallback applies.
 
 export const PACK_PRICES: Record<'8' | '9' | '10' | '12', string> = {
-  '8': getPackPriceId('8') ?? 'price_1TYbXTGhjWB5e4mpkuHG1Ckd',
-  '9': getPackPriceId('9') ?? 'price_1TYbXcGhjWB5e4mpodKcrTAG',
-  '10': getPackPriceId('10') ?? 'price_1TYbXkGhjWB5e4mpZnBQM9PI',
-  '12': getPackPriceId('12') ?? 'price_1TYbXwGhjWB5e4mpjvVl1Oqf',
+  '8': getPackPriceId('8') ?? SANDBOX_PRICE_IDS.pack['8'],
+  '9': getPackPriceId('9') ?? SANDBOX_PRICE_IDS.pack['9'],
+  '10': getPackPriceId('10') ?? SANDBOX_PRICE_IDS.pack['10'],
+  '12': getPackPriceId('12') ?? SANDBOX_PRICE_IDS.pack['12'],
 }
 
 export const SINGLE_PRICES: Record<'8' | '9' | '10' | '12', string> = {
-  '8': getSinglePriceId('8') ?? 'price_1TYEItGhjWB5e4mpWsLAcRMJ',
-  '9': getSinglePriceId('9') ?? 'price_1TYEJ3GhjWB5e4mpfgqpzfql',
-  '10': getSinglePriceId('10') ?? 'price_1TYEJBGhjWB5e4mpEIEfFyrT',
-  '12': getSinglePriceId('12') ?? 'price_1TYEJKGhjWB5e4mpdpMew8qJ',
+  '8': getSinglePriceId('8') ?? SANDBOX_PRICE_IDS.single['8'],
+  '9': getSinglePriceId('9') ?? SANDBOX_PRICE_IDS.single['9'],
+  '10': getSinglePriceId('10') ?? SANDBOX_PRICE_IDS.single['10'],
+  '12': getSinglePriceId('12') ?? SANDBOX_PRICE_IDS.single['12'],
 }
 
 // Stripe Checkout only allows one coupon per session, so the seasonal-sale
@@ -89,6 +91,8 @@ const BUNDLE_BASE_DISCOUNT_FALLBACK_CENTS = 500
 export const WASH_VALUES = ['8', '9', '10', '12'] as const
 export type WashValue = (typeof WASH_VALUES)[number]
 
+export type { CatalogSku }
+
 export type CouponBreakdownItem = {
   id: string
   label: string
@@ -96,7 +100,10 @@ export type CouponBreakdownItem = {
 }
 
 export type PackPricing = {
-  id: WashValue
+  /** The SKU id (Stripe Product lookup key) — what checkout is sent. */
+  id: string
+  /** Whole-dollar wash denomination, e.g. '12'. */
+  washValue: string
   tokens: number
   price: number // list price cents
   save: number // total discount actually applied at checkout, cents
@@ -108,8 +115,12 @@ export type PackPricing = {
 }
 
 export type SinglePricing = {
-  id: WashValue
+  /** The SKU id (Stripe Product lookup key). */
+  id: string
+  washValue: string
   price: number // cents
+  label: string
+  featured?: boolean
 }
 
 /** Serializable slice of the active sale, safe to pass to client components. */
@@ -188,8 +199,8 @@ function toResolvedSale(
 }
 
 export type CheckoutConfig = {
-  packPriceIds: Record<WashValue, string>
-  singlePriceIds: Record<WashValue, string>
+  /** Every one-time SKU currently for sale, display order. */
+  catalog: CatalogSku[]
   /** The one coupon Stripe Checkout will actually apply to a pack. */
   packCouponId: string
   sale: ResolvedSale | null
@@ -222,18 +233,8 @@ export async function resolveCheckoutConfig(
     ? toResolvedSale(record, baseCouponId, snapshot.settings.baseDiscountCents)
     : null
 
-  const idsFor = (kind: 'pack' | 'single'): Record<WashValue, string> =>
-    Object.fromEntries(
-      WASH_VALUES.map((v) => [
-        v,
-        snapshot.prices[kind][v].stripePriceId ||
-          (kind === 'pack' ? PACK_PRICES[v] : SINGLE_PRICES[v]),
-      ]),
-    ) as Record<WashValue, string>
-
   return {
-    packPriceIds: idsFor('pack'),
-    singlePriceIds: idsFor('single'),
+    catalog: snapshot.catalog.filter((s) => Boolean(s.stripePriceId)),
     packCouponId: sale ? sale.couponId : baseCouponId,
     sale,
     baseDiscountCents: snapshot.settings.baseDiscountCents,
@@ -326,56 +327,90 @@ export async function getCheckoutPricing(
   const stripe = getStripe()
 
   if (!stripe) {
-    return fallbackPricing(sale, baseDiscountCents, baseCouponId)
+    return fallbackPricing(sale, baseDiscountCents, baseCouponId, config.catalog)
   }
 
   try {
-    const packIds = WASH_VALUES.map((id) => ({ id, priceId: config.packPriceIds[id] }))
-    const singleIds = WASH_VALUES.map((id) => ({ id, priceId: config.singlePriceIds[id] }))
-
-    const [packPrices, singlePrices, coupon] = await Promise.all([
-      Promise.all(packIds.map((p) => stripe.prices.retrieve(p.priceId))),
-      Promise.all(singleIds.map((p) => stripe.prices.retrieve(p.priceId))),
+    // SKUs read from Stripe's catalog already carry their amount. Only the
+    // legacy, never-adopted ones (priced from a bare env-var Price ID) need a
+    // lookup — so a fully adopted catalog costs no extra round-trips here.
+    const [amounts, coupon] = await Promise.all([
+      Promise.all(
+        config.catalog.map(async (s) =>
+          s.cents != null && s.source === 'stripe'
+            ? s.cents
+            : ((await stripe.prices.retrieve(s.stripePriceId)).unit_amount ??
+              legacyFallbackCents(s)),
+        ),
+      ),
       stripe.coupons.retrieve(config.packCouponId).catch(() => null),
     ])
 
-    const packs: PackPricing[] = packIds.map((p, i) => {
-      const stripePrice = packPrices[i]
-      const cents = stripePrice.unit_amount ?? PACK_FALLBACK_CENTS[p.id]
-      const tokens = 4
-      const save = couponAmountOffFor(coupon, cents)
-      return {
-        id: p.id,
-        tokens,
+    const priced = config.catalog.map((s, i) => ({ sku: s, cents: amounts[i] }))
+    return buildPricing(priced, sale, baseDiscountCents, baseCouponId, (cents) =>
+      couponAmountOffFor(coupon, cents),
+    )
+  } catch {
+    return fallbackPricing(sale, baseDiscountCents, baseCouponId, config.catalog)
+  }
+}
+
+function legacyFallbackCents(s: CatalogSku): number | null {
+  const v = s.washValue
+  const singles: Record<string, number> = SINGLE_FALLBACK_CENTS
+  const packs: Record<string, number> = PACK_FALLBACK_CENTS
+  if (s.kind === 'single') return singles[v] ?? null
+  if (s.tokens === 4) return packs[v] ?? null
+  return null
+}
+
+function buildPricing(
+  priced: { sku: CatalogSku; cents: number | null }[],
+  sale: ResolvedSale | null,
+  baseDiscountCents: number,
+  baseCouponId: string,
+  saveFor: (cents: number) => number,
+): CheckoutPricing {
+  const packs: PackPricing[] = []
+  const singles: SinglePricing[] = []
+  for (const { sku, cents } of priced) {
+    // A SKU whose amount is unknowable can't be honestly advertised.
+    if (cents == null) continue
+    if (sku.kind === 'pack') {
+      const save = saveFor(cents)
+      packs.push({
+        id: sku.sku,
+        washValue: sku.washValue,
+        tokens: sku.tokens,
         price: cents,
         save,
-        perToken: Math.round(cents / tokens),
-        label: `$${p.id} wash · 4-pack`,
-        featured: p.id === '12',
+        perToken: Math.round(cents / sku.tokens),
+        label: skuLabel('pack', sku.washValue, sku.tokens),
+        featured: sku.featured,
         coupons: splitCouponBreakdown(save, sale, baseDiscountCents, baseCouponId),
-      }
-    })
-
-    const packCouponAmountOff = packs[0]?.save ?? 0
-
-    const singles: SinglePricing[] = singleIds.map((p, i) => {
-      const stripePrice = singlePrices[i]
-      return {
-        id: p.id,
-        price: stripePrice.unit_amount ?? SINGLE_FALLBACK_CENTS[p.id],
-      }
-    })
-
-    return { packs, singles, packCouponAmountOff, activeSale: toSaleInfo(sale) }
-  } catch {
-    return fallbackPricing(sale, baseDiscountCents, baseCouponId)
+      })
+    } else {
+      singles.push({
+        id: sku.sku,
+        washValue: sku.washValue,
+        price: cents,
+        label: skuLabel('single', sku.washValue, 1),
+        featured: sku.featured,
+      })
+    }
   }
+  // The headline "save $X per pack". Every pack gets the same fixed-amount
+  // coupon, so the largest saving is the coupon's face value unless every pack
+  // is cheaper than it.
+  const packCouponAmountOff = packs.reduce((m, p) => Math.max(m, p.save), 0)
+  return { packs, singles, packCouponAmountOff, activeSale: toSaleInfo(sale) }
 }
 
 function fallbackPricing(
   sale: ResolvedSale | null,
   baseDiscountCents = BUNDLE_BASE_DISCOUNT_FALLBACK_CENTS,
   baseCouponId = PACK_DISCOUNT_COUPON_ID,
+  catalog: CatalogSku[] = [],
 ): CheckoutPricing {
   // With Stripe unreachable the coupon's real amount is unknown, so the
   // displayed saving is reconstructed from config: base alone outside a sale,
@@ -383,30 +418,15 @@ function fallbackPricing(
   const saveCents = sale
     ? baseDiscountCents + sale.extraDiscountCents
     : baseDiscountCents
-  const packs: PackPricing[] = (Object.keys(PACK_FALLBACK_CENTS) as WashValue[]).map(
-    (id) => {
-      const cents = PACK_FALLBACK_CENTS[id]
-      const tokens = 4
-      const save = Math.min(cents, saveCents)
-      return {
-        id,
-        tokens,
-        price: cents,
-        save,
-        perToken: Math.round(cents / tokens),
-        label: `$${id} wash · 4-pack`,
-        featured: id === '12',
-        coupons: splitCouponBreakdown(save, sale, baseDiscountCents, baseCouponId),
-      }
-    },
+
+  // The catalog still says WHAT is for sale (the store degrades it to the
+  // deploy-config SKUs when Stripe can't be listed); only the amounts are
+  // reconstructed. An empty catalog stays empty — an admin who removed
+  // everything must not see the old eight come back.
+  const priced = catalog.map((s) => ({ sku: s, cents: s.cents ?? legacyFallbackCents(s) }))
+
+  const pricing = buildPricing(priced, sale, baseDiscountCents, baseCouponId, (cents) =>
+    Math.min(cents, saveCents),
   )
-  const singles: SinglePricing[] = (Object.keys(SINGLE_FALLBACK_CENTS) as WashValue[]).map(
-    (id) => ({ id, price: SINGLE_FALLBACK_CENTS[id] }),
-  )
-  return {
-    packs,
-    singles,
-    packCouponAmountOff: saveCents,
-    activeSale: toSaleInfo(sale),
-  }
+  return { ...pricing, packCouponAmountOff: saveCents }
 }

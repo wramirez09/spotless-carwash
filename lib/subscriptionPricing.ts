@@ -1,6 +1,8 @@
 import 'server-only'
 import Stripe from 'stripe'
 import { getStripeSecretKey, getSubscriptionPriceId } from './stripeEnv'
+import { loadSubscriptionPrices } from './stripeCatalog'
+import { subscriptionLookupKey } from './pricing/model'
 
 // Wash Token Subscription pricing.
 //
@@ -192,40 +194,104 @@ function getStripe(): Stripe | null {
   return stripeSingleton
 }
 
+/** Map key for one plan × denomination. */
+export function subscriptionVariantKey(
+  plan: SubscriptionPlanId,
+  washValue: SubscriptionWashValue,
+): string {
+  return `${plan}:${washValue}`
+}
+
+export type ResolvedSubscriptionPrice = {
+  priceId: string
+  /** Null when only an env-var Price ID is known and it couldn't be read. */
+  cents: number | null
+  /** 'stripe' — keyed by lookup key (set from /admin/pricing); 'env' — deploy config. */
+  source: 'stripe' | 'env'
+}
+
 /**
- * Live plan pricing, read from the Stripe Price objects so the page can never
- * advertise a number that differs from what the customer is charged. Any
- * variant whose price is unconfigured or unreachable falls back to the computed
- * amount — same degrade-don't-fail contract as getCheckoutPricing.
+ * The recurring Price each plan × denomination currently sells at.
+ *
+ * Stripe first: a Price carrying the variant's `lookup_key` (moved there by
+ * /admin/pricing) is authoritative. A variant never priced that way falls
+ * back to its env-var Price ID, read from Stripe for its amount. Variants with
+ * neither are simply absent — the caller decides whether that means "show the
+ * computed price" (display) or "not configured" (checkout).
+ */
+export async function resolveSubscriptionPrices(): Promise<
+  Map<string, ResolvedSubscriptionPrice>
+> {
+  const out = new Map<string, ResolvedSubscriptionPrice>()
+  const stripe = getStripe()
+
+  const variants = SUBSCRIPTION_PLAN_IDS.flatMap((plan) =>
+    SUBSCRIPTION_WASH_VALUES.map((washValue) => ({ plan, washValue })),
+  )
+
+  const keyed = stripe
+    ? await loadSubscriptionPrices(
+        stripe,
+        variants.map((v) => subscriptionLookupKey(v.plan, v.washValue)),
+      )
+    : null
+
+  await Promise.all(
+    variants.map(async ({ plan, washValue }) => {
+      const key = subscriptionVariantKey(plan, washValue)
+      const hit = keyed?.get(subscriptionLookupKey(plan, washValue))
+      if (hit) {
+        out.set(key, { priceId: hit.priceId, cents: hit.cents, source: 'stripe' })
+        return
+      }
+      let envId: string | undefined
+      try {
+        envId = subscriptionPriceId(plan, washValue)
+      } catch {
+        // Throws on Vercel Production when the PROD_* var is unset.
+        envId = undefined
+      }
+      if (!envId) return
+      let cents: number | null = null
+      if (stripe) {
+        const price = await stripe.prices.retrieve(envId).catch(() => null)
+        // An archived env Price can't be sold — treat it as unconfigured.
+        if (price && price.active === false) return
+        cents = price?.unit_amount ?? null
+      }
+      out.set(key, { priceId: envId, cents, source: 'env' })
+    }),
+  )
+  return out
+}
+
+/** The Price ID checkout should use for a variant, or undefined. */
+export async function resolveSubscriptionPriceId(
+  plan: SubscriptionPlanId,
+  washValue: SubscriptionWashValue,
+): Promise<string | undefined> {
+  const resolved = await resolveSubscriptionPrices()
+  return resolved.get(subscriptionVariantKey(plan, washValue))?.priceId
+}
+
+/**
+ * Live plan pricing, read from Stripe so the page can never advertise a
+ * number that differs from what the customer is charged. Any variant whose
+ * price is unconfigured or unreachable falls back to the computed amount —
+ * same degrade-don't-fail contract as getCheckoutPricing.
  */
 export async function getSubscriptionPricing(): Promise<SubscriptionPricing> {
-  const stripe = getStripe()
-  if (!stripe) return fallbackSubscriptionPricing()
-
+  if (!getStripe()) return fallbackSubscriptionPricing()
   try {
-    const plans = await Promise.all(
-      SUBSCRIPTION_PLAN_IDS.map(async (id) => {
-        const entries = await Promise.all(
-          SUBSCRIPTION_WASH_VALUES.map(async (w) => {
-            let priceId: string | undefined
-            try {
-              priceId = subscriptionPriceId(id, w)
-            } catch {
-              // Throws on Vercel Production when the PROD_* var is unset; the
-              // computed fallback keeps the page rendering.
-              return [w, undefined] as const
-            }
-            if (!priceId) return [w, undefined] as const
-            const price = await stripe.prices.retrieve(priceId)
-            return [w, price.unit_amount ?? undefined] as const
-          }),
-        )
-        const overrides = Object.fromEntries(
-          entries.filter(([, cents]) => cents != null),
-        ) as Partial<Record<SubscriptionWashValue, number>>
-        return buildPlan(id, overrides)
-      }),
-    )
+    const resolved = await resolveSubscriptionPrices()
+    const plans = SUBSCRIPTION_PLAN_IDS.map((id) => {
+      const overrides: Partial<Record<SubscriptionWashValue, number>> = {}
+      for (const w of SUBSCRIPTION_WASH_VALUES) {
+        const cents = resolved.get(subscriptionVariantKey(id, w))?.cents
+        if (cents != null) overrides[w] = cents
+      }
+      return buildPlan(id, overrides)
+    })
     return { plans }
   } catch {
     return fallbackSubscriptionPricing()

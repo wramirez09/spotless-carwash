@@ -13,7 +13,10 @@ import {
   pickActiveSale,
   saleEndLabel,
   saleState,
+  skuLabel,
   slugify,
+  sortCatalog,
+  validateSkuInput,
   type SaleRecord,
 } from './model'
 
@@ -372,5 +375,72 @@ describe('priceSaveState', () => {
     const s = priceSaveState({ ...base, typedCents: 1 })
     expect(s.canSave).toBe(true)
     expect(s.reason).toBeNull()
+  })
+})
+
+describe('validateSkuInput', () => {
+  const ok = { kind: 'pack', washValue: '12', tokens: 10, cents: 11000 }
+
+  it('accepts a sensible new pack', () => {
+    expect(validateSkuInput(ok)).toBeNull()
+  })
+
+  it('accepts a single token regardless of the token field', () => {
+    expect(validateSkuInput({ ...ok, kind: 'single', tokens: 0, cents: 1500 })).toBeNull()
+  })
+
+  it.each([
+    [{ kind: 'bundle' }, /pack or a single/],
+    [{ washValue: '0' }, /whole-dollar/],
+    [{ washValue: '012' }, /whole-dollar/],
+    [{ washValue: '12.50' }, /whole-dollar/],
+    [{ washValue: '101' }, /between \$1 and \$100/],
+    [{ tokens: 1 }, /between 2 and 50/],
+    [{ tokens: 51 }, /between 2 and 50/],
+    [{ tokens: 4.5 }, /between 2 and 50/],
+    [{ cents: 0 }, /greater than/],
+    [{ cents: null }, /greater than/],
+    [{ cents: 50_001 }, /typo/],
+  ])('rejects %o', (patch, message) => {
+    expect(validateSkuInput({ ...ok, ...patch } as typeof ok)).toMatch(message)
+  })
+})
+
+describe('sortCatalog', () => {
+  const s = (kind: 'pack' | 'single', washValue: string, tokens: number, sortOrder = 100) => ({
+    kind,
+    washValue,
+    tokens,
+    sortOrder,
+  })
+
+  it('puts packs first, then orders by denomination numerically and size', () => {
+    const sorted = sortCatalog([
+      s('single', '8', 1),
+      s('pack', '12', 4),
+      s('pack', '9', 10),
+      s('pack', '9', 4),
+      s('pack', '10', 4),
+    ])
+    expect(sorted.map((x) => `${x.kind}-${x.washValue}-${x.tokens}`)).toEqual([
+      'pack-9-4',
+      'pack-9-10',
+      'pack-10-4',
+      'pack-12-4',
+      'single-8-1',
+    ])
+  })
+
+  it('lets an explicit sort order win over denomination', () => {
+    const sorted = sortCatalog([s('pack', '8', 4), s('pack', '12', 4, 1)])
+    expect(sorted[0].washValue).toBe('12')
+  })
+})
+
+describe('skuLabel', () => {
+  it('names packs by size and singles as singles', () => {
+    expect(skuLabel('pack', '12', 4)).toBe('$12 wash · 4-pack')
+    expect(skuLabel('pack', '9', 10)).toBe('$9 wash · 10-pack')
+    expect(skuLabel('single', '8', 1)).toBe('$8 wash · single')
   })
 })

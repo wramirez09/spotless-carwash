@@ -6,7 +6,7 @@ import {
   getSubscriptionVariant,
   isSubscriptionPlanId,
   isSubscriptionWashValue,
-  subscriptionPriceId,
+  resolveSubscriptionPriceId,
 } from '@/lib/subscriptionPricing'
 import { firstIssueMessage, subscriptionCheckoutBodySchema } from '@/lib/schemas'
 
@@ -64,7 +64,8 @@ export async function POST(req: Request) {
 
   let priceId: string | undefined
   try {
-    priceId = subscriptionPriceId(plan.id, variant.washValue)
+    // Stripe first (a Price keyed from /admin/pricing), then the env var.
+    priceId = await resolveSubscriptionPriceId(plan.id, variant.washValue)
   } catch (err) {
     // getSubscriptionPriceId throws on Vercel Production when the PROD_* var is
     // unset. Surface it as a controlled 500 rather than an unhandled crash.

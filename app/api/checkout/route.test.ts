@@ -40,20 +40,32 @@ vi.mock('@/lib/stripeEnv', () => ({ getStripeSecretKey }))
 // whether a sale is running.
 const resolveSpy = vi.hoisted(() => ({ calls: [] as unknown[][] }))
 
+// The Stripe catalog the route resolves a SKU against. Mirrors what
+// pricingStore builds: the original eight plus whatever an admin added.
+const catalogMock = vi.hoisted(() => {
+  const sku = (kind: 'pack' | 'single', v: string, tokens: number, key?: string) => ({
+    sku: key ?? `spotless_${kind}_${v}`,
+    kind,
+    washValue: v,
+    tokens,
+    cents: null,
+    stripePriceId: key ? `price_${key}` : `price_${kind}_${v}`,
+    stripeProductId: null,
+    featured: false,
+    sortOrder: 100,
+    source: 'stripe',
+  })
+  const base = () => [
+    ...['8', '9', '10', '12'].map((v) => sku('pack', v, 4)),
+    ...['8', '9', '10', '12'].map((v) => sku('single', v, 1)),
+    sku('pack', '12', 10, 'spotless_pack_12_x10'),
+  ]
+  return { sku, base, items: base() }
+})
+
 vi.mock('@/lib/stripePricing', () => ({
   resolveCheckoutConfig: async (...args: unknown[]) => (resolveSpy.calls.push(args), {
-    packPriceIds: {
-      '8': 'price_pack_8',
-      '9': 'price_pack_9',
-      '10': 'price_pack_10',
-      '12': 'price_pack_12',
-    },
-    singlePriceIds: {
-      '8': 'price_single_8',
-      '9': 'price_single_9',
-      '10': 'price_single_10',
-      '12': 'price_single_12',
-    },
+    catalog: catalogMock.items,
     packCouponId: 'coupon_test',
     sale: getActiveSeasonalSale(),
     baseDiscountCents: 500,
@@ -133,6 +145,7 @@ beforeEach(() => {
   couponsCreate.mockReset().mockImplementation(async (params: { id: string }) => params)
   getStripeSecretKey.mockReturnValue('sk_test_fake')
   getActiveSeasonalSale.mockReturnValue(null)
+  catalogMock.items = catalogMock.base()
 })
 
 afterEach(() => {
@@ -161,16 +174,42 @@ describe('POST /api/checkout — validation', () => {
     expect(json.error).toBe('Invalid JSON')
   })
 
-  it('returns 400 on a bad pack package', async () => {
-    const { res, json } = await callPost({ ...VALID_PACK, package: '7' })
+  it('returns 400 on a malformed pack package', async () => {
+    const { res, json } = await callPost({ ...VALID_PACK, package: 'free-stuff' })
     expect(res.status).toBe(400)
     expect(json.error).toBe('Bad package')
   })
 
-  it('returns 400 on a bad single wash value', async () => {
-    const { res, json } = await callPost({ ...VALID_SINGLE, washValue: 99 })
+  it('returns 400 on a malformed single wash value', async () => {
+    const { res, json } = await callPost({ ...VALID_SINGLE, washValue: 'abc' })
     expect(res.status).toBe(400)
     expect(json.error).toBe('Bad wash value')
+  })
+
+  it('refuses a pack id for a single-token checkout', async () => {
+    const { res, json } = await callPost({ ...VALID_SINGLE, package: 'spotless_pack_12' })
+    expect(res.status).toBe(400)
+    expect(json.error).toBe('Bad wash value')
+  })
+
+  it('refuses a denomination that is not in the Stripe catalog', async () => {
+    const { res, json } = await callPost({ ...VALID_PACK, package: '7' })
+    expect(res.status).toBe(400)
+    expect(json.error).toMatch(/no longer available/)
+    expect(sessionsCreate).not.toHaveBeenCalled()
+  })
+
+  it('refuses a single denomination that is not in the Stripe catalog', async () => {
+    const { res, json } = await callPost({ ...VALID_SINGLE, washValue: 99 })
+    expect(res.status).toBe(400)
+    expect(json.error).toMatch(/no longer available/)
+  })
+
+  it('refuses a SKU deleted since the page was rendered', async () => {
+    catalogMock.items = catalogMock.items.filter((s) => s.sku !== 'spotless_pack_12')
+    const { res } = await callPost({ ...VALID_PACK, package: 'spotless_pack_12' })
+    expect(res.status).toBe(400)
+    expect(sessionsCreate).not.toHaveBeenCalled()
   })
 
   it('returns 400 on an invalid email', async () => {
@@ -233,6 +272,28 @@ describe('POST /api/checkout — token-count metadata (091d5fa)', () => {
     expect(metadata.package_size).toBe('4')
     expect(metadata.wash_value).toBe('12')
     expect(metadata.mode).toBe('pack')
+  })
+
+  it('charges an admin-created pack size at its own Price and token count', async () => {
+    await callPost({ ...VALID_PACK, package: 'spotless_pack_12_x10', quantity: 1 })
+    const session = lastSession()
+    expect(session.line_items).toEqual([{ price: 'price_spotless_pack_12_x10', quantity: 1 }])
+    expect(session.metadata.package_size).toBe('10')
+    expect(session.metadata.wash_value).toBe('12')
+    expect(session.metadata.sku).toBe('spotless_pack_12_x10')
+    // Every pack gets the bundle coupon, whatever its size.
+    expect(session.discounts).toEqual([{ coupon: 'coupon_test' }])
+  })
+
+  it('accepts the SKU id form the storefront now sends', async () => {
+    await callPost({ ...VALID_PACK, package: 'spotless_pack_9', quantity: 1 })
+    expect(lastSession().line_items).toEqual([{ price: 'price_pack_9', quantity: 1 }])
+  })
+
+  it('accepts a single-token SKU id', async () => {
+    await callPost({ ...VALID_SINGLE, package: 'spotless_single_12', washValue: undefined })
+    expect(lastSession().line_items).toEqual([{ price: 'price_single_12', quantity: 1 }])
+    expect(lastSession().metadata.package_size).toBe('1')
   })
 
   it('sets package_size to 1 for a single', async () => {

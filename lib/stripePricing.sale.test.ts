@@ -80,7 +80,7 @@ describe('Labor Day sale — customer-facing prices', () => {
   it('charges Joe\'s published sale prices inside the window', async () => {
     const pricing = await getCheckoutPricing(INSIDE_WINDOW)
     const actual = Object.fromEntries(
-      pricing.packs.map((p) => [p.id, finalCents(p)]),
+      pricing.packs.map((p) => [p.washValue, finalCents(p)]),
     )
     expect(actual).toEqual(SALE_PRICE)
   })
@@ -88,7 +88,7 @@ describe('Labor Day sale — customer-facing prices', () => {
   it('charges the everyday prices outside the window', async () => {
     const pricing = await getCheckoutPricing(OUTSIDE_WINDOW)
     const actual = Object.fromEntries(
-      pricing.packs.map((p) => [p.id, finalCents(p)]),
+      pricing.packs.map((p) => [p.washValue, finalCents(p)]),
     )
     expect(actual).toEqual(NORMAL_PRICE)
   })
@@ -97,7 +97,7 @@ describe('Labor Day sale — customer-facing prices', () => {
     const pricing = await getCheckoutPricing(INSIDE_WINDOW)
     for (const pack of pricing.packs) {
       expect(pack.save).toBe(1000)
-      expect(pack.price).toBe(LIST[pack.id])
+      expect(pack.price).toBe(LIST[pack.washValue as keyof typeof LIST])
     }
   })
 
@@ -120,17 +120,17 @@ describe('Labor Day sale — customer-facing prices', () => {
 
   it('holds the sale price at the last second of the window', async () => {
     const pricing = await getCheckoutPricing(LABOR_DAY_SALE_END_MS)
-    expect(finalCents(pricing.packs.find((p) => p.id === '12')!)).toBe(3800)
+    expect(finalCents(pricing.packs.find((p) => p.washValue === '12')!)).toBe(3800)
   })
 
   it('drops back to the everyday price one millisecond later', async () => {
     const pricing = await getCheckoutPricing(LABOR_DAY_SALE_END_MS + 1)
-    expect(finalCents(pricing.packs.find((p) => p.id === '12')!)).toBe(4300)
+    expect(finalCents(pricing.packs.find((p) => p.washValue === '12')!)).toBe(4300)
   })
 
   it('leaves single-token prices untouched by the sale', async () => {
     const pricing = await getCheckoutPricing(INSIDE_WINDOW)
-    const actual = Object.fromEntries(pricing.singles.map((s) => [s.id, s.price]))
+    const actual = Object.fromEntries(pricing.singles.map((s) => [s.washValue, s.price]))
     expect(actual).toEqual(SINGLE)
   })
 })
@@ -174,7 +174,7 @@ describe('Labor Day sale — misconfigured coupon regressions', () => {
   it('a $5 seasonal coupon does not produce the advertised sale price', async () => {
     stubCoupons({ labourDay: 500 })
     const pricing = await getCheckoutPricing(INSIDE_WINDOW)
-    const twelve = pricing.packs.find((p) => p.id === '12')!
+    const twelve = pricing.packs.find((p) => p.washValue === '12')!
     expect(finalCents(twelve)).toBe(NORMAL_PRICE['12'])
     expect(finalCents(twelve)).not.toBe(SALE_PRICE['12'])
   })
@@ -198,7 +198,7 @@ describe('Labor Day sale — misconfigured coupon regressions', () => {
     // Checkout must keep working at $5 rather than erroring out.
     getSeasonalCouponId.mockReturnValue(undefined)
     const pricing = await getCheckoutPricing(INSIDE_WINDOW)
-    const twelve = pricing.packs.find((p) => p.id === '12')!
+    const twelve = pricing.packs.find((p) => p.washValue === '12')!
     expect(finalCents(twelve)).toBe(NORMAL_PRICE['12'])
     expect(pricing.activeSale?.id).toBe('labor-day-2026')
   })

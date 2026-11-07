@@ -1,26 +1,26 @@
 import type { Metadata } from 'next'
 import { getSessionUser } from '@/lib/supabase/authServer'
+import { getPricingSnapshot, listAllSales } from '@/lib/pricingStore'
 import {
-  getPricingSnapshot,
-  listAllSales,
-  listCatalogPrices,
-} from '@/lib/pricingStore'
-import {
-  PRICE_KINDS,
-  WASH_VALUES,
   couponDrift,
   formatCents,
   isProvisioned,
   pickActiveSale,
   saleEndLabel,
   saleState,
-  type PriceKind,
-  type WashValue,
 } from '@/lib/pricing/model'
 import { formatChicagoAdmin, toChicagoLocalInput } from '@/lib/pricing/time'
 import { getCheckoutPricing } from '@/lib/stripePricing'
+import {
+  SUBSCRIPTION_PLAN_IDS,
+  SUBSCRIPTION_WASH_VALUES,
+  fallbackSubscriptionPricing,
+  resolveSubscriptionPrices,
+  subscriptionVariantKey,
+} from '@/lib/subscriptionPricing'
 import { signOut } from '../login/actions'
 import PriceGrid, { type PriceRowView } from './PriceGrid'
+import SubscriptionPriceGrid, { type SubscriptionPriceView } from './SubscriptionPriceGrid'
 import BundleDiscountCard from './BundleDiscountCard'
 import SalesManager, { type SaleView } from './SalesManager'
 
@@ -39,46 +39,56 @@ export default async function PricingAdminPage() {
   // reading it here means this screen shows the prices customers are actually
   // being charged — including SKUs still priced from the deploy config, whose
   // amounts live only in Stripe.
-  const [snapshot, sales, catalog, pricing, user] = await Promise.all([
+  const [snapshot, sales, pricing, subPrices, user] = await Promise.all([
     // Always a fresh read here. The cache is per serverless instance, so the
     // re-render after a save can land on an instance that still holds the old
     // snapshot — which would show the admin the price they just replaced.
     getPricingSnapshot({ fresh: true }),
     listAllSales(),
-    listCatalogPrices(),
     getCheckoutPricing(),
+    resolveSubscriptionPrices(),
     getSessionUser(),
   ])
 
-  const livePackCents = new Map(pricing.packs.map((p) => [p.id, p.price]))
-  const liveSingleCents = new Map(pricing.singles.map((p) => [p.id, p.price]))
+  // Legacy SKUs still priced from an env-var Price ID carry no amount in the
+  // snapshot; the storefront's own resolution fills those in.
+  const liveCents = new Map<string, number>([
+    ...pricing.packs.map((p) => [p.id, p.price] as const),
+    ...pricing.singles.map((p) => [p.id, p.price] as const),
+  ])
 
   const now = Date.now()
   const live = pickActiveSale(snapshot.sales, now)
 
-  // A SKU priced through this screen has a catalog row; one that still comes
-  // from the deploy config doesn't. The distinction is worth showing — it is
-  // the difference between "I can change this here" and "this is whatever was
-  // deployed".
-  const catalogBySku = new Map(catalog.map((c) => [`${c.kind}-${c.washValue}`, c]))
-  const priceRows: PriceRowView[] = PRICE_KINDS.flatMap((kind: PriceKind) =>
-    WASH_VALUES.map((washValue: WashValue): PriceRowView => {
-      const row = catalogBySku.get(`${kind}-${washValue}`)
-      const resolved = snapshot.prices[kind][washValue]
-      const liveCents =
-        kind === 'pack' ? livePackCents.get(washValue) : liveSingleCents.get(washValue)
-      // Prefer the resolved amount over the catalog row's stored copy: when
-      // Stripe is authoritative for this SKU it is the live number, and the
-      // stored copy is only a record of what it was set to here.
+  // Exactly what the storefront lists — the catalog IS the store.
+  const priceRows: PriceRowView[] = snapshot.catalog.map((sku) => ({
+    sku: sku.sku,
+    kind: sku.kind,
+    washValue: sku.washValue,
+    tokens: sku.tokens,
+    cents: sku.cents ?? liveCents.get(sku.sku) ?? null,
+    stripePriceId: sku.stripePriceId,
+    featured: sku.featured,
+    source: sku.source,
+  }))
+
+  const computedSubs = fallbackSubscriptionPricing()
+  const subscriptionRows: SubscriptionPriceView[] = SUBSCRIPTION_PLAN_IDS.flatMap((plan) => {
+    const computed = computedSubs.plans.find((p) => p.id === plan)!
+    return SUBSCRIPTION_WASH_VALUES.map((washValue): SubscriptionPriceView => {
+      const resolved = subPrices.get(subscriptionVariantKey(plan, washValue))
+      const fallbackCents =
+        computed.variants.find((v) => v.washValue === washValue)?.price ?? 0
       return {
-        kind,
+        plan,
+        planName: computed.name,
+        tokensPerCycle: computed.tokensPerCycle,
         washValue,
-        cents: resolved.cents ?? liveCents ?? row?.unitAmountCents ?? null,
-        stripePriceId: resolved.stripePriceId || (row?.stripePriceId ?? ''),
-        source: resolved.source,
+        cents: resolved?.cents ?? fallbackCents,
+        source: resolved ? resolved.source : 'unset',
       }
-    }),
-  )
+    })
+  })
 
   const saleViews: SaleView[] = sales.map((sale) => ({
     id: sale.id,
@@ -197,6 +207,11 @@ export default async function PricingAdminPage() {
             driftCount={driftCount}
           />
         </div>
+
+        <SubscriptionPriceGrid
+          rows={subscriptionRows}
+          washValues={SUBSCRIPTION_WASH_VALUES}
+        />
 
         <SalesManager
           sales={saleViews}

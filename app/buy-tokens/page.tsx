@@ -31,7 +31,8 @@ const BUY_TOKENS_FALLBACK: BuyTokensCopy = {
   quantityInputLabel: 'Number of packs',
   modeHelper: 'Choose how you want to buy',
   modeSingleLabel: 'Single tokens',
-  modePackLabel: '4-Pack · Save $5',
+  // `{discount}` is replaced with the live bundle discount from Stripe.
+  modePackLabel: 'Token packs · Save {discount}',
   packTokensSuffixSingle: 'wash · single',
   quantityHeadingSingle: 'Number of tokens',
   quantitySubtextSingle: 'Buy any number of individual tokens at the same wash value.',

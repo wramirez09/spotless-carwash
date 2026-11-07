@@ -27,8 +27,161 @@ export const PACK_TOKEN_COUNT = 4
  * Never change the format — it is matched against Products already created in
  * both the live and sandbox accounts.
  */
-export function skuLookupKey(kind: PriceKind, washValue: WashValue): string {
-  return `spotless_${kind}_${washValue}`
+export function skuLookupKey(
+  kind: PriceKind,
+  washValue: string,
+  tokens: number = kind === 'pack' ? PACK_TOKEN_COUNT : 1,
+): string {
+  // The original eight SKUs (4-packs and singles) keep their historical key so
+  // the Products already in both Stripe accounts are still found. Any other
+  // pack size gets an `_x<tokens>` suffix, which is what lets a $12 4-pack and
+  // a $12 10-pack exist side by side.
+  if (kind === 'single' || tokens === PACK_TOKEN_COUNT) {
+    return `spotless_${kind}_${washValue}`
+  }
+  return `spotless_${kind}_${washValue}_x${tokens}`
+}
+
+const SKU_KEY_RE = /^spotless_(pack|single)_(\d{1,3})(?:_x(\d{1,3}))?$/
+
+/**
+ * The inverse of `skuLookupKey`. Returns null for anything that isn't a
+ * one-time token SKU — subscription keys, hand-made Products, typos — so the
+ * catalog loader can never mistake an unrelated Product for something sellable.
+ */
+export function parseSkuLookupKey(
+  key: string | null | undefined,
+): { kind: PriceKind; washValue: string; tokens: number } | null {
+  if (!key) return null
+  const m = SKU_KEY_RE.exec(key)
+  if (!m) return null
+  const kind = m[1] as PriceKind
+  const washValue = String(Number(m[2]))
+  if (washValue !== m[2]) return null // leading zeros: not a key we ever write
+  if (kind === 'single') {
+    if (m[3]) return null
+    return { kind, washValue, tokens: 1 }
+  }
+  const tokens = m[3] ? Number(m[3]) : PACK_TOKEN_COUNT
+  if (m[3] && (tokens === PACK_TOKEN_COUNT || String(tokens) !== m[3])) return null
+  return { kind, washValue, tokens }
+}
+
+// ---------------------------------------------------------------------------
+// Catalog (one-time token SKUs)
+// ---------------------------------------------------------------------------
+
+/** Where a SKU's price came from, highest precedence first. */
+export type PriceSource = 'stripe' | 'db' | 'env'
+
+/**
+ * One sellable one-time product: a pack of N tokens, or a single token, at a
+ * wash denomination. `sku` is the Stripe Product's lookup key and is the id
+ * the storefront and checkout pass around.
+ */
+export type CatalogSku = {
+  sku: string
+  kind: PriceKind
+  /** Whole-dollar wash denomination as a string, e.g. '12'. */
+  washValue: string
+  tokens: number
+  /** List price in cents, or null when only a Price ID is known. */
+  cents: number | null
+  stripePriceId: string
+  stripeProductId: string | null
+  featured: boolean
+  /** Lower sorts first. Ties fall back to denomination then size. */
+  sortOrder: number
+  source: PriceSource
+}
+
+/** The SKU that is "Most Popular" when nobody has said otherwise. */
+export function defaultFeatured(kind: PriceKind, washValue: string, tokens: number): boolean {
+  return kind === 'pack' && washValue === '12' && tokens === PACK_TOKEN_COUNT
+}
+
+/** Default sort weight — everything ties, so denomination then size decides. */
+export const DEFAULT_SORT_ORDER = 100
+
+export function sortCatalog<
+  T extends Pick<CatalogSku, 'kind' | 'washValue' | 'tokens' | 'sortOrder'>,
+>(items: readonly T[]): T[] {
+  return [...items].sort((a, b) => {
+    if (a.kind !== b.kind) return a.kind === 'pack' ? -1 : 1
+    if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder
+    const dv = Number(a.washValue) - Number(b.washValue)
+    if (dv !== 0) return dv
+    return a.tokens - b.tokens
+  })
+}
+
+/** Customer-facing label, e.g. "$12 wash · 4-pack" or "$9 wash · single". */
+export function skuLabel(kind: PriceKind, washValue: string, tokens: number): string {
+  return kind === 'single'
+    ? `$${washValue} wash · single`
+    : `$${washValue} wash · ${tokens}-pack`
+}
+
+/** The Stripe Product name for a SKU. */
+export function skuProductName(kind: PriceKind, washValue: string, tokens: number): string {
+  return kind === 'single'
+    ? `$${washValue} Wash Token`
+    : `$${washValue} Wash Token — ${tokens}-Pack`
+}
+
+/** Highest list price the admin may publish, in cents. Typo guard. */
+export const MAX_PRICE_CENTS = 50_000
+
+export function validatePriceCents(cents: number | null): string | null {
+  if (cents == null || !Number.isInteger(cents) || cents <= 0) {
+    return 'Enter a price greater than $0.00.'
+  }
+  // A fat-fingered "3200" in a dollars field becomes $3,200. Nothing in this
+  // catalog is anywhere near $500, so refuse rather than publish it.
+  if (cents > MAX_PRICE_CENTS) {
+    return `${formatCents(cents)} looks like a typo — prices above $500 are blocked.`
+  }
+  return null
+}
+
+/**
+ * Validate what an admin typed when creating a SKU. Returns a message for the
+ * first problem, or null. Kept pure so the exact rules are unit-tested.
+ */
+export function validateSkuInput(input: {
+  kind: string
+  washValue: string
+  tokens: number
+  cents: number | null
+}): string | null {
+  if (input.kind !== 'pack' && input.kind !== 'single') {
+    return 'Choose a pack or a single token.'
+  }
+  if (!/^[1-9]\d{0,2}$/.test(input.washValue)) {
+    return 'The wash value must be a whole-dollar amount, e.g. 12.'
+  }
+  const wash = Number(input.washValue)
+  if (wash < 1 || wash > 100) return 'The wash value must be between $1 and $100.'
+  if (input.kind === 'pack') {
+    if (!Number.isInteger(input.tokens) || input.tokens < 2 || input.tokens > 50) {
+      return 'A pack holds between 2 and 50 tokens.'
+    }
+  }
+  return validatePriceCents(input.cents)
+}
+
+// ---------------------------------------------------------------------------
+// Subscription prices
+// ---------------------------------------------------------------------------
+
+/**
+ * Stripe Price `lookup_key` for a subscription plan at a denomination. Unlike
+ * the one-time SKUs this lives on the Price, not the Product: every plan
+ * shares one Product, and Stripe's `transfer_lookup_key` moves the key to a new
+ * Price atomically when an admin changes the monthly amount.
+ */
+export function subscriptionLookupKey(plan: string, washValue: string): string {
+  return `spotless_sub_${plan}_${washValue}`
 }
 
 export type SaleStatus = 'draft' | 'scheduled' | 'canceled'

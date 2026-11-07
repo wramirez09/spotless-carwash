@@ -1,12 +1,31 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { resolveCheckoutConfig, type WashValue } from '@/lib/stripePricing'
+import { resolveCheckoutConfig } from '@/lib/stripePricing'
 import { getStripeSecretKey } from '@/lib/stripeEnv'
 import { checkoutBodySchema, firstIssueMessage } from '@/lib/schemas'
+import { parseSkuLookupKey, skuLookupKey, type PriceKind } from '@/lib/pricing/model'
 
 export const runtime = 'nodejs'
 
-const VALID_WASH: Set<WashValue> = new Set(['8', '9', '10', '12'])
+/**
+ * The SKU id a request is asking for. Accepts the SKU id itself (what the
+ * storefront sends now) and, for back-compat with cached pages, the bare wash
+ * value the old form sent ('12' → the $12 4-pack). Returns null for anything
+ * that can't name a SKU of the requested kind.
+ */
+function requestedSku(
+  mode: PriceKind,
+  pkg: string | undefined,
+  washValue: string | number | undefined,
+): string | null {
+  const parsed = parseSkuLookupKey(pkg)
+  if (parsed) return parsed.kind === mode ? pkg! : null
+  const bare = mode === 'pack' ? pkg : washValue != null ? String(washValue) : undefined
+  if (bare == null || !/^\d{1,3}$/.test(bare.trim())) return null
+  const v = String(Number(bare))
+  if (v === '0') return null
+  return skuLookupKey(mode, v)
+}
 
 // Stripe applies fixed-amount coupons once per SESSION, not per line-item
 // unit — so the $5-off pack coupon would only ever take $5 off no matter how
@@ -81,10 +100,8 @@ export async function POST(req: Request) {
   }
   const b = parsed.data
 
-  const pkg = b.package as WashValue
   const quantity = b.quantity
   const purchaseMode = b.mode
-  const washValue = String(Number(b.washValue)) as WashValue
   const email = b.email
   const name = b.name
   const phone = b.phone
@@ -95,12 +112,13 @@ export async function POST(req: Request) {
   const mailingPostalCode = b.mailingPostalCode
   const mailingListSubscribed = b.mailingListSubscribed
 
-  // Mode-dependent wash-value check drives pricing, so it stays explicit.
-  if (purchaseMode === 'pack' && !VALID_WASH.has(pkg)) {
-    return NextResponse.json({ error: 'Bad package' }, { status: 400 })
-  }
-  if (purchaseMode === 'single' && !VALID_WASH.has(washValue)) {
-    return NextResponse.json({ error: 'Bad wash value' }, { status: 400 })
+  // Mode-dependent SKU check drives pricing, so it stays explicit.
+  const skuId = requestedSku(purchaseMode, b.package, b.washValue)
+  if (!skuId) {
+    return NextResponse.json(
+      { error: purchaseMode === 'pack' ? 'Bad package' : 'Bad wash value' },
+      { status: 400 },
+    )
   }
 
   const stripe = new Stripe(secret)
@@ -117,12 +135,19 @@ export async function POST(req: Request) {
   // value path is a good trade.
   const config = await resolveCheckoutConfig(Date.now(), { fresh: true })
 
-  const priceId =
-    purchaseMode === 'single' ? config.singlePriceIds[washValue] : config.packPriceIds[pkg]
-  const skuWash = purchaseMode === 'single' ? washValue : pkg
-
+  // The catalog is Stripe's list of what is for sale right now, so a SKU an
+  // admin deleted since the page was rendered is refused here rather than
+  // charged at a price nobody is advertising any more.
+  const sku = config.catalog.find((s) => s.sku === skuId)
+  if (!sku) {
+    return NextResponse.json(
+      { error: 'That item is no longer available. Refresh the page to see current prices.' },
+      { status: 400 },
+    )
+  }
+  const priceId = sku.stripePriceId
   if (!priceId) {
-    console.error('[api/checkout] no Stripe Price configured', { purchaseMode, skuWash })
+    console.error('[api/checkout] no Stripe Price configured', { purchaseMode, skuId })
     return NextResponse.json({ error: 'That pack is not available right now.' }, { status: 500 })
   }
 
@@ -177,10 +202,11 @@ export async function POST(req: Request) {
         mail_list_subscribed: mailingListSubscribed ? 'true' : 'false',
         // Tokens per purchased unit: a 4-pack = 4 tokens, a single = 1. The
         // chosen wash value is carried separately in `wash_value` below.
-        package_size: purchaseMode === 'single' ? '1' : '4',
+        package_size: String(sku.tokens),
         quantity: String(quantity),
         mode: purchaseMode,
-        wash_value: skuWash,
+        wash_value: sku.washValue,
+        sku: sku.sku,
         pack_discount: applyPackDiscount
           ? activeSale?.discountMetadata ??
             `${Math.round(config.baseDiscountCents / 100)}_off`

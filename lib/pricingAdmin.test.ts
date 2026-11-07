@@ -15,9 +15,10 @@ const {
   pricesUpdate,
   couponsCreate,
   couponsDel,
-  productsSearch,
+  productsList,
   productsCreate,
   productsUpdate,
+  pricesList,
   getSupabaseAdmin,
   getStripeSecretKey,
   getPricingSnapshot,
@@ -29,7 +30,8 @@ const {
   pricesUpdate: vi.fn(),
   couponsCreate: vi.fn(),
   couponsDel: vi.fn(),
-  productsSearch: vi.fn(),
+  productsList: vi.fn(),
+  pricesList: vi.fn(),
   productsCreate: vi.fn(),
   productsUpdate: vi.fn(),
   getSupabaseAdmin: vi.fn(),
@@ -43,10 +45,15 @@ const {
 
 vi.mock('stripe', () => {
   const FakeStripe = class {
-    prices = { retrieve: pricesRetrieve, create: pricesCreate, update: pricesUpdate }
+    prices = {
+      retrieve: pricesRetrieve,
+      create: pricesCreate,
+      update: pricesUpdate,
+      list: pricesList,
+    }
     coupons = { create: couponsCreate, del: couponsDel }
     products = {
-      search: productsSearch,
+      list: productsList,
       create: productsCreate,
       update: productsUpdate,
     }
@@ -56,7 +63,11 @@ vi.mock('stripe', () => {
 })
 
 vi.mock('./supabase', () => ({ getSupabaseAdmin }))
-vi.mock('./stripeEnv', () => ({ getStripeSecretKey }))
+vi.mock('./stripeEnv', () => ({
+  getStripeSecretKey,
+  // No env-var subscription Prices in these tests: only lookup keys count.
+  getSubscriptionPriceId: () => undefined,
+}))
 vi.mock('./pricingStore', async () => {
   const { mapSaleRow } = await vi.importActual<typeof import('./pricingStore')>(
     './pricingStore',
@@ -65,7 +76,12 @@ vi.mock('./pricingStore', async () => {
 })
 
 import {
+  adoptAllCatalogSkus,
   adoptCatalogSku,
+  createCatalogSku,
+  deleteCatalogSku,
+  setSkuFeatured,
+  updateSubscriptionPrice,
   cancelSale,
   publishSale,
   reprovisionSale,
@@ -126,21 +142,32 @@ function makeSupabase() {
 const HOUR = 3_600_000
 const NOW = Date.UTC(2026, 7, 25, 12, 0, 0)
 
+function catalogEntry(kind: 'pack' | 'single', v: string, cents: number) {
+  return {
+    sku: `spotless_${kind}_${v}`,
+    kind,
+    washValue: v,
+    tokens: kind === 'pack' ? 4 : 1,
+    cents,
+    stripePriceId: `price_${kind}_${v}`,
+    stripeProductId: null,
+    featured: false,
+    sortOrder: 100,
+    source: 'stripe' as const,
+  }
+}
+
 const SNAPSHOT = {
-  prices: {
-    pack: {
-      '8': { stripePriceId: 'price_pack_8', cents: 3200 },
-      '9': { stripePriceId: 'price_pack_9', cents: 3600 },
-      '10': { stripePriceId: 'price_pack_10', cents: 4000 },
-      '12': { stripePriceId: 'price_pack_12', cents: 4800 },
-    },
-    single: {
-      '8': { stripePriceId: 'price_single_8', cents: 800 },
-      '9': { stripePriceId: 'price_single_9', cents: 900 },
-      '10': { stripePriceId: 'price_single_10', cents: 1000 },
-      '12': { stripePriceId: 'price_single_12', cents: 1200 },
-    },
-  },
+  catalog: [
+    catalogEntry('pack', '8', 3200),
+    catalogEntry('pack', '9', 3600),
+    catalogEntry('pack', '10', 4000),
+    catalogEntry('pack', '12', 4800),
+    catalogEntry('single', '8', 800),
+    catalogEntry('single', '9', 900),
+    catalogEntry('single', '10', 1000),
+    catalogEntry('single', '12', 1200),
+  ],
   sales: [],
   settings: { baseDiscountCents: 500, baseCouponId: 'coupon_base' },
   source: 'db' as const,
@@ -195,6 +222,8 @@ beforeEach(() => {
   couponsCreate.mockImplementation(async () => ({ id: 'coupon_new' }))
   couponsDel.mockResolvedValue({})
   productsUpdate.mockResolvedValue({})
+  productsList.mockResolvedValue({ data: [], has_more: false })
+  pricesList.mockResolvedValue({ data: [] })
   vi.useFakeTimers()
   vi.setSystemTime(NOW)
 })
@@ -204,202 +233,336 @@ afterEach(() => {
 })
 
 // =========================================================================
-describe('updateCatalogPrice', () => {
-  it('creates a new Stripe Price on the same Product and records it', async () => {
-    const res = await updateCatalogPrice({
-      kind: 'pack',
-      washValue: '12',
-      unitAmountCents: 4500,
-      actorEmail: 'will@example.com',
-    })
+// =========================================================================
+// Catalog
+// =========================================================================
 
-    expect(res.ok).toBe(true)
-    expect(pricesCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ product: 'prod_12', unit_amount: 4500, currency: 'usd' }),
+/** A Stripe Product as products.list returns it (default_price expanded). */
+function stripeProduct(
+  sku: string,
+  over: { id?: string; active?: boolean; priceId?: string | null; cents?: number } = {},
+) {
+  const priceId = over.priceId === undefined ? `price_${sku}` : over.priceId
+  return {
+    id: over.id ?? `prod_${sku}`,
+    active: over.active ?? true,
+    metadata: { lookup_key: sku },
+    default_price: priceId
+      ? { id: priceId, active: true, unit_amount: over.cents ?? 4800 }
+      : null,
+  }
+}
+
+function listing(...products: unknown[]) {
+  productsList.mockResolvedValue({ data: products, has_more: false })
+}
+
+describe('createCatalogSku', () => {
+  const input = {
+    kind: 'pack' as const,
+    washValue: '12',
+    tokens: 10,
+    unitAmountCents: 11000,
+    actorEmail: 'will@example.com',
+  }
+
+  it('creates a keyed Product + Price, so the store lists it with no deploy', async () => {
+    listing()
+    productsCreate.mockResolvedValue({ id: 'prod_new' })
+
+    const result = await createCatalogSku(input)
+
+    expect(result.ok).toBe(true)
+    expect(productsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: '$12 Wash Token — 10-Pack',
+        metadata: expect.objectContaining({
+          lookup_key: 'spotless_pack_12_x10',
+          token_count: '10',
+        }),
+      }),
     )
-    const row = inserts.find((i) => i.table === 'catalog_prices')?.payload as Record<string, unknown>
-    expect(row).toMatchObject({
-      kind: 'pack',
-      wash_value: '12',
-      unit_amount_cents: 4500,
-      stripe_price_id: 'price_new',
-      active: true,
+    expect(pricesCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ product: 'prod_new', unit_amount: 11000, currency: 'usd' }),
+    )
+    // default_price is what puts it on sale.
+    expect(productsUpdate).toHaveBeenCalledWith(
+      'prod_new',
+      expect.objectContaining({ active: true, default_price: 'price_new' }),
+    )
+    expect(invalidatePricingCache).toHaveBeenCalled()
+  })
+
+  it('revives an archived Product instead of creating a duplicate', async () => {
+    listing(stripeProduct('spotless_pack_12_x10', { id: 'prod_old', active: false }))
+
+    const result = await createCatalogSku(input)
+
+    expect(result.ok).toBe(true)
+    expect(productsCreate).not.toHaveBeenCalled()
+    expect(pricesCreate).toHaveBeenCalledWith(expect.objectContaining({ product: 'prod_old' }))
+    expect(productsUpdate).toHaveBeenCalledWith(
+      'prod_old',
+      expect.objectContaining({ active: true, default_price: 'price_new' }),
+    )
+  })
+
+  it('refuses a SKU that is already on sale', async () => {
+    listing(stripeProduct('spotless_pack_12_x10'))
+    const result = await createCatalogSku(input)
+    expect(result.ok).toBe(false)
+    expect(result.message).toMatch(/already exists/)
+    expect(pricesCreate).not.toHaveBeenCalled()
+  })
+
+  it('refuses a legacy SKU still on sale from the deploy config', async () => {
+    listing() // nothing keyed in Stripe yet
+    const result = await createCatalogSku({ ...input, tokens: 4, washValue: '12' })
+    expect(result.ok).toBe(false)
+    expect(result.message).toMatch(/already exists/)
+  })
+
+  it('forces a single token to one token, whatever the form said', async () => {
+    listing()
+    productsCreate.mockResolvedValue({ id: 'prod_s15' })
+    await createCatalogSku({ ...input, kind: 'single', washValue: '15', tokens: 7, unitAmountCents: 1500 })
+    expect(productsCreate.mock.calls[0][0].metadata.lookup_key).toBe('spotless_single_15')
+  })
+
+  it('records the Most Popular flag when asked', async () => {
+    listing()
+    productsCreate.mockResolvedValue({ id: 'prod_new' })
+    await createCatalogSku({ ...input, featured: true })
+    expect(productsUpdate).toHaveBeenCalledWith('prod_new', {
+      metadata: { featured: 'true' },
+    })
+  })
+
+  it('validates before touching Stripe', async () => {
+    for (const bad of [
+      { washValue: '0' },
+      { washValue: '12.5' },
+      { tokens: 1 },
+      { tokens: 51 },
+      { unitAmountCents: 0 },
+      { unitAmountCents: 60_000 },
+    ]) {
+      const result = await createCatalogSku({ ...input, ...bad })
+      expect(result.ok).toBe(false)
+    }
+    expect(productsList).not.toHaveBeenCalled()
+  })
+
+  it('creates nothing when Stripe cannot be listed', async () => {
+    // Without the listing we can't tell "new" from "already exists".
+    productsList.mockRejectedValue(new Error('down'))
+    const result = await createCatalogSku(input)
+    expect(result.ok).toBe(false)
+    expect(productsCreate).not.toHaveBeenCalled()
+  })
+
+  it('writes no price history for a pack size the table cannot hold', async () => {
+    listing()
+    productsCreate.mockResolvedValue({ id: 'prod_new' })
+    await createCatalogSku(input)
+    expect(inserts.filter((i) => i.table === 'catalog_prices')).toHaveLength(0)
+  })
+
+  it('reports a Stripe rejection and audits it', async () => {
+    listing()
+    productsCreate.mockRejectedValue(new StripeError('Invalid name'))
+    const result = await createCatalogSku(input)
+    expect(result.ok).toBe(false)
+    expect(result.message).toContain('Invalid name')
+    expect(inserts).toContainEqual(
+      expect.objectContaining({
+        table: 'pricing_audit_log',
+        payload: expect.objectContaining({ action: 'sku.create', succeeded: false }),
+      }),
+    )
+  })
+})
+
+describe('updateCatalogPrice', () => {
+  const input = { sku: 'spotless_pack_12', unitAmountCents: 4500, actorEmail: 'will@example.com' }
+
+  it('creates a new Price on the same Product and makes it the default', async () => {
+    listing(stripeProduct('spotless_pack_12', { id: 'prod_12', priceId: 'price_old' }))
+
+    const result = await updateCatalogPrice(input)
+
+    expect(result.ok).toBe(true)
+    expect(pricesCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ product: 'prod_12', unit_amount: 4500 }),
+    )
+    expect(productsUpdate).toHaveBeenCalledWith(
+      'prod_12',
+      expect.objectContaining({
+        default_price: 'price_new',
+        metadata: expect.objectContaining({ lookup_key: 'spotless_pack_12' }),
+      }),
+    )
+  })
+
+  it('reprices an admin-created pack size', async () => {
+    listing(stripeProduct('spotless_pack_15_x10', { id: 'prod_15', cents: 13500 }))
+    const result = await updateCatalogPrice({ ...input, sku: 'spotless_pack_15_x10', unitAmountCents: 12000 })
+    expect(result.ok).toBe(true)
+    expect(productsUpdate.mock.calls[0][1].metadata).toMatchObject({
+      lookup_key: 'spotless_pack_15_x10',
+      token_count: '10',
+    })
+  })
+
+  it('archives a superseded Price this tool created', async () => {
+    listing(stripeProduct('spotless_pack_12', { priceId: 'price_old' }))
+    pricesRetrieve.mockResolvedValue({ id: 'price_old', metadata: { source: 'admin_pricing' } })
+    await updateCatalogPrice(input)
+    expect(pricesUpdate).toHaveBeenCalledWith('price_old', { active: false })
+  })
+
+  it('leaves an env-configured Price active so the fallback keeps working', async () => {
+    listing(stripeProduct('spotless_pack_12', { priceId: 'price_env' }))
+    pricesRetrieve.mockResolvedValue({ id: 'price_env', metadata: {} })
+    await updateCatalogPrice(input)
+    expect(pricesUpdate).not.toHaveBeenCalled()
+  })
+
+  it('adopts a legacy SKU found only through its env-var Price', async () => {
+    listing() // not keyed yet
+    pricesRetrieve.mockResolvedValue({ id: 'price_pack_12', product: 'prod_handmade', unit_amount: 4800, metadata: {} })
+
+    const result = await updateCatalogPrice(input)
+
+    expect(result.ok).toBe(true)
+    expect(pricesCreate).toHaveBeenCalledWith(expect.objectContaining({ product: 'prod_handmade' }))
+  })
+
+  it('records history for the original eight, after Stripe', async () => {
+    listing(stripeProduct('spotless_pack_12'))
+    await updateCatalogPrice(input)
+    expect(updates[0]).toMatchObject({ table: 'catalog_prices', payload: { active: false } })
+    expect(inserts).toContainEqual({
+      table: 'catalog_prices',
+      payload: expect.objectContaining({ stripe_price_id: 'price_new', unit_amount_cents: 4500 }),
+    })
+  })
+
+  it('still succeeds when the history write fails — Stripe already took the change', async () => {
+    listing(stripeProduct('spotless_pack_12'))
+    enqueue('catalog_prices', { error: { message: 'db down' } })
+    const result = await updateCatalogPrice(input)
+    expect(result.ok).toBe(true)
+  })
+
+  it('rejects a no-op change', async () => {
+    listing(stripeProduct('spotless_pack_12', { cents: 4500 }))
+    const result = await updateCatalogPrice(input)
+    expect(result.ok).toBe(false)
+    expect(pricesCreate).not.toHaveBeenCalled()
+  })
+
+  it('refuses to reprice a removed SKU', async () => {
+    listing(stripeProduct('spotless_pack_12', { active: false }))
+    const result = await updateCatalogPrice(input)
+    expect(result.ok).toBe(false)
+    expect(result.message).toMatch(/isn't on sale/)
+  })
+
+  it('blocks typo-sized prices', async () => {
+    const result = await updateCatalogPrice({ ...input, unitAmountCents: 320_000 })
+    expect(result.ok).toBe(false)
+    expect(result.message).toMatch(/typo/)
+  })
+
+  it('rejects an unknown SKU id', async () => {
+    expect((await updateCatalogPrice({ ...input, sku: 'prod_whatever' })).ok).toBe(false)
+  })
+
+  it('writes nothing to the database when Stripe rejects the price', async () => {
+    listing(stripeProduct('spotless_pack_12'))
+    pricesCreate.mockRejectedValue(new StripeError('Amount too small'))
+    const result = await updateCatalogPrice(input)
+    expect(result.ok).toBe(false)
+    expect(inserts.filter((i) => i.table === 'catalog_prices')).toHaveLength(0)
+  })
+
+  it('fails closed when Stripe is not configured', async () => {
+    vi.resetModules()
+    getStripeSecretKey.mockReturnValue(undefined)
+    const fresh = await import('./pricingAdmin')
+    const result = await fresh.updateCatalogPrice(input)
+    expect(result.ok).toBe(false)
+    expect(result.message).toMatch(/Stripe is not configured/)
+  })
+})
+
+describe('deleteCatalogSku', () => {
+  it('archives the Product but keeps its lookup key as a tombstone', async () => {
+    listing(stripeProduct('spotless_pack_9', { id: 'prod_9' }))
+
+    const result = await deleteCatalogSku('spotless_pack_9', 'will@example.com')
+
+    expect(result.ok).toBe(true)
+    expect(productsUpdate).toHaveBeenCalledWith('prod_9', {
+      active: false,
+      metadata: expect.objectContaining({ lookup_key: 'spotless_pack_9' }),
     })
     expect(invalidatePricingCache).toHaveBeenCalled()
   })
 
-  it('deactivates the previous row before inserting the new one', async () => {
-    // The partial unique index allows only one active row per SKU, so the
-    // opposite order would trip a constraint violation.
-    await updateCatalogPrice({
-      kind: 'pack',
-      washValue: '12',
-      unitAmountCents: 4500,
-      actorEmail: null,
-    })
-    expect(updates[0]).toMatchObject({ table: 'catalog_prices', payload: { active: false } })
-    expect(inserts.some((i) => i.table === 'catalog_prices')).toBe(true)
-  })
-
-  it('leaves an env-configured Price active so the fallback keeps working', async () => {
-    // Archiving the env-var Price would turn a Supabase blip into a checkout
-    // outage: archived Prices can't be used in new Checkout Sessions.
-    pricesRetrieve.mockResolvedValue({ id: 'price_pack_12', product: 'prod_12', metadata: {} })
-    await updateCatalogPrice({
-      kind: 'pack',
-      washValue: '12',
-      unitAmountCents: 4500,
-      actorEmail: null,
-    })
-    expect(pricesUpdate).not.toHaveBeenCalled()
-  })
-
-  it('archives a superseded Price this tool created', async () => {
-    pricesRetrieve.mockResolvedValue({
-      id: 'price_prev',
-      product: 'prod_12',
-      metadata: { source: 'admin_pricing' },
-    })
-    await updateCatalogPrice({
-      kind: 'pack',
-      washValue: '12',
-      unitAmountCents: 4500,
-      actorEmail: null,
-    })
-    expect(pricesUpdate).toHaveBeenCalledWith('price_prev', { active: false })
-  })
-
-  it('bootstraps a Product when the SKU has never been priced', async () => {
-    // This is what removes the "go set it up in Stripe first" step.
-    getPricingSnapshot.mockResolvedValue({
-      ...SNAPSHOT,
-      prices: {
-        ...SNAPSHOT.prices,
-        pack: { ...SNAPSHOT.prices.pack, '12': { stripePriceId: '', cents: null } },
-      },
-    })
-    productsSearch.mockResolvedValue({ data: [] })
-    productsCreate.mockResolvedValue({ id: 'prod_fresh' })
-
-    const res = await updateCatalogPrice({
-      kind: 'pack',
-      washValue: '12',
-      unitAmountCents: 4500,
-      actorEmail: null,
-    })
-
-    expect(res.ok).toBe(true)
-    expect(productsCreate).toHaveBeenCalled()
-    expect(pricesCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ product: 'prod_fresh' }),
+  it('keys and archives a legacy Product that was never adopted', async () => {
+    listing()
+    pricesRetrieve.mockResolvedValue({ id: 'price_single_8', product: 'prod_handmade', metadata: {} })
+    const result = await deleteCatalogSku('spotless_single_8', null)
+    expect(result.ok).toBe(true)
+    expect(productsUpdate).toHaveBeenCalledWith(
+      'prod_handmade',
+      expect.objectContaining({ active: false }),
     )
   })
 
-  it('reuses an existing Product found by lookup key instead of duplicating it', async () => {
-    getPricingSnapshot.mockResolvedValue({
-      ...SNAPSHOT,
-      prices: {
-        ...SNAPSHOT.prices,
-        pack: { ...SNAPSHOT.prices.pack, '12': { stripePriceId: '', cents: null } },
-      },
-    })
-    productsSearch.mockResolvedValue({ data: [{ id: 'prod_existing' }] })
-
-    await updateCatalogPrice({
-      kind: 'pack',
-      washValue: '12',
-      unitAmountCents: 4500,
-      actorEmail: null,
-    })
-
-    expect(productsCreate).not.toHaveBeenCalled()
-    expect(pricesCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ product: 'prod_existing' }),
-    )
+  it('retires the price-history row so a Stripe outage cannot bring it back', async () => {
+    listing(stripeProduct('spotless_pack_9'))
+    await deleteCatalogSku('spotless_pack_9', null)
+    expect(updates).toContainEqual({ table: 'catalog_prices', payload: { active: false } })
   })
 
-  it.each([
-    [0, 'zero'],
-    [-100, 'negative'],
-    [50_001, 'above the $500 typo guard'],
-  ])('rejects %s (%s) without touching Stripe', async (cents) => {
-    const res = await updateCatalogPrice({
-      kind: 'pack',
-      washValue: '12',
-      unitAmountCents: cents,
-      actorEmail: null,
-    })
-    expect(res.ok).toBe(false)
-    expect(pricesCreate).not.toHaveBeenCalled()
+  it('says so when the SKU is already gone', async () => {
+    listing(stripeProduct('spotless_pack_9', { active: false }))
+    const result = await deleteCatalogSku('spotless_pack_9', null)
+    expect(result.ok).toBe(false)
+    expect(productsUpdate).not.toHaveBeenCalled()
   })
 
-  it('rejects a no-op change', async () => {
-    const res = await updateCatalogPrice({
-      kind: 'pack',
-      washValue: '12',
-      unitAmountCents: 4800,
-      actorEmail: null,
-    })
-    expect(res.ok).toBe(false)
-    expect(pricesCreate).not.toHaveBeenCalled()
-  })
-
-  it('writes nothing to the database when Stripe rejects the price', async () => {
-    pricesCreate.mockRejectedValue(new Error('card_declined'))
-    const res = await updateCatalogPrice({
-      kind: 'pack',
-      washValue: '12',
-      unitAmountCents: 4500,
-      actorEmail: null,
-    })
-    expect(res.ok).toBe(false)
-    expect(inserts.filter((i) => i.table === 'catalog_prices')).toHaveLength(0)
-  })
-
-  it('reports the orphaned Price id when the database write fails', async () => {
-    // The admin needs to know a Stripe object was created, since the audit log
-    // is the only other record of it.
-    enqueue('catalog_prices', { error: null })
-    enqueue('catalog_prices', { error: { message: 'boom' } })
-    const res = await updateCatalogPrice({
-      kind: 'pack',
-      washValue: '12',
-      unitAmountCents: 4500,
-      actorEmail: null,
-    })
-    expect(res.ok).toBe(false)
-    expect(res.message).toContain('price_new')
-  })
-
-  it('fails closed when Stripe is not configured', async () => {
-    // The Stripe client is a module-scoped singleton (the secret can't change
-    // at runtime in production), so this needs a freshly imported module
-    // rather than just a re-stubbed env getter.
-    vi.resetModules()
-    getStripeSecretKey.mockReturnValue(undefined)
-    const fresh = await import('./pricingAdmin')
-
-    const res = await fresh.updateCatalogPrice({
-      kind: 'pack',
-      washValue: '12',
-      unitAmountCents: 4500,
-      actorEmail: null,
-    })
-
-    expect(res).toMatchObject({ ok: false })
-    expect(res.message).toMatch(/not configured/i)
-    expect(pricesCreate).not.toHaveBeenCalled()
+  it('reports a Stripe failure instead of claiming success', async () => {
+    listing(stripeProduct('spotless_pack_9'))
+    productsUpdate.mockRejectedValue(new StripeError('nope'))
+    const result = await deleteCatalogSku('spotless_pack_9', null)
+    expect(result.ok).toBe(false)
+    expect(invalidatePricingCache).not.toHaveBeenCalled()
   })
 })
 
-// =========================================================================
+describe('setSkuFeatured', () => {
+  it('stamps the featured flag on the keyed Product', async () => {
+    listing(stripeProduct('spotless_pack_10', { id: 'prod_10' }))
+    const result = await setSkuFeatured('spotless_pack_10', true, null)
+    expect(result.ok).toBe(true)
+    expect(productsUpdate).toHaveBeenLastCalledWith('prod_10', { metadata: { featured: 'true' } })
+  })
+
+  it('refuses a SKU that is not on sale', async () => {
+    listing()
+    getPricingSnapshot.mockResolvedValue({ ...SNAPSHOT, catalog: [] })
+    expect((await setSkuFeatured('spotless_pack_15', true, null)).ok).toBe(false)
+  })
+})
+
 describe('adoptCatalogSku', () => {
   it('points the Product at the current Price and stamps the lookup key', async () => {
-    // Adoption is how a SKU created by hand, long before this tool existed,
-    // becomes Stripe-authoritative WITHOUT changing its price.
-    const res = await adoptCatalogSku('pack', '12', 'will@example.com')
-
-    expect(res.ok).toBe(true)
+    const result = await adoptCatalogSku('spotless_pack_12', 'will@example.com')
+    expect(result.ok).toBe(true)
     expect(productsUpdate).toHaveBeenCalledWith(
       'prod_12',
       expect.objectContaining({
@@ -407,63 +570,100 @@ describe('adoptCatalogSku', () => {
         metadata: expect.objectContaining({ lookup_key: 'spotless_pack_12' }),
       }),
     )
-    expect(invalidatePricingCache).toHaveBeenCalled()
   })
 
   it('never creates a new Price — the amount must not change', async () => {
-    await adoptCatalogSku('pack', '12', null)
+    await adoptCatalogSku('spotless_pack_12', null)
     expect(pricesCreate).not.toHaveBeenCalled()
   })
 
   it('refuses when the SKU has no Stripe price to adopt', async () => {
-    getPricingSnapshot.mockResolvedValue({
-      ...SNAPSHOT,
-      prices: {
-        ...SNAPSHOT.prices,
-        pack: { ...SNAPSHOT.prices.pack, '12': { stripePriceId: '', cents: null } },
-      },
-    })
-    const res = await adoptCatalogSku('pack', '12', null)
-    expect(res.ok).toBe(false)
+    getPricingSnapshot.mockResolvedValue({ ...SNAPSHOT, catalog: [] })
+    const result = await adoptCatalogSku('spotless_pack_12', null)
+    expect(result.ok).toBe(false)
     expect(productsUpdate).not.toHaveBeenCalled()
   })
 
   it('reports a Stripe failure instead of claiming success', async () => {
-    productsUpdate.mockRejectedValue(new Error('permission denied'))
-    const res = await adoptCatalogSku('pack', '12', null)
-    expect(res.ok).toBe(false)
-    expect(res.message).toContain('permission denied')
+    productsUpdate.mockRejectedValue(new StripeError('No such product'))
+    const result = await adoptCatalogSku('spotless_pack_12', null)
+    expect(result.ok).toBe(false)
+    expect(result.message).toContain('No such product')
   })
 
-  it('fails closed when Stripe is not configured', async () => {
-    vi.resetModules()
-    getStripeSecretKey.mockReturnValue(undefined)
-    const fresh = await import('./pricingAdmin')
-    const res = await fresh.adoptCatalogSku('pack', '12', null)
-    expect(res.ok).toBe(false)
-    expect(res.message).toMatch(/not configured/i)
+  it('links every deploy-config SKU in one go', async () => {
+    getPricingSnapshot.mockResolvedValue({
+      ...SNAPSHOT,
+      catalog: SNAPSHOT.catalog.map((s, i) => (i < 2 ? { ...s, source: 'env' } : s)),
+    })
+    const result = await adoptAllCatalogSkus(null)
+    expect(result.ok).toBe(true)
+    expect(productsUpdate).toHaveBeenCalledTimes(2)
   })
 })
 
-// =========================================================================
-describe('updateCatalogPrice — Stripe adoption', () => {
-  it('sets the new Price as the Product default so the site actually uses it', async () => {
-    // Without this the new Price exists in Stripe but nothing points at it.
-    await updateCatalogPrice({
-      kind: 'pack',
+describe('updateSubscriptionPrice', () => {
+  it('creates a recurring Price and moves the lookup key onto it', async () => {
+    pricesList.mockResolvedValue({
+      data: [{ id: 'price_w12_old', lookup_key: 'spotless_sub_weekly_12', unit_amount: 4000, product: 'prod_sub' }],
+    })
+    pricesRetrieve.mockResolvedValue({ id: 'price_w12_old', product: 'prod_sub', metadata: { source: 'admin_pricing' } })
+
+    const result = await updateSubscriptionPrice({
+      plan: 'weekly',
       washValue: '12',
-      unitAmountCents: 4500,
+      unitAmountCents: 4200,
       actorEmail: null,
     })
 
-    expect(productsUpdate).toHaveBeenCalledWith(
-      'prod_12',
-      expect.objectContaining({ default_price: 'price_new' }),
+    expect(result.ok).toBe(true)
+    expect(pricesCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        product: 'prod_sub',
+        unit_amount: 4200,
+        recurring: { interval: 'month' },
+        lookup_key: 'spotless_sub_weekly_12',
+        transfer_lookup_key: true,
+      }),
     )
+    expect(pricesUpdate).toHaveBeenCalledWith('price_w12_old', { active: false })
+    expect(result.message).toMatch(/Existing subscribers keep/)
+  })
+
+  it('creates the shared subscription Product the first time', async () => {
+    pricesList.mockResolvedValue({ data: [] })
+    productsList.mockResolvedValue({ data: [] })
+    productsCreate.mockResolvedValue({ id: 'prod_sub_new' })
+
+    const result = await updateSubscriptionPrice({
+      plan: 'family',
+      washValue: '8',
+      unitAmountCents: 6000,
+      actorEmail: null,
+    })
+
+    expect(result.ok).toBe(true)
+    expect(productsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ metadata: expect.objectContaining({ spotless_subscription: 'true' }) }),
+    )
+    expect(pricesCreate).toHaveBeenCalledWith(expect.objectContaining({ product: 'prod_sub_new' }))
+  })
+
+  it('rejects a no-op change', async () => {
+    pricesList.mockResolvedValue({
+      data: [{ id: 'p', lookup_key: 'spotless_sub_weekly_12', unit_amount: 4000, product: 'prod_sub' }],
+    })
+    const result = await updateSubscriptionPrice({
+      plan: 'weekly',
+      washValue: '12',
+      unitAmountCents: 4000,
+      actorEmail: null,
+    })
+    expect(result.ok).toBe(false)
+    expect(pricesCreate).not.toHaveBeenCalled()
   })
 })
 
-// =========================================================================
 describe('saveSale', () => {
   it('provisions a coupon worth base + extra, expiring when the sale ends', async () => {
     // Stripe applies ONE coupon per session, so the sale coupon must carry the

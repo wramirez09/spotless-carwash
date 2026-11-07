@@ -26,13 +26,13 @@ const FALLBACK: TokensCopy = {
   eyebrow: 'Wash tokens',
   sectionNumber: '07',
   headlineLine1: 'Buy a 4-pack.',
-  headlineLine2: 'Save **$5** every wash.',
+  headlineLine2: 'Save **{discount}** every pack.',
   valueLine: '4 tokens per pack. Never expires. Works at both locations.',
   description:
-    'Prepaid wash tokens save you $5 per 4-pack. Keep them in your glovebox, skip the cash station — and they make a great Forest Park gift.',
+    'Prepaid wash tokens save you {discount} per pack. Keep them in your glovebox, skip the cash station — and they make a great Forest Park gift.',
   cta: { label: 'Buy tokens', href: '/buy-tokens' },
   unitLabel: '/ wash · 4-pack',
-  saleHeadline: 'Extra **$5 off** every 4-pack.',
+  saleHeadline: 'Extra **{saleDiscount} off** every pack.',
 }
 
 function formatUSD(cents: number): string {
@@ -50,13 +50,38 @@ export default async function Tokens() {
   // left to second-guess here.
   const sale = pricing.activeSale
 
-  const t: TokensCopy = {
+  const merged: TokensCopy = {
     ...FALLBACK,
     ...(copyData ?? {}),
     cta: { ...FALLBACK.cta, ...(copyData?.cta ?? {}) },
   }
 
-  const packsDesc = [...pricing.packs].sort((a, b) => Number(b.id) - Number(a.id))
+  // Copy can name the live discount with `{discount}` (the everyday bundle
+  // saving) and `{saleDiscount}` (a sale's extra), so the headline follows
+  // whatever is set in /admin/pricing instead of a number typed into the CMS.
+  // During a sale the first chip is the bundle part and the second the sale's
+  // extra (see splitCouponBreakdown); outside one the single chip is the base.
+  const chips = pricing.packs[0]?.coupons ?? []
+  const totalOff = pricing.packCouponAmountOff
+  const baseOff = sale && chips.length === 2 ? chips[0].amountOffCents : totalOff
+  const saleOff = sale && chips.length === 2 ? chips[1].amountOffCents : totalOff
+  const fill = (text: string) =>
+    text
+      .replaceAll('{discount}', formatUSD(baseOff))
+      .replaceAll('{saleDiscount}', formatUSD(saleOff))
+  const t: TokensCopy = {
+    ...merged,
+    headlineLine1: fill(merged.headlineLine1),
+    headlineLine2: fill(merged.headlineLine2),
+    valueLine: fill(merged.valueLine),
+    description: fill(merged.description),
+    saleHeadline: fill(merged.saleHeadline),
+  }
+
+  // Biggest denomination first, then biggest pack — the premium option leads.
+  const packsDesc = [...pricing.packs].sort(
+    (a, b) => Number(b.washValue) - Number(a.washValue) || b.tokens - a.tokens,
+  )
 
   return (
     <section id="tokens" className="pb-16 md:pb-24">
@@ -118,10 +143,10 @@ export default async function Tokens() {
                 >
                   <div className="flex items-center gap-3 md:gap-4">
                     <span className="display text-[30px] md:text-[34px] leading-none pr-3 md:pr-4 border-r-2 border-blue-700">
-                      ${pack.id}
+                      ${pack.washValue}
                     </span>
                     <span className="text-[11px] md:text-[13px] font-extrabold tracking-[0.08em] uppercase whitespace-nowrap leading-tight">
-                      {t.unitLabel}
+                      {pack.tokens === 4 ? t.unitLabel : `/ wash · ${pack.tokens}-pack`}
                     </span>
                     <span className="ml-auto flex flex-col items-end leading-none">
                       {hasDiscount && (
