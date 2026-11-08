@@ -4,6 +4,7 @@ import type { Pkg, WashColor } from '@/src/data/washes'
 import { getCheckoutPricing } from '@/lib/stripePricing'
 import { fillCountWord, formatUSD } from '@/lib/pricingCopy'
 import { getWashLineup } from '@/lib/washPackages'
+import { featuredWashIndex } from '@/lib/washPricing'
 import OfferCatalogSchema from '@/src/components/seo/OfferCatalogSchema'
 
 type WashesData = {
@@ -143,11 +144,17 @@ export default async function Washes() {
   // The number is what everything else — token packs, checkout — is priced
   // from, so the card shows that number rather than the separately typed
   // display string, which could drift from it.
-  const packages: Pkg[] = washes.packages.map((pkg) =>
-    Number.isFinite(pkg.priceNumber) && pkg.priceNumber > 0
-      ? { ...pkg, price: formatUSD(Math.round(pkg.priceNumber * 100)) }
-      : pkg,
-  )
+  // Exactly one "Most Popular", and the same one the store shows: the wash
+  // whose token pack is featured in /admin/pricing (today the $12 Ultimate).
+  const storePick = pricing.packs.find((p) => p.featured)?.washValue
+  const popular = featuredWashIndex(washes.packages, storePick)
+  const packages: Pkg[] = washes.packages.map((pkg, i) => ({
+    ...pkg,
+    ...(Number.isFinite(pkg.priceNumber) && pkg.priceNumber > 0
+      ? { price: formatUSD(Math.round(pkg.priceNumber * 100)) }
+      : {}),
+    featured: i === popular,
+  }))
 
   return (
     <section id="washes" className="py-16 md:py-24">

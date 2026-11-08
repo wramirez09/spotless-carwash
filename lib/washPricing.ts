@@ -159,3 +159,25 @@ export function describeSyncAction(a: SyncAction): string {
       return `Remove the ${what} — there is no $${a.washValue} wash package`
   }
 }
+
+/**
+ * Which wash package wears the "Most Popular" badge on the home page — always
+ * at most ONE, and the same one as the store.
+ *
+ * The store's pick (the featured token pack, set with "Mark most popular" in
+ * /admin/pricing) wins, so the home page and the buy-tokens page can never
+ * disagree. Only when no pack is featured does the CMS flag decide, and even
+ * then just the first flagged package keeps it — the CMS has carried two at
+ * once (Deluxe and Lustre), which read as neither being the most popular.
+ * Returns the package's index, or -1 for none.
+ */
+export function featuredWashIndex(
+  packages: readonly { priceNumber?: number | null; featured?: boolean | null }[],
+  featuredValue: string | null | undefined,
+): number {
+  if (featuredValue) {
+    const i = packages.findIndex((p) => String(p.priceNumber) === featuredValue)
+    if (i >= 0) return i
+  }
+  return packages.findIndex((p) => Boolean(p.featured))
+}

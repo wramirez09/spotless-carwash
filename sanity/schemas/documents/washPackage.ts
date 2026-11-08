@@ -26,7 +26,14 @@ export default defineType({
       type: 'string',
       options: { list: ['red', 'green', 'purple', 'blue'], layout: 'radio' },
     }),
-    defineField({ name: 'featured', type: 'boolean', initialValue: false }),
+    defineField({
+      name: 'featured',
+      title: 'Most popular (fallback)',
+      type: 'boolean',
+      initialValue: false,
+      description:
+        'The home page shows ONE "Most Popular" badge: on the wash whose token pack is marked Most Popular at /admin/pricing. This flag is only used when no pack is marked there.',
+    }),
     defineField({
       name: 'features',
       type: 'array',
