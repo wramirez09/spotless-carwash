@@ -234,6 +234,8 @@ describe('getCheckoutPricing with Stripe unavailable', () => {
         save: 500,
       }),
     ])
+    // The discount chip names the pack it is on, not a 4-pack.
+    expect(pricing.packs[0].coupons.map((c) => c.label)).toEqual(['10-Pack bundle'])
     expect(pricing.singles).toEqual([])
   })
 

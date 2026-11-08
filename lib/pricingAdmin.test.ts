@@ -547,6 +547,33 @@ describe('setSkuFeatured', () => {
     expect(productsUpdate).toHaveBeenLastCalledWith('prod_10', { metadata: { featured: 'true' } })
   })
 
+  it('takes Most Popular away from the SKU that had it, even by default', async () => {
+    // The $12 4-pack is Most Popular with no flag set at all; featuring
+    // another SKU must write an explicit false, or the store shows two.
+    listing(
+      stripeProduct('spotless_pack_10', { id: 'prod_10' }),
+      stripeProduct('spotless_pack_12', { id: 'prod_12' }),
+    )
+    getPricingSnapshot.mockResolvedValue({
+      ...SNAPSHOT,
+      catalog: SNAPSHOT.catalog.map((s) =>
+        s.sku === 'spotless_pack_12' ? { ...s, featured: true } : s,
+      ),
+    })
+
+    await setSkuFeatured('spotless_pack_10', true, null)
+
+    expect(productsUpdate).toHaveBeenCalledWith('prod_12', { metadata: { featured: 'false' } })
+    expect(productsUpdate).not.toHaveBeenCalledWith('prod_10', { metadata: { featured: 'false' } })
+  })
+
+  it('leaves other SKUs alone when un-featuring', async () => {
+    listing(stripeProduct('spotless_pack_10', { id: 'prod_10' }))
+    await setSkuFeatured('spotless_pack_10', false, null)
+    expect(productsUpdate).toHaveBeenLastCalledWith('prod_10', { metadata: { featured: 'false' } })
+    expect(getPricingSnapshot).not.toHaveBeenCalled()
+  })
+
   it('refuses a SKU that is not on sale', async () => {
     listing()
     getPricingSnapshot.mockResolvedValue({ ...SNAPSHOT, catalog: [] })

@@ -213,6 +213,25 @@ async function archiveIfOurs(stripe: Stripe, priceId: string, keepId: string): P
   })
 }
 
+/**
+ * Keep "Most Popular" on one SKU: un-flag every other SKU that shows it —
+ * including one that only has it by default (the $12 4-pack), which needs an
+ * explicit `featured: 'false'` to lose it.
+ */
+async function clearOtherFeatured(stripe: Stripe, keepSku: string): Promise<void> {
+  const { catalog } = await getPricingSnapshot({ fresh: true })
+  for (const other of catalog) {
+    if (other.sku === keepSku || !other.featured) continue
+    const found = await locateSku(stripe, other.sku)
+    if (!found.productId || !found.current) continue
+    const parsed = parseSkuLookupKey(other.sku)
+    if (!parsed) continue
+    // Adopt first so the flag is on a keyed Product the store reads.
+    await adoptSku(stripe, { productId: found.productId, priceId: found.current.priceId, ...parsed })
+    await stripe.products.update(found.productId, { metadata: { featured: 'false' } })
+  }
+}
+
 export type CreateSkuInput = {
   kind: PriceKind
   washValue: string
@@ -304,6 +323,7 @@ export async function createCatalogSku(
       await stripe.products.update(productId, {
         metadata: { featured: input.featured ? 'true' : 'false' },
       })
+      if (input.featured) await clearOtherFeatured(stripe, sku)
     }
   } catch (err) {
     const message = stripeMessage(err)
@@ -480,6 +500,7 @@ export async function setSkuFeatured(
     await stripe.products.update(found.productId, {
       metadata: { featured: featured ? 'true' : 'false' },
     })
+    if (featured) await clearOtherFeatured(stripe, sku)
   } catch (err) {
     const message = stripeMessage(err)
     await audit(actorEmail, 'sku.feature', { sku, featured, error: message }, false)

@@ -45,7 +45,14 @@ function rowTitle(row: Pick<PriceRowView, 'kind' | 'washValue' | 'tokens'>): str
     : `$${row.washValue} wash · single`
 }
 
-function Row({ row }: { row: PriceRowView }) {
+function Row({
+  row,
+  onRemoved,
+}: {
+  row: PriceRowView
+  /** Called with the success message: the row unmounts once it's gone. */
+  onRemoved: (message: string) => void
+}) {
   const [value, setValue] = useState(
     row.cents != null ? (row.cents / 100).toFixed(2) : '',
   )
@@ -130,7 +137,11 @@ function Row({ row }: { row: PriceRowView }) {
                   startTransition(async () => {
                     setFeedback(null)
                     setConfirmingDelete(false)
-                    setFeedback(await deleteSku(row.sku))
+                    const res = await deleteSku(row.sku)
+                    // On success the row disappears with the next render, and
+                    // its own status line with it — so report up a level.
+                    if (res.ok) onRemoved(res.message)
+                    else setFeedback(res)
                   })
                 }
                 className="rounded-full bg-red-600 px-2.5 py-0.5 text-white disabled:opacity-40"
@@ -364,6 +375,7 @@ export default function PriceGrid({ rows }: Props) {
   const packs = rows.filter((r) => r.kind === 'pack')
   const singles = rows.filter((r) => r.kind === 'single')
   const unlinked = rows.filter((r) => r.source !== 'stripe').length
+  const [notice, setNotice] = useState<string | null>(null)
 
   return (
     <div className="rounded-2xl border border-line bg-white p-6">
@@ -375,6 +387,11 @@ export default function PriceGrid({ rows }: Props) {
         already placed keep the price they were bought at.
       </p>
       {unlinked > 0 && <AdoptAllButton count={unlinked} />}
+      {notice && (
+        <p role="status" className="mt-4 rounded-lg bg-green-50 p-3 text-xs font-semibold text-green-700">
+          {notice}
+        </p>
+      )}
 
       {[
         { title: 'Token packs', rows: packs, empty: 'No packs on sale.' },
@@ -397,7 +414,7 @@ export default function PriceGrid({ rows }: Props) {
               </thead>
               <tbody>
                 {group.rows.map((row) => (
-                  <Row key={row.sku} row={row} />
+                  <Row key={row.sku} row={row} onRemoved={setNotice} />
                 ))}
               </tbody>
             </table>

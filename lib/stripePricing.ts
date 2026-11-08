@@ -290,10 +290,13 @@ function splitCouponBreakdown(
   sale: ResolvedSale | null,
   baseDiscountCents = BUNDLE_BASE_DISCOUNT_FALLBACK_CENTS,
   baseCouponId = PACK_DISCOUNT_COUPON_ID,
+  tokens = 4,
 ): CouponBreakdownItem[] {
+  // Named for the pack it's on: "4-Pack bundle", "10-Pack bundle".
+  const bundleLabel = `${tokens}-Pack bundle`
   if (totalSave <= 0) return []
   if (!sale) {
-    return [{ id: baseCouponId, label: '4-Pack bundle', amountOffCents: totalSave }]
+    return [{ id: baseCouponId, label: bundleLabel, amountOffCents: totalSave }]
   }
   const saleCouponId = sale.couponId
   if (totalSave <= baseDiscountCents) {
@@ -307,7 +310,7 @@ function splitCouponBreakdown(
   return [
     {
       id: baseCouponId,
-      label: '4-Pack bundle',
+      label: bundleLabel,
       amountOffCents: baseDiscountCents,
     },
     {
@@ -387,7 +390,7 @@ function buildPricing(
         perToken: Math.round(cents / sku.tokens),
         label: skuLabel('pack', sku.washValue, sku.tokens),
         featured: sku.featured,
-        coupons: splitCouponBreakdown(save, sale, baseDiscountCents, baseCouponId),
+        coupons: splitCouponBreakdown(save, sale, baseDiscountCents, baseCouponId, sku.tokens),
       })
     } else {
       singles.push({
