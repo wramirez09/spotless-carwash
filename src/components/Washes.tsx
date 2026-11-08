@@ -5,6 +5,7 @@ import { getCheckoutPricing } from '@/lib/stripePricing'
 import { fillCountWord, formatUSD } from '@/lib/pricingCopy'
 import { getWashLineup } from '@/lib/washPackages'
 import { featuredWashIndex } from '@/lib/washPricing'
+import { washCheckoutHref } from '@/lib/buyTokensLink'
 import OfferCatalogSchema from '@/src/components/seo/OfferCatalogSchema'
 
 type WashesData = {
@@ -79,7 +80,7 @@ function Card({ pkg }: { pkg: Pkg }) {
           ))}
         </ul>
         <a
-          href="/buy-tokens"
+          href={washCheckoutHref(pkg.priceNumber)}
           className="mt-auto bg-yellow-400 text-blue-700 text-center py-3 rounded-xl font-bold text-sm border border-yellow-400 hover:bg-white transition"
         >
           Pick {pkg.name} · {pkg.price}
@@ -118,8 +119,9 @@ function Card({ pkg }: { pkg: Pkg }) {
           ),
         )}
       </ul>
+      {/* Straight into checkout with this wash's pack already in the order. */}
       <a
-        href="#tokens"
+        href={washCheckoutHref(pkg.priceNumber)}
         className="mt-auto bg-paper text-ink text-center py-3 rounded-xl font-bold text-sm border border-line hover:bg-blue-500 hover:text-white hover:border-blue-500 transition"
       >
         Choose {pkg.name}
