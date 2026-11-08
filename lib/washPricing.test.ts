@@ -164,12 +164,12 @@ describe('featuredWashIndex — one "Most Popular" on the home page', () => {
     expect(featuredWashIndex(cms, '12')).toBe(1)
   })
 
-  it('falls back to the first CMS-flagged package — never two', () => {
-    expect(featuredWashIndex(cms, null)).toBe(0)
-    expect(featuredWashIndex(cms, '99')).toBe(0)
+  it('ignores the CMS flags entirely — no admin pick, no badge', () => {
+    expect(featuredWashIndex(cms, null)).toBe(-1)
+    expect(featuredWashIndex(cms, undefined)).toBe(-1)
   })
 
-  it('is none when nothing is flagged anywhere', () => {
-    expect(featuredWashIndex([{ priceNumber: 10 }, { priceNumber: 12 }], undefined)).toBe(-1)
+  it('shows no badge when the admin pick has no matching wash', () => {
+    expect(featuredWashIndex(cms, '99')).toBe(-1)
   })
 })

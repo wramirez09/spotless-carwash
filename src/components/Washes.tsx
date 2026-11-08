@@ -90,11 +90,10 @@ function Card({ pkg }: { pkg: Pkg }) {
   return (
     <article className="hover:lift bg-white border border-line rounded-2xl p-6 flex flex-col gap-3.5 hover:-translate-y-1 hover:border-blue-500 hover:shadow-[0_18px_40px_rgba(27,79,217,.12)] transition relative overflow-hidden">
       <span className={`absolute top-0 left-0 right-0 h-1.5 ${colorAccent[pkg.color]}`}></span>
+      {/* No badge here: the only badge on these cards is "Most Popular",
+          set from /admin/pricing. The colour is shown by the stripe above. */}
       <div className="flex items-center justify-between">
         <span className="mono text-xs font-semibold text-[#5b6987]">WASH / {pkg.num}</span>
-        <span className={`text-[10px] tracking-[0.16em] font-extrabold px-2.5 py-1 rounded-full uppercase ${colorBadge[pkg.color]}`}>
-          {pkg.color}
-        </span>
       </div>
       <h3 className="display text-[32px] m-0">{pkg.name}</h3>
       <div className="display text-[54px] leading-none">

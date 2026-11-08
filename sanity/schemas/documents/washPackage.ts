@@ -24,15 +24,17 @@ export default defineType({
     defineField({
       name: 'color',
       type: 'string',
+      description: 'The coloured stripe along the top of the card.',
       options: { list: ['red', 'green', 'purple', 'blue'], layout: 'radio' },
     }),
     defineField({
       name: 'featured',
-      title: 'Most popular (fallback)',
+      title: 'Most popular (not used)',
       type: 'boolean',
       initialValue: false,
-      description:
-        'The home page shows ONE "Most Popular" badge: on the wash whose token pack is marked Most Popular at /admin/pricing. This flag is only used when no pack is marked there.',
+      // The home page's single "Most Popular" badge is set at /admin/pricing
+      // (Mark most popular), so this flag no longer does anything.
+      hidden: true,
     }),
     defineField({
       name: 'features',
