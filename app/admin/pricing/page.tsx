@@ -11,11 +11,8 @@ import {
 } from '@/lib/pricing/model'
 import { formatChicagoAdmin, toChicagoLocalInput } from '@/lib/pricing/time'
 import { getCheckoutPricing } from '@/lib/stripePricing'
-import { getSubscriptionCatalog } from '@/lib/subscriptionPricing'
-import { subscriptionsEnabled } from '@/lib/featureFlags'
 import { signOut } from '../login/actions'
 import PriceGrid, { type PriceRowView } from './PriceGrid'
-import SubscriptionPlansManager, { type PlanView } from './SubscriptionPlansManager'
 import BundleDiscountCard from './BundleDiscountCard'
 import SalesManager, { type SaleView } from './SalesManager'
 
@@ -34,16 +31,13 @@ export default async function PricingAdminPage() {
   // reading it here means this screen shows the prices customers are actually
   // being charged — including SKUs still priced from the deploy config, whose
   // amounts live only in Stripe.
-  const [snapshot, sales, pricing, subCatalog, user] = await Promise.all([
+  const [snapshot, sales, pricing, user] = await Promise.all([
     // Always a fresh read here. The cache is per serverless instance, so the
     // re-render after a save can land on an instance that still holds the old
     // snapshot — which would show the admin the price they just replaced.
     getPricingSnapshot({ fresh: true }),
     listAllSales(),
     getCheckoutPricing(),
-    // Fresh for the same reason as the snapshot: right after a save, this
-    // instance's cache could still hold the plans as they were.
-    getSubscriptionCatalog({ fresh: true }),
     getSessionUser(),
   ])
 
@@ -67,20 +61,6 @@ export default async function PricingAdminPage() {
     stripePriceId: sku.stripePriceId,
     featured: sku.featured,
     source: sku.source,
-  }))
-
-  const planViews: PlanView[] = subCatalog.plans.map((plan) => ({
-    id: plan.id,
-    name: plan.name,
-    tokensPerCycle: plan.tokensPerCycle,
-    blurb: plan.blurb,
-    featured: Boolean(plan.featured),
-    source: plan.source,
-    variants: plan.variants.map((v) => ({
-      washValue: v.washValue,
-      cents: v.price,
-      source: v.source,
-    })),
   }))
 
   const saleViews: SaleView[] = sales.map((sale) => ({
@@ -201,11 +181,6 @@ export default async function PricingAdminPage() {
           />
         </div>
 
-        <SubscriptionPlansManager
-          plans={planViews}
-          live={subCatalog.live}
-          enabled={subscriptionsEnabled()}
-        />
 
         <SalesManager
           sales={saleViews}

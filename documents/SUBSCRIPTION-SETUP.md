@@ -1,16 +1,5 @@
 # Wash Token Subscription — go-live runbook
 
-> **Update — plans are now managed at `/admin/pricing` → Subscription plans.**
-> Steps 1 and 3 below (creating Stripe Prices by hand and copying 24 Price IDs
-> into env vars) are no longer needed. From the admin page you can add, rename,
-> re-price and delete plans and the token values each one offers; everything is
-> written to Stripe (plan = Product, token value = monthly Price keyed
-> `spotless_sub_<plan>_<value>`) and the subscribe page reads it from there.
-> The original Weekly / Frequent / Family plans keep working from the env vars
-> until you edit them, at which point they move into Stripe. Still required:
-> the Customer Portal (step 2) and `SUBSCRIPTIONS_ENABLED=true` to show the
-> pages on production.
-
 Everything in the code is committed (`cf989ac` on `dev`, not pushed). The
 feature is **inert** until the steps below are done: with no price IDs
 configured, the page falls back to the proposal's prices for display and

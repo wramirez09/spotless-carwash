@@ -1,19 +1,8 @@
 import 'server-only'
 import Stripe from 'stripe'
 import { getStripeSecretKey, getSubscriptionPriceId } from './stripeEnv'
-import { loadSubscriptionCatalog } from './stripeCatalog'
-import { subscriptionLookupKey } from './pricing/model'
-import { getPricingSnapshot } from './pricingStore'
 
-// Wash Token Subscription plans and pricing.
-//
-// Plans live in Stripe and are managed at /admin/pricing: a plan is a Stripe
-// Product (name, description, tokens a month) and each token value it offers
-// is a monthly Price keyed `spotless_sub_<plan>_<value>` — see
-// lib/stripeCatalog.ts. The three plans from the original proposal (weekly /
-// frequent / family, below) are only a fallback: each one is shown until a
-// plan with its id exists in Stripe, live or deleted, so moving it into Stripe
-// or deleting it from the admin both take effect.
+// Wash Token Subscription pricing.
 //
 // Deliberately does NOT import from lib/stripePricing. Subscription tiers are
 // set by the business proposal and are independent of one-time pack/single
@@ -71,8 +60,7 @@ const PLAN_PER_TOKEN_DISCOUNT_CENTS: Record<SubscriptionPlanId, number> = {
 }
 
 export type SubscriptionVariant = {
-  /** Whole-dollar token value, e.g. '12'. */
-  washValue: string
+  washValue: SubscriptionWashValue
   /** Monthly charge in cents. */
   price: number
   /** price / tokensPerCycle, cents. */
@@ -81,25 +69,15 @@ export type SubscriptionVariant = {
   listPerToken: number
   /** listPerToken - perToken, cents. */
   savePerToken: number
-  /** The recurring Price checkout uses; null when none exists (display only). */
-  priceId: string | null
-  /** 'stripe' — keyed Price; 'env' — deploy-config Price; 'computed' — no Price yet. */
-  source: 'stripe' | 'env' | 'computed'
 }
 
 export type SubscriptionPlan = {
-  /** Stable id (slug) — recorded on every subscription, never renamed. */
-  id: string
+  id: SubscriptionPlanId
   /** Customer-facing plan name from the proposal. */
   name: string
   tokensPerCycle: number
   blurb: string
   featured?: boolean
-  sortOrder: number
-  /** The plan's Stripe Product, or null for an original plan not yet in Stripe. */
-  productId: string | null
-  /** 'stripe' — managed in Stripe; 'legacy' — an original plan from code. */
-  source: 'stripe' | 'legacy'
   /** One entry per selectable token denomination. */
   variants: SubscriptionVariant[]
 }
@@ -132,52 +110,26 @@ export function subscriptionMonthlyCents(
   return perToken * PLAN_TOKENS[plan]
 }
 
-/** Live single-token price per denomination, cents — the "vs" figure. */
-type ListPrices = Record<string, number>
-
-function variantFrom(
-  washValue: string,
-  price: number,
-  tokens: number,
-  listPrices: ListPrices | undefined,
-  priceId: string | null,
-  source: SubscriptionVariant['source'],
-): SubscriptionVariant {
-  const perToken = Math.round(price / tokens)
-  // What a subscriber is compared against: one token bought outright, at the
-  // price Stripe charges for it today. The static table, then the face value,
-  // only stand in when Stripe has no single token of that value.
-  const list =
-    listPrices?.[washValue] ??
-    (WASH_LIST_CENTS as Record<string, number>)[washValue] ??
-    Number(washValue) * 100
-  return {
-    washValue,
-    price,
-    perToken,
-    listPerToken: list,
-    savePerToken: list - perToken,
-    priceId,
-    source,
-  }
-}
-
 function buildVariant(
   plan: SubscriptionPlanId,
   washValue: SubscriptionWashValue,
   overrideCents?: number,
-  listPrices?: ListPrices,
 ): SubscriptionVariant {
+  const tokens = PLAN_TOKENS[plan]
   const price = overrideCents ?? subscriptionMonthlyCents(plan, washValue)
-  return variantFrom(washValue, price, PLAN_TOKENS[plan], listPrices, null, 'computed')
+  const perToken = Math.round(price / tokens)
+  return {
+    washValue,
+    price,
+    perToken,
+    listPerToken: WASH_LIST_CENTS[washValue],
+    savePerToken: WASH_LIST_CENTS[washValue] - perToken,
+  }
 }
-
-const LEGACY_SORT: Record<SubscriptionPlanId, number> = { weekly: 10, frequent: 20, family: 30 }
 
 function buildPlan(
   id: SubscriptionPlanId,
   overrides?: Partial<Record<SubscriptionWashValue, number>>,
-  listPrices?: ListPrices,
 ): SubscriptionPlan {
   return {
     id,
@@ -185,21 +137,17 @@ function buildPlan(
     tokensPerCycle: PLAN_TOKENS[id],
     blurb: PLAN_COPY[id].blurb,
     featured: id === 'frequent',
-    sortOrder: LEGACY_SORT[id],
-    productId: null,
-    source: 'legacy',
     variants: SUBSCRIPTION_WASH_VALUES.map((w) =>
-      buildVariant(id, w, overrides?.[w], listPrices),
+      buildVariant(id, w, overrides?.[w]),
     ),
   }
 }
 
-/** The original proposal's plans at their computed prices — the offline fallback. */
 export function fallbackSubscriptionPricing(): SubscriptionPricing {
   return { plans: SUBSCRIPTION_PLAN_IDS.map((id) => buildPlan(id)) }
 }
 
-/** Deploy-config Price ID for an original plan, or undefined when unset. */
+/** Price ID for a plan + denomination, or undefined when the env var is unset. */
 export function subscriptionPriceId(
   id: SubscriptionPlanId,
   washValue: SubscriptionWashValue,
@@ -207,7 +155,6 @@ export function subscriptionPriceId(
   return getSubscriptionPriceId(PLAN_ENV_KEY[id], washValue)
 }
 
-/** True for one of the three original plan ids. */
 export function isSubscriptionPlanId(value: unknown): value is SubscriptionPlanId {
   return (
     typeof value === 'string' &&
@@ -215,7 +162,6 @@ export function isSubscriptionPlanId(value: unknown): value is SubscriptionPlanI
   )
 }
 
-/** True for one of the original four token values. */
 export function isSubscriptionWashValue(
   value: unknown,
 ): value is SubscriptionWashValue {
@@ -225,12 +171,11 @@ export function isSubscriptionWashValue(
   )
 }
 
-/** An original plan at its computed (proposal) prices. */
 export function getSubscriptionPlan(id: SubscriptionPlanId): SubscriptionPlan {
   return buildPlan(id)
 }
 
-/** An original plan's variant at its computed (proposal) price. */
+/** The variant a customer actually selected. */
 export function getSubscriptionVariant(
   id: SubscriptionPlanId,
   washValue: SubscriptionWashValue,
@@ -248,165 +193,41 @@ function getStripe(): Stripe | null {
 }
 
 /**
- * Single-token prices from the Stripe catalog. Read through the pricing store
- * (not lib/stripePricing) so none of the one-time sale/coupon logic can reach
- * a recurring charge — this only feeds the "vs" comparison on the cards.
- */
-async function liveSingleTokenPrices(): Promise<ListPrices> {
-  try {
-    const { catalog } = await getPricingSnapshot()
-    const out: ListPrices = {}
-    for (const s of catalog) {
-      if (s.kind === 'single' && s.cents != null) out[s.washValue] = s.cents
-    }
-    return out
-  } catch {
-    return {}
-  }
-}
-
-const valueOrder = (a: SubscriptionVariant, b: SubscriptionVariant) =>
-  Number(a.washValue) - Number(b.washValue)
-
-export function sortPlans(plans: SubscriptionPlan[]): SubscriptionPlan[] {
-  return [...plans].sort(
-    (a, b) => a.sortOrder - b.sortOrder || a.tokensPerCycle - b.tokensPerCycle,
-  )
-}
-
-export type SubscriptionCatalog = {
-  /** Every plan on offer, sorted for display. May include plans with no prices. */
-  plans: SubscriptionPlan[]
-  /** False when Stripe couldn't be asked and the original plans were used. */
-  live: boolean
-}
-
-// Same reasoning as the pricing store's cache: the home page renders the plan
-// cards on every request, so a short per-instance TTL spares Stripe two list
-// calls per view. Admin writes call `invalidateSubscriptionCache()`, and
-// checkout always reads fresh.
-const CACHE_TTL_MS = 30_000
-let cached: { at: number; catalog: SubscriptionCatalog } | null = null
-
-export function invalidateSubscriptionCache(): void {
-  cached = null
-}
-
-async function loadCatalog(): Promise<SubscriptionCatalog> {
-  const stripe = getStripe()
-  if (!stripe) return { plans: fallbackSubscriptionPricing().plans, live: false }
-
-  const [catalog, listPrices] = await Promise.all([
-    loadSubscriptionCatalog(stripe),
-    liveSingleTokenPrices(),
-  ])
-  if (!catalog.ok) {
-    return {
-      plans: SUBSCRIPTION_PLAN_IDS.map((id) => buildPlan(id, undefined, listPrices)),
-      live: false,
-    }
-  }
-
-  const pricesFor = (planId: string) =>
-    [...catalog.prices.values()].filter((p) => p.plan === planId)
-
-  const plans: SubscriptionPlan[] = []
-  for (const p of catalog.plans.values()) {
-    if (!p.active) continue
-    plans.push({
-      id: p.id,
-      name: p.name,
-      tokensPerCycle: p.tokensPerCycle,
-      blurb: p.blurb,
-      featured: p.featured ?? false,
-      sortOrder: p.sortOrder ?? 100,
-      productId: p.productId,
-      source: 'stripe',
-      variants: pricesFor(p.id)
-        .map((x) =>
-          variantFrom(x.washValue, x.cents, p.tokensPerCycle, listPrices, x.priceId, 'stripe'),
-        )
-        .sort(valueOrder),
-    })
-  }
-
-  // An original plan fills in only while Stripe has never heard of its id. A
-  // deleted (archived) plan Product with that id keeps it gone.
-  for (const id of SUBSCRIPTION_PLAN_IDS) {
-    if (catalog.plans.has(id)) continue
-    const base = buildPlan(id, undefined, listPrices)
-    const variants = await Promise.all(
-      SUBSCRIPTION_WASH_VALUES.map(async (w): Promise<SubscriptionVariant | null> => {
-        const keyed = catalog.prices.get(subscriptionLookupKey(id, w))
-        if (keyed) {
-          return variantFrom(w, keyed.cents, base.tokensPerCycle, listPrices, keyed.priceId, 'stripe')
-        }
-        let envId: string | undefined
-        try {
-          envId = subscriptionPriceId(id, w)
-        } catch {
-          envId = undefined // throws on Vercel Production when PROD_* is unset
-        }
-        if (envId) {
-          const price = await stripe.prices.retrieve(envId).catch(() => null)
-          // An archived env Price can't be sold — treat it as removed.
-          if (price && price.active === false) return null
-          if (price?.unit_amount != null) {
-            return variantFrom(w, price.unit_amount, base.tokensPerCycle, listPrices, envId, 'env')
-          }
-        }
-        return base.variants.find((v) => v.washValue === w) ?? null
-      }),
-    )
-    plans.push({ ...base, variants: variants.filter((v): v is SubscriptionVariant => v != null) })
-  }
-
-  // Exactly one "Most Popular": the first flagged plan in display order, or
-  // none at all if the admin cleared it everywhere.
-  const sorted = sortPlans(plans)
-  let seen = false
-  for (const plan of sorted) {
-    if (plan.featured && !seen) seen = true
-    else plan.featured = false
-  }
-  return { plans: sorted, live: true }
-}
-
-/** Every plan, for the admin page and checkout. `fresh` skips the cache. */
-export async function getSubscriptionCatalog(
-  { fresh = false }: { fresh?: boolean } = {},
-): Promise<SubscriptionCatalog> {
-  if (!fresh && cached && Date.now() - cached.at < CACHE_TTL_MS) return cached.catalog
-  const catalog = await loadCatalog()
-  if (catalog.live) cached = { at: Date.now(), catalog }
-  return catalog
-}
-
-/**
- * What customers are offered: plans with at least one token value. Never
- * throws — any failure degrades to the original plans at computed prices, the
- * same degrade-don't-fail contract as getCheckoutPricing.
+ * Live plan pricing, read from the Stripe Price objects so the page can never
+ * advertise a number that differs from what the customer is charged. Any
+ * variant whose price is unconfigured or unreachable falls back to the computed
+ * amount — same degrade-don't-fail contract as getCheckoutPricing.
  */
 export async function getSubscriptionPricing(): Promise<SubscriptionPricing> {
+  const stripe = getStripe()
+  if (!stripe) return fallbackSubscriptionPricing()
+
   try {
-    const { plans } = await getSubscriptionCatalog()
-    return { plans: plans.filter((p) => p.variants.length > 0) }
+    const plans = await Promise.all(
+      SUBSCRIPTION_PLAN_IDS.map(async (id) => {
+        const entries = await Promise.all(
+          SUBSCRIPTION_WASH_VALUES.map(async (w) => {
+            let priceId: string | undefined
+            try {
+              priceId = subscriptionPriceId(id, w)
+            } catch {
+              // Throws on Vercel Production when the PROD_* var is unset; the
+              // computed fallback keeps the page rendering.
+              return [w, undefined] as const
+            }
+            if (!priceId) return [w, undefined] as const
+            const price = await stripe.prices.retrieve(priceId)
+            return [w, price.unit_amount ?? undefined] as const
+          }),
+        )
+        const overrides = Object.fromEntries(
+          entries.filter(([, cents]) => cents != null),
+        ) as Partial<Record<SubscriptionWashValue, number>>
+        return buildPlan(id, overrides)
+      }),
+    )
+    return { plans }
   } catch {
     return fallbackSubscriptionPricing()
   }
-}
-
-/**
- * The plan and token value a checkout is for, read fresh from Stripe so a plan
- * deleted or repriced since the page rendered is never charged. Null when the
- * plan or the value isn't on offer.
- */
-export async function findSubscriptionVariant(
-  planId: string,
-  washValue: string,
-): Promise<{ plan: SubscriptionPlan; variant: SubscriptionVariant } | null> {
-  const { plans } = await getSubscriptionCatalog({ fresh: true })
-  const plan = plans.find((p) => p.id === planId)
-  const variant = plan?.variants.find((v) => v.washValue === washValue)
-  return plan && variant ? { plan, variant } : null
 }

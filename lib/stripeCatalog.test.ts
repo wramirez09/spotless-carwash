@@ -1,8 +1,8 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type Stripe from 'stripe'
-import { adoptSku, loadStripeCatalog, loadSubscriptionCatalog } from './stripeCatalog'
-import { parseSkuLookupKey, parseSubscriptionLookupKey, skuLookupKey, subscriptionLookupKey } from './pricing/model'
+import { adoptSku, loadStripeCatalog } from './stripeCatalog'
+import { parseSkuLookupKey, skuLookupKey } from './pricing/model'
 
 // This module is what makes Stripe authoritative: it decides which SKUs are
 // for sale and which Price each one charges. Every "unpriced" branch below is
@@ -11,11 +11,9 @@ import { parseSkuLookupKey, parseSubscriptionLookupKey, skuLookupKey, subscripti
 
 const productsList = vi.fn()
 const productsUpdate = vi.fn()
-const pricesList = vi.fn()
 
 const stripe = {
   products: { list: productsList, update: productsUpdate },
-  prices: { list: pricesList },
 } as unknown as Stripe
 
 function product(overrides: Record<string, unknown> = {}) {
@@ -248,119 +246,6 @@ describe('adoptSku', () => {
     await expect(
       adoptSku(stripe, { productId: 'p', priceId: 'pr', kind: 'pack', washValue: '8' }),
     ).rejects.toThrow('permission denied')
-  })
-})
-
-describe('loadSubscriptionCatalog', () => {
-  function planProduct(id: string, over: Record<string, unknown> = {}) {
-    return {
-      id: `prod_${id}`,
-      active: true,
-      name: `${id} plan`,
-      description: `About ${id}`,
-      metadata: { spotless_sub_plan: id, tokens_per_cycle: '4', featured: 'true', sort_order: '5' },
-      ...over,
-    }
-  }
-  function monthly(key: string, cents: number, over: Record<string, unknown> = {}) {
-    return {
-      id: `price_${key}`,
-      lookup_key: key,
-      unit_amount: cents,
-      product: 'prod_x',
-      recurring: { interval: 'month', interval_count: 1 },
-      ...over,
-    }
-  }
-
-  it('reads plans from Products and their values from keyed monthly Prices', async () => {
-    productsList.mockResolvedValue({ data: [planProduct('commuter')] })
-    pricesList.mockResolvedValue({ data: [monthly('spotless_sub_commuter_12', 4400)] })
-
-    const cat = await loadSubscriptionCatalog(stripe)
-
-    expect(cat.ok).toBe(true)
-    expect(cat.plans.get('commuter')).toEqual({
-      id: 'commuter',
-      productId: 'prod_commuter',
-      active: true,
-      name: 'commuter plan',
-      blurb: 'About commuter',
-      tokensPerCycle: 4,
-      featured: true,
-      sortOrder: 5,
-    })
-    expect(cat.prices.get('spotless_sub_commuter_12')).toMatchObject({
-      plan: 'commuter',
-      washValue: '12',
-      cents: 4400,
-      priceId: 'price_spotless_sub_commuter_12',
-    })
-    // Only active, recurring Prices are listed.
-    expect(pricesList.mock.calls[0][0]).toMatchObject({ active: true, type: 'recurring' })
-  })
-
-  it('keeps a deleted plan as inactive so it is not revived from code', async () => {
-    productsList.mockResolvedValue({ data: [planProduct('weekly', { active: false })] })
-    pricesList.mockResolvedValue({ data: [] })
-    expect((await loadSubscriptionCatalog(stripe)).plans.get('weekly')?.active).toBe(false)
-  })
-
-  it('prefers a live plan over an archived duplicate', async () => {
-    productsList.mockResolvedValue({
-      data: [planProduct('weekly'), planProduct('weekly', { id: 'prod_old', active: false })],
-    })
-    pricesList.mockResolvedValue({ data: [] })
-    expect((await loadSubscriptionCatalog(stripe)).plans.get('weekly')?.productId).toBe('prod_weekly')
-  })
-
-  it('ignores unrelated Products and malformed plan metadata', async () => {
-    productsList.mockResolvedValue({
-      data: [
-        { id: 'prod_pack', active: true, name: 'Pack', metadata: { lookup_key: 'spotless_pack_12' } },
-        planProduct('Bad Id'),
-        planProduct('notokens', { metadata: { spotless_sub_plan: 'notokens' } }),
-      ],
-    })
-    pricesList.mockResolvedValue({ data: [] })
-    expect((await loadSubscriptionCatalog(stripe)).plans.size).toBe(0)
-  })
-
-  it('ignores Prices that would bill something other than plain monthly', async () => {
-    productsList.mockResolvedValue({ data: [] })
-    pricesList.mockResolvedValue({
-      data: [
-        monthly('spotless_sub_weekly_12', 4000, { recurring: { interval: 'year', interval_count: 1 } }),
-        monthly('spotless_sub_weekly_10', 3200, { recurring: { interval: 'month', interval_count: 3 } }),
-        monthly('spotless_sub_weekly_9', 2800, { unit_amount: null }),
-        monthly('some_other_key', 100),
-        monthly('spotless_sub_weekly_8', 2400),
-      ],
-    })
-    const cat = await loadSubscriptionCatalog(stripe)
-    expect([...cat.prices.keys()]).toEqual(['spotless_sub_weekly_8'])
-  })
-
-  it('reports ok=false when Stripe cannot answer', async () => {
-    productsList.mockRejectedValue(new Error('down'))
-    pricesList.mockResolvedValue({ data: [] })
-    const cat = await loadSubscriptionCatalog(stripe)
-    expect(cat.ok).toBe(false)
-  })
-})
-
-describe('subscriptionLookupKey / parseSubscriptionLookupKey', () => {
-  it('round-trips plan ids with hyphens', () => {
-    expect(parseSubscriptionLookupKey(subscriptionLookupKey('family-fleet', '12'))).toEqual({
-      plan: 'family-fleet',
-      washValue: '12',
-    })
-  })
-
-  it('rejects keys it never writes', () => {
-    for (const bad of ['spotless_sub_weekly', 'spotless_sub_Weekly_12', 'spotless_sub_weekly_012', 'spotless_pack_12', null]) {
-      expect(parseSubscriptionLookupKey(bad)).toBeNull()
-    }
   })
 })
 

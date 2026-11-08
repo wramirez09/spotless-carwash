@@ -140,9 +140,7 @@ export default function SubscribeClient({
 
     const body = {
       plan: selected.id,
-      // The value actually shown for this plan. Plans can offer different
-      // token values, so the last one picked may not exist on this plan.
-      washValue: variant.washValue,
+      washValue,
       email,
       name,
       phone,
@@ -298,7 +296,7 @@ export default function SubscribeClient({
                   className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3"
                 >
                   {(selected?.variants ?? []).map((v) => {
-                    const on = v.washValue === variant?.washValue
+                    const on = v.washValue === washValue
                     return (
                       <button
                         key={v.washValue}

@@ -22,35 +22,11 @@ vi.mock('stripe', () => ({
 
 vi.mock('@/lib/stripeEnv', () => ({ getStripeSecretKey }))
 
-// Extra plans an admin created in Stripe, on top of the original three.
-const extraPlans = vi.hoisted(() => ({ list: [] as unknown[], drop: [] as string[] }))
-
 vi.mock('@/lib/subscriptionPricing', async () => {
   const actual = await vi.importActual<typeof import('@/lib/subscriptionPricing')>(
     '@/lib/subscriptionPricing',
   )
-  // The route reads the live plan catalog. Built here from the original plans,
-  // with each Price ID coming from the `subscriptionPriceId` stub, so every
-  // test keeps one switch for "is this variant purchasable".
-  return {
-    ...actual,
-    getSubscriptionCatalog: async () => ({
-      live: true,
-      plans: [
-        ...actual
-          .fallbackSubscriptionPricing()
-          .plans.filter((p) => !extraPlans.drop.includes(p.id))
-          .map((p) => ({
-            ...p,
-            variants: p.variants.map((v) => ({
-              ...v,
-              priceId: subscriptionPriceId(p.id, v.washValue) ?? null,
-            })),
-          })),
-        ...extraPlans.list,
-      ],
-    }),
-  }
+  return { ...actual, subscriptionPriceId }
 })
 
 import { POST } from './route'
@@ -83,8 +59,6 @@ afterEach(() => {
   vi.clearAllMocks()
   getStripeSecretKey.mockReturnValue('sk_test_fake')
   subscriptionPriceId.mockReturnValue('price_sub_weekly')
-  extraPlans.list = []
-  extraPlans.drop = []
 })
 
 describe('POST /api/subscription-checkout', () => {
@@ -183,49 +157,6 @@ describe('POST /api/subscription-checkout', () => {
     sessionsCreate.mockResolvedValue({ url: 'https://checkout.stripe.test/s/1' })
     await POST(makeReq({ ...VALID_BODY, plan: 'family', washValue: '8' }))
     expect(subscriptionPriceId).toHaveBeenCalledWith('family', '8')
-  })
-
-  it('sells a plan an admin created, at its own Price and token count', async () => {
-    extraPlans.list = [
-      {
-        id: 'commuter-club',
-        name: 'Commuter Club',
-        tokensPerCycle: 6,
-        blurb: '',
-        featured: false,
-        sortOrder: 40,
-        productId: 'prod_cc',
-        source: 'stripe',
-        variants: [
-          { washValue: '15', price: 7200, perToken: 1200, listPerToken: 1500, savePerToken: 300, priceId: 'price_cc_15', source: 'stripe' },
-        ],
-      },
-    ]
-    sessionsCreate.mockResolvedValue({ url: 'https://checkout.stripe.test/s/1' })
-
-    const res = await POST(makeReq({ ...VALID_BODY, plan: 'commuter-club', washValue: '15' }))
-
-    expect(res.status).toBe(200)
-    const args = sessionsCreate.mock.calls[0][0]
-    expect(args.line_items).toEqual([{ price: 'price_cc_15', quantity: 1 }])
-    expect(args.subscription_data.metadata).toMatchObject({
-      plan: 'commuter-club',
-      tokens_per_cycle: '6',
-      wash_value: '15',
-    })
-  })
-
-  it('refuses a plan deleted since the page was rendered', async () => {
-    extraPlans.drop = ['weekly']
-    const res = await POST(makeReq(VALID_BODY))
-    expect(res.status).toBe(400)
-    await expect(res.json()).resolves.toEqual({ error: 'Bad plan' })
-    expect(sessionsCreate).not.toHaveBeenCalled()
-  })
-
-  it('rejects a malformed plan id before reading the catalog', async () => {
-    const res = await POST(makeReq({ ...VALID_BODY, plan: 'Weekly Plan!' }))
-    expect(res.status).toBe(400)
   })
 
   it('records the chosen denomination on the subscription, not the default', async () => {

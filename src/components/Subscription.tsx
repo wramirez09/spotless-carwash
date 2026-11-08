@@ -64,23 +64,15 @@ export default async function Subscription() {
     cta: { ...FALLBACK.cta, ...(copyData?.cta ?? {}) },
   }
 
-  // Every plan was removed in /admin/pricing — nothing to advertise.
-  if (pricing.plans.length === 0) return null
-
-  // The home section advertises a single denomination so the plans are
+  // The home section advertises a single denomination so the three plans are
   // comparable at a glance; the picker on /buy-tokens/subscribe is where the
   // customer chooses. Keep this in step with the page's default.
-
   const plans = pricing.plans.map((plan) => ({
     ...plan,
     variant:
       plan.variants.find((v) => v.washValue === DEFAULT_SUBSCRIPTION_WASH_VALUE) ??
       plan.variants[plan.variants.length - 1],
   }))
-
-  // The footnote names the denomination shown ("Prices shown for the $12 …"),
-  // which is only true while every plan offers it.
-  const allAtDefault = plans.every((p) => p.variant?.washValue === DEFAULT_SUBSCRIPTION_WASH_VALUE)
 
   return (
     <section id="subscription" className="pb-16 md:pb-24">
@@ -165,11 +157,9 @@ export default async function Subscription() {
                   </li>
                 ))}
               </ul>
-              {allAtDefault && (
-                <p className="mt-4 text-[12px] leading-relaxed text-[#9aa9c9]">
-                  {t.footnote}
-                </p>
-              )}
+              <p className="mt-4 text-[12px] leading-relaxed text-[#9aa9c9]">
+                {t.footnote}
+              </p>
             </div>
           </div>
         </div>

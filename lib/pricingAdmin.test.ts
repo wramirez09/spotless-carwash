@@ -63,11 +63,7 @@ vi.mock('stripe', () => {
 })
 
 vi.mock('./supabase', () => ({ getSupabaseAdmin }))
-vi.mock('./stripeEnv', () => ({
-  getStripeSecretKey,
-  // No env-var subscription Prices in these tests: only lookup keys count.
-  getSubscriptionPriceId: () => undefined,
-}))
+vi.mock('./stripeEnv', () => ({ getStripeSecretKey }))
 vi.mock('./pricingStore', async () => {
   const { mapSaleRow } = await vi.importActual<typeof import('./pricingStore')>(
     './pricingStore',

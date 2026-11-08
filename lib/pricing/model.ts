@@ -170,64 +170,6 @@ export function validateSkuInput(input: {
   return validatePriceCents(input.cents)
 }
 
-// ---------------------------------------------------------------------------
-// Subscription prices
-// ---------------------------------------------------------------------------
-
-/**
- * Stripe Price `lookup_key` for a subscription plan at a denomination. Unlike
- * the one-time SKUs this lives on the Price, not the Product: every plan
- * shares one Product, and Stripe's `transfer_lookup_key` moves the key to a new
- * Price atomically when an admin changes the monthly amount.
- */
-export function subscriptionLookupKey(plan: string, washValue: string): string {
-  return `spotless_sub_${plan}_${washValue}`
-}
-
-/** Plan ids are lowercase slugs: letters, digits, single hyphens. */
-export const PLAN_ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
-
-const SUB_KEY_RE = /^spotless_sub_([a-z0-9]+(?:-[a-z0-9]+)*)_([1-9]\d{0,2})$/
-
-/** Inverse of `subscriptionLookupKey`; null for anything we never write. */
-export function parseSubscriptionLookupKey(
-  key: string | null | undefined,
-): { plan: string; washValue: string } | null {
-  if (!key) return null
-  const m = SUB_KEY_RE.exec(key)
-  return m ? { plan: m[1], washValue: m[2] } : null
-}
-
-/** Validate a whole-dollar token denomination typed by an admin. */
-export function validateWashValue(washValue: string): string | null {
-  if (!/^[1-9]\d{0,2}$/.test(washValue)) {
-    return 'The token value must be a whole-dollar amount, e.g. 12.'
-  }
-  const n = Number(washValue)
-  if (n < 1 || n > 100) return 'The token value must be between $1 and $100.'
-  return null
-}
-
-/** Validate a subscription plan's details. Returns the first problem, or null. */
-export function validatePlanInput(input: {
-  name: string
-  tokensPerCycle: number
-  blurb: string
-}): string | null {
-  const name = input.name.trim()
-  if (!name) return 'A plan needs a name.'
-  if (name.length > 40) return 'Keep the plan name to 40 characters or fewer.'
-  if (
-    !Number.isInteger(input.tokensPerCycle) ||
-    input.tokensPerCycle < 1 ||
-    input.tokensPerCycle > 50
-  ) {
-    return 'A plan ships between 1 and 50 tokens a month.'
-  }
-  if (input.blurb.trim().length > 200) return 'Keep the description to 200 characters or fewer.'
-  return null
-}
-
 export type SaleStatus = 'draft' | 'scheduled' | 'canceled'
 
 /** A row of `public.sales`, normalized to ms for comparison against Date.now(). */

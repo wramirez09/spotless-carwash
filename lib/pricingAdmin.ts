@@ -42,7 +42,7 @@ export type AdminResult<T = undefined> =
 const CURRENCY = 'usd'
 
 let stripeSingleton: Stripe | null = null
-export function getStripe(): Stripe | null {
+function getStripe(): Stripe | null {
   if (stripeSingleton) return stripeSingleton
   const key = getStripeSecretKey()
   if (!key) return null
@@ -50,7 +50,7 @@ export function getStripe(): Stripe | null {
   return stripeSingleton
 }
 
-export function stripeMessage(err: unknown): string {
+function stripeMessage(err: unknown): string {
   if (err instanceof Stripe.errors.StripeError) return err.message
   return err instanceof Error ? err.message : 'Unknown error'
 }
@@ -60,7 +60,7 @@ export function stripeMessage(err: unknown): string {
  * lost log line must not roll back a price change that already happened in
  * Stripe. Failures are logged to the platform logs instead.
  */
-export async function audit(
+async function audit(
   actorEmail: string | null,
   action: string,
   detail: Record<string, unknown>,
@@ -203,7 +203,7 @@ async function locateSku(
  * lib/pricingStore.ts), and archived Prices can't be used in new Checkout
  * Sessions — archiving one would turn a Stripe blip into a checkout outage.
  */
-export async function archiveIfOurs(stripe: Stripe, priceId: string, keepId: string): Promise<void> {
+async function archiveIfOurs(stripe: Stripe, priceId: string, keepId: string): Promise<void> {
   if (!priceId || priceId === keepId) return
   const old = await stripe.prices.retrieve(priceId).catch(() => null)
   if (old?.metadata?.source !== 'admin_pricing') return
