@@ -4,6 +4,7 @@ import type { Pkg, WashColor } from '@/src/data/washes'
 import { getCheckoutPricing } from '@/lib/stripePricing'
 import { fillCountWord, formatUSD } from '@/lib/pricingCopy'
 import { getWashLineup } from '@/lib/washPackages'
+import { featuredWashIndex } from '@/lib/washPricing'
 import OfferCatalogSchema from '@/src/components/seo/OfferCatalogSchema'
 
 type WashesData = {
@@ -89,11 +90,10 @@ function Card({ pkg }: { pkg: Pkg }) {
   return (
     <article className="hover:lift bg-white border border-line rounded-2xl p-6 flex flex-col gap-3.5 hover:-translate-y-1 hover:border-blue-500 hover:shadow-[0_18px_40px_rgba(27,79,217,.12)] transition relative overflow-hidden">
       <span className={`absolute top-0 left-0 right-0 h-1.5 ${colorAccent[pkg.color]}`}></span>
+      {/* No badge here: the only badge on these cards is "Most Popular",
+          set from /admin/pricing. The colour is shown by the stripe above. */}
       <div className="flex items-center justify-between">
         <span className="mono text-xs font-semibold text-[#5b6987]">WASH / {pkg.num}</span>
-        <span className={`text-[10px] tracking-[0.16em] font-extrabold px-2.5 py-1 rounded-full uppercase ${colorBadge[pkg.color]}`}>
-          {pkg.color}
-        </span>
       </div>
       <h3 className="display text-[32px] m-0">{pkg.name}</h3>
       <div className="display text-[54px] leading-none">
@@ -143,11 +143,17 @@ export default async function Washes() {
   // The number is what everything else — token packs, checkout — is priced
   // from, so the card shows that number rather than the separately typed
   // display string, which could drift from it.
-  const packages: Pkg[] = washes.packages.map((pkg) =>
-    Number.isFinite(pkg.priceNumber) && pkg.priceNumber > 0
-      ? { ...pkg, price: formatUSD(Math.round(pkg.priceNumber * 100)) }
-      : pkg,
-  )
+  // Exactly one "Most Popular", and the same one the store shows: the wash
+  // whose token pack is featured in /admin/pricing (today the $12 Ultimate).
+  const storePick = pricing.packs.find((p) => p.featured)?.washValue
+  const popular = featuredWashIndex(washes.packages, storePick)
+  const packages: Pkg[] = washes.packages.map((pkg, i) => ({
+    ...pkg,
+    ...(Number.isFinite(pkg.priceNumber) && pkg.priceNumber > 0
+      ? { price: formatUSD(Math.round(pkg.priceNumber * 100)) }
+      : {}),
+    featured: i === popular,
+  }))
 
   return (
     <section id="washes" className="py-16 md:py-24">

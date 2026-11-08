@@ -24,7 +24,6 @@ export const packages: Pkg[] = [
     price: '$10',
     priceNumber: 10,
     color: 'green',
-    featured: true,
     features: [
       { text: 'Undercarriage spray', included: true },
       { text: 'Single presoak', included: true },
@@ -41,6 +40,7 @@ export const packages: Pkg[] = [
     price: '$12',
     priceNumber: 12,
     color: 'purple',
+    featured: true,
     features: [
       { text: 'Undercarriage spray', included: true },
       { text: 'Double presoak', included: true },
@@ -57,7 +57,6 @@ export const packages: Pkg[] = [
     price: '$14',
     priceNumber: 14,
     color: 'blue',
-    featured: true,
     features: [
       { text: 'Undercarriage spray', included: true },
       { text: 'Double presoak', included: true },

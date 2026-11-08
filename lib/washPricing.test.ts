@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   describeSyncAction,
   expectedListCents,
+  featuredWashIndex,
   planCatalogSync,
   tiersFromPackages,
   type SkuLike,
@@ -148,5 +149,27 @@ describe('describeSyncAction', () => {
       'Change the $12 4-pack from $45.00 to $48.00 (Ultimate)',
       'Remove the $9 4-pack — there is no $9 wash package',
     ])
+  })
+})
+
+describe('featuredWashIndex — one "Most Popular" on the home page', () => {
+  // The live CMS flags two packages at once.
+  const cms = [
+    { name: 'Deluxe', priceNumber: 10, featured: true },
+    { name: 'Ultimate', priceNumber: 12, featured: false },
+    { name: 'Lustre', priceNumber: 14, featured: true },
+  ]
+
+  it('follows the store: the wash whose token pack is featured in the admin', () => {
+    expect(featuredWashIndex(cms, '12')).toBe(1)
+  })
+
+  it('ignores the CMS flags entirely — no admin pick, no badge', () => {
+    expect(featuredWashIndex(cms, null)).toBe(-1)
+    expect(featuredWashIndex(cms, undefined)).toBe(-1)
+  })
+
+  it('shows no badge when the admin pick has no matching wash', () => {
+    expect(featuredWashIndex(cms, '99')).toBe(-1)
   })
 })
