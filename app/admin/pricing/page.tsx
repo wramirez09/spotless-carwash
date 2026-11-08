@@ -11,6 +11,8 @@ import {
 } from '@/lib/pricing/model'
 import { formatChicagoAdmin, toChicagoLocalInput } from '@/lib/pricing/time'
 import { getCheckoutPricing } from '@/lib/stripePricing'
+import { getWashLineup } from '@/lib/washPackages'
+import { describeSyncAction, expectedListCents, planCatalogSync } from '@/lib/washPricing'
 import { signOut } from '../login/actions'
 import PriceGrid, { type PriceRowView } from './PriceGrid'
 import BundleDiscountCard from './BundleDiscountCard'
@@ -40,6 +42,10 @@ export default async function PricingAdminPage() {
     getCheckoutPricing(),
     getSessionUser(),
   ])
+  // Fresh: an editor who just changed a wash price in the CMS and came here to
+  // check should see the new number, not a 60-second-old one.
+  const washes = await getWashLineup({ fresh: true })
+  const tierFor = (v: string) => washes.tiers.find((t) => t.washValue === v)
 
   // Legacy SKUs still priced from an env-var Price ID carry no amount in the
   // snapshot; the storefront's own resolution fills those in.
@@ -61,7 +67,19 @@ export default async function PricingAdminPage() {
     stripePriceId: sku.stripePriceId,
     featured: sku.featured,
     source: sku.source,
+    tierName: tierFor(sku.washValue)?.name ?? null,
+    expectedCents: expectedListCents(washes.tiers, sku.washValue, sku.tokens),
   }))
+
+  // What "Sync to wash packages" would change. Only planned against a real
+  // CMS answer — never against the built-in fallback lineup.
+  const syncPlan =
+    washes.source === 'cms'
+      ? planCatalogSync(
+          priceRows.map((r) => ({ ...r, cents: r.cents })),
+          washes.tiers,
+        ).map(describeSyncAction)
+      : []
 
   const saleViews: SaleView[] = sales.map((sale) => ({
     id: sale.id,
@@ -174,7 +192,12 @@ export default async function PricingAdminPage() {
         )}
 
         <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-          <PriceGrid rows={priceRows} />
+          <PriceGrid
+            rows={priceRows}
+            tiers={washes.tiers}
+            lineupFromCms={washes.source === 'cms'}
+            syncPlan={syncPlan}
+          />
           <BundleDiscountCard
             currentCents={snapshot.settings.baseDiscountCents}
             driftCount={driftCount}

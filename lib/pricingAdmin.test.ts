@@ -64,6 +64,12 @@ vi.mock('stripe', () => {
 
 vi.mock('./supabase', () => ({ getSupabaseAdmin }))
 vi.mock('./stripeEnv', () => ({ getStripeSecretKey }))
+// Wash packages (CMS). Default: no CMS answer, so nothing is restricted.
+const washLineup = vi.hoisted(() => ({
+  value: { source: 'fallback', tiers: [] as { name: string; washValue: string; priceCents: number }[], packages: [] },
+}))
+vi.mock('./washPackages', () => ({ getWashLineup: async () => washLineup.value }))
+
 vi.mock('./pricingStore', async () => {
   const { mapSaleRow } = await vi.importActual<typeof import('./pricingStore')>(
     './pricingStore',
@@ -77,6 +83,7 @@ import {
   createCatalogSku,
   deleteCatalogSku,
   setSkuFeatured,
+  syncCatalogToWashPackages,
   cancelSale,
   publishSale,
   reprovisionSale,
@@ -200,6 +207,7 @@ const baseSaleInput = {
 }
 
 beforeEach(() => {
+  washLineup.value = { source: 'fallback', tiers: [], packages: [] }
   vi.clearAllMocks()
   queues = {}
   inserts = []
@@ -852,5 +860,115 @@ describe('updateBaseDiscount', () => {
     const res = await updateBaseDiscount(cents, null)
     expect(res.ok).toBe(false)
     expect(couponsCreate).not.toHaveBeenCalled()
+  })
+})
+
+// =========================================================================
+// Wash packages are the source of truth
+// =========================================================================
+
+const LIVE_TIERS = [
+  { name: 'Deluxe', washValue: '10', priceCents: 1000 },
+  { name: 'Ultimate', washValue: '12', priceCents: 1200 },
+  { name: 'Lustre', washValue: '14', priceCents: 1400 },
+]
+
+describe('createCatalogSku — token values follow the wash packages', () => {
+  it('refuses a token value with no wash package', async () => {
+    washLineup.value = { source: 'cms', tiers: LIVE_TIERS, packages: [] }
+    const result = await createCatalogSku({
+      kind: 'pack',
+      washValue: '9',
+      tokens: 4,
+      unitAmountCents: 3600,
+      actorEmail: null,
+    })
+    expect(result.ok).toBe(false)
+    expect(result.message).toMatch(/no \$9 wash package/)
+    expect(productsList).not.toHaveBeenCalled()
+  })
+
+  it('does not block creation when the CMS is unreachable', async () => {
+    listing()
+    productsCreate.mockResolvedValue({ id: 'prod_new' })
+    const result = await createCatalogSku({
+      kind: 'pack',
+      washValue: '9',
+      tokens: 10,
+      unitAmountCents: 9000,
+      actorEmail: null,
+    })
+    expect(result.ok).toBe(true)
+  })
+})
+
+describe('syncCatalogToWashPackages', () => {
+  beforeEach(() => {
+    washLineup.value = { source: 'cms', tiers: LIVE_TIERS, packages: [] }
+  })
+
+  it('adds, re-prices and removes until the catalog matches the packages', async () => {
+    // Today: $8 and $12 4-packs (the $12 hand-edited to $45), no $10 or $14.
+    listing(
+      stripeProduct('spotless_pack_8', { id: 'prod_8', cents: 3200 }),
+      stripeProduct('spotless_pack_12', { id: 'prod_12', cents: 4500 }),
+    )
+    getPricingSnapshot.mockResolvedValue({
+      ...SNAPSHOT,
+      catalog: [catalogEntry('pack', '8', 3200), catalogEntry('pack', '12', 4500)],
+    })
+    productsCreate.mockImplementation(async (p: { metadata: { lookup_key: string } }) => ({
+      id: `prod_${p.metadata.lookup_key}`,
+    }))
+
+    const result = await syncCatalogToWashPackages('will@example.com')
+
+    expect(result.ok).toBe(true)
+    // $10 and $14 4-packs created at 4 × wash price.
+    const created = productsCreate.mock.calls.map((c) => c[0].metadata.lookup_key)
+    expect(created).toEqual(['spotless_pack_10', 'spotless_pack_14'])
+    expect(pricesCreate).toHaveBeenCalledWith(expect.objectContaining({ unit_amount: 4000 }))
+    expect(pricesCreate).toHaveBeenCalledWith(expect.objectContaining({ unit_amount: 5600 }))
+    // $12 back to 4 × $12.
+    expect(pricesCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ product: 'prod_12', unit_amount: 4800 }),
+    )
+    // $8 archived — there is no $8 wash.
+    expect(productsUpdate).toHaveBeenCalledWith(
+      'prod_8',
+      expect.objectContaining({ active: false }),
+    )
+    expect(inserts).toContainEqual({
+      table: 'pricing_audit_log',
+      payload: expect.objectContaining({ action: 'catalog.sync', succeeded: true }),
+    })
+  })
+
+  it('does nothing when already in line', async () => {
+    listing()
+    getPricingSnapshot.mockResolvedValue({
+      ...SNAPSHOT,
+      catalog: LIVE_TIERS.map((t) => catalogEntry('pack', t.washValue, t.priceCents * 4)),
+    })
+    const result = await syncCatalogToWashPackages(null)
+    expect(result.ok).toBe(true)
+    expect(result.message).toMatch(/nothing to change/)
+    expect(pricesCreate).not.toHaveBeenCalled()
+    expect(productsUpdate).not.toHaveBeenCalled()
+  })
+
+  it('refuses to act on the built-in lineup when the CMS is down', async () => {
+    washLineup.value = { source: 'fallback', tiers: LIVE_TIERS, packages: [] }
+    const result = await syncCatalogToWashPackages(null)
+    expect(result.ok).toBe(false)
+    expect(productsUpdate).not.toHaveBeenCalled()
+    expect(productsCreate).not.toHaveBeenCalled()
+  })
+
+  it('refuses to act when Stripe cannot be listed', async () => {
+    productsList.mockRejectedValue(new Error('down'))
+    const result = await syncCatalogToWashPackages(null)
+    expect(result.ok).toBe(false)
+    expect(result.message).toMatch(/Stripe could not be reached/)
   })
 })

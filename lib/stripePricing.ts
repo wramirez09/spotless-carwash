@@ -13,6 +13,8 @@ import {
 } from './stripeEnv'
 import Stripe from 'stripe'
 import { SANDBOX_PRICE_IDS, getPricingSnapshot } from './pricingStore'
+import { getWashLineup } from './washPackages'
+import { expectedListCents, type WashTier } from './washPricing'
 import {
   discountMetadata,
   pickActiveSale,
@@ -138,6 +140,8 @@ export type CheckoutPricing = {
   packCouponAmountOff: number // cents — total auto-applied discount per pack
   /** null outside every sale window. */
   activeSale: ActiveSaleInfo | null
+  /** The wash packages the token values and prices come from. */
+  tiers?: WashTier[]
 }
 
 function toSaleInfo(sale: ResolvedSale | null): ActiveSaleInfo | null {
@@ -206,6 +210,8 @@ export type CheckoutConfig = {
   sale: ResolvedSale | null
   baseDiscountCents: number
   baseCouponId: string
+  /** The wash packages' tiers — what token values exist and cost. */
+  tiers: WashTier[]
 }
 
 /**
@@ -226,7 +232,7 @@ export async function resolveCheckoutConfig(
   now = Date.now(),
   { fresh = false }: { fresh?: boolean } = {},
 ): Promise<CheckoutConfig> {
-  const snapshot = await getPricingSnapshot({ fresh })
+  const [snapshot, washes] = await Promise.all([getPricingSnapshot({ fresh }), getWashLineup()])
   const baseCouponId = snapshot.settings.baseCouponId ?? PACK_DISCOUNT_COUPON_ID
   const record = pickActiveSale(snapshot.sales, now)
   const sale = record
@@ -234,11 +240,19 @@ export async function resolveCheckoutConfig(
     : null
 
   return {
-    catalog: snapshot.catalog.filter((s) => Boolean(s.stripePriceId)),
+    catalog: snapshot.catalog.filter(
+      (s) =>
+        Boolean(s.stripePriceId) &&
+        // Only token values that are a wash package on the home page are
+        // sold — a $9 token is meaningless once there is no $9 wash. Applied
+        // only when the CMS actually answered: an outage must not stop sales.
+        (washes.source !== 'cms' || washes.tiers.some((t) => t.washValue === s.washValue)),
+    ),
     packCouponId: sale ? sale.couponId : baseCouponId,
     sale,
     baseDiscountCents: snapshot.settings.baseDiscountCents,
     baseCouponId,
+    tiers: washes.tiers,
   }
 }
 
@@ -330,7 +344,7 @@ export async function getCheckoutPricing(
   const stripe = getStripe()
 
   if (!stripe) {
-    return fallbackPricing(sale, baseDiscountCents, baseCouponId, config.catalog)
+    return fallbackPricing(sale, baseDiscountCents, baseCouponId, config.catalog, config.tiers)
   }
 
   try {
@@ -343,22 +357,29 @@ export async function getCheckoutPricing(
           s.cents != null && s.source === 'stripe'
             ? s.cents
             : ((await stripe.prices.retrieve(s.stripePriceId)).unit_amount ??
-              legacyFallbackCents(s)),
+              legacyFallbackCents(s, config.tiers)),
         ),
       ),
       stripe.coupons.retrieve(config.packCouponId).catch(() => null),
     ])
 
     const priced = config.catalog.map((s, i) => ({ sku: s, cents: amounts[i] }))
-    return buildPricing(priced, sale, baseDiscountCents, baseCouponId, (cents) =>
-      couponAmountOffFor(coupon, cents),
-    )
+    return {
+      ...buildPricing(priced, sale, baseDiscountCents, baseCouponId, (cents) =>
+        couponAmountOffFor(coupon, cents),
+      ),
+      tiers: config.tiers,
+    }
   } catch {
-    return fallbackPricing(sale, baseDiscountCents, baseCouponId, config.catalog)
+    return fallbackPricing(sale, baseDiscountCents, baseCouponId, config.catalog, config.tiers)
   }
 }
 
-function legacyFallbackCents(s: CatalogSku): number | null {
+function legacyFallbackCents(s: CatalogSku, tiers: readonly WashTier[] = []): number | null {
+  // The wash price is the best estimate of what a token costs; the old
+  // hardcoded table only covers values that aren't a package.
+  const fromWash = expectedListCents(tiers, s.washValue, s.tokens)
+  if (fromWash != null) return fromWash
   const v = s.washValue
   const singles: Record<string, number> = SINGLE_FALLBACK_CENTS
   const packs: Record<string, number> = PACK_FALLBACK_CENTS
@@ -414,6 +435,7 @@ function fallbackPricing(
   baseDiscountCents = BUNDLE_BASE_DISCOUNT_FALLBACK_CENTS,
   baseCouponId = PACK_DISCOUNT_COUPON_ID,
   catalog: CatalogSku[] = [],
+  tiers: readonly WashTier[] = [],
 ): CheckoutPricing {
   // With Stripe unreachable the coupon's real amount is unknown, so the
   // displayed saving is reconstructed from config: base alone outside a sale,
@@ -426,10 +448,10 @@ function fallbackPricing(
   // deploy-config SKUs when Stripe can't be listed); only the amounts are
   // reconstructed. An empty catalog stays empty — an admin who removed
   // everything must not see the old eight come back.
-  const priced = catalog.map((s) => ({ sku: s, cents: s.cents ?? legacyFallbackCents(s) }))
+  const priced = catalog.map((s) => ({ sku: s, cents: s.cents ?? legacyFallbackCents(s, tiers) }))
 
   const pricing = buildPricing(priced, sale, baseDiscountCents, baseCouponId, (cents) =>
     Math.min(cents, saveCents),
   )
-  return { ...pricing, packCouponAmountOff: saveCents }
+  return { ...pricing, packCouponAmountOff: saveCents, tiers: [...tiers] }
 }

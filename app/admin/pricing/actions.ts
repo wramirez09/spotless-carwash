@@ -9,6 +9,7 @@ import {
   createCatalogSku,
   deleteCatalogSku,
   setSkuFeatured,
+  syncCatalogToWashPackages,
   cancelSale as cancelSaleService,
   publishSale as publishSaleService,
   reprovisionSale as reprovisionSaleService,
@@ -147,6 +148,15 @@ export async function adoptAllSkusFromStripe(): Promise<ActionResult> {
   const actor = await requireAdmin()
   if (!actor) return { ok: false, message: EXPIRED }
   const result = await adoptAllCatalogSkus(actor)
+  revalidateStorefront()
+  return toResult(result)
+}
+
+/** Bring every token price in Stripe in line with the wash packages. */
+export async function syncWithWashPackages(): Promise<ActionResult> {
+  const actor = await requireAdmin()
+  if (!actor) return { ok: false, message: EXPIRED }
+  const result = await syncCatalogToWashPackages(actor)
   revalidateStorefront()
   return toResult(result)
 }

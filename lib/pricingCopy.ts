@@ -12,8 +12,11 @@
 //   {discount}          everyday bundle discount per pack, e.g. "$5"
 //   {saleDiscount}      a running sale's extra discount (the bundle discount
 //                       when no sale is running)
-//   {packPrices}        every pack with its price, e.g. "$8 wash 4-pack $27, …"
+//   {packPrices}        every pack with its price, e.g. "4 × $10 washes for $35, …"
 //   {singlePrices}      every single token with its price
+//   {washPrices}        the wash packages, e.g. "Deluxe $10, Ultimate $12 and Lustre $14"
+//   {tokenValues}       the token values, e.g. "$10, $12 and $14"
+//   {washCount}         how many wash packages, as a word, e.g. "Three"
 //   {lowestPackPerWash} cheapest per-wash price across packs, e.g. "$6.75"
 //   {pack:12}           price you pay for the $12 4-pack (discount applied)
 //   {pack:12x10}        …the $12 10-pack
@@ -30,6 +33,8 @@ export type PricingFacts = {
   saleExtraCents: number | null
   packs: { washValue: string; tokens: number; price: number; save: number }[]
   singles: { washValue: string; price: number }[]
+  /** The wash packages — the source of truth for token values and prices. */
+  washes: { name: string; washValue: string; priceCents: number }[]
 }
 
 /** The subset of CheckoutPricing this module reads. */
@@ -51,7 +56,10 @@ export function formatUSD(cents: number): string {
   return cents % 100 === 0 ? `$${cents / 100}` : `$${(cents / 100).toFixed(2)}`
 }
 
-export function pricingFacts(pricing: PricingLike): PricingFacts {
+export function pricingFacts(
+  pricing: PricingLike & { tiers?: PricingFacts['washes'] },
+  washes: PricingFacts['washes'] = pricing.tiers ?? [],
+): PricingFacts {
   // During a sale the first chip is the bundle part and the second the sale's
   // extra (see splitCouponBreakdown in lib/stripePricing.ts); outside one the
   // single chip is the whole, everyday discount.
@@ -69,10 +77,36 @@ export function pricingFacts(pricing: PricingLike): PricingFacts {
       save,
     })),
     singles: pricing.singles.map(({ washValue, price }) => ({ washValue, price })),
+    washes: washes.map(({ name, washValue, priceCents }) => ({ name, washValue, priceCents })),
   }
 }
 
 const net = (p: { price: number; save: number }) => Math.max(0, p.price - p.save)
+
+const COUNT_WORDS = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve']
+
+/** 3 → "Three"; past twelve, digits. */
+export function countWord(n: number): string {
+  return COUNT_WORDS[n] ?? String(n)
+}
+
+/**
+ * Make a heading's count agree with what's listed: fills `{washCount}`, and
+ * rewrites a LEADING count word ("Four ways to…") left in the CMS from when
+ * the lineup had a different size. Only the first word is touched, so a count
+ * elsewhere in the sentence is never mistaken for one.
+ */
+export function fillCountWord(text: string, n: number): string {
+  if (!text || n <= 0) return text
+  const word = countWord(n)
+  const filled = text.replaceAll('{washCount}', word)
+  return filled.replace(/^(\s*)([A-Za-z]+)\b/, (whole, lead: string, first: string) => {
+    const i = COUNT_WORDS.findIndex((w) => w.toLowerCase() === first.toLowerCase())
+    if (i < 1 || i === n) return whole
+    const cased = first === first.toLowerCase() ? word.toLowerCase() : word
+    return lead + cased
+  })
+}
 
 function listJoin(items: string[]): string {
   if (items.length <= 1) return items.join('')
@@ -94,8 +128,20 @@ export function fillPricing(text: string, facts: PricingFacts): string {
       case 'packPrices': {
         if (facts.packs.length === 0) return whole
         return listJoin(
-          facts.packs.map((p) => `$${p.washValue} wash ${p.tokens}-pack ${formatUSD(net(p))}`),
+          facts.packs.map((p) => `${p.tokens} × $${p.washValue} washes for ${formatUSD(net(p))}`),
         )
+      }
+      case 'washPrices': {
+        if (facts.washes.length === 0) return whole
+        return listJoin(facts.washes.map((w) => `${w.name} ${formatUSD(w.priceCents)}`))
+      }
+      case 'tokenValues': {
+        if (facts.washes.length === 0) return whole
+        return listJoin(facts.washes.map((w) => `$${w.washValue}`))
+      }
+      case 'washCount': {
+        if (facts.washes.length === 0) return whole
+        return countWord(facts.washes.length)
       }
       case 'singlePrices': {
         if (facts.singles.length === 0) return whole
@@ -142,39 +188,47 @@ export function fillDiscountCopy(
   return filled.replace(/\$\d+(?:\.\d{2})?(?!\d)/g, formatUSD(amountCents))
 }
 
-/**
- * What one wash costs, from Stripe: the price of a single token of that
- * denomination. Null when no single token of that value is on sale — callers
- * keep their CMS-entered price in that case.
- */
-export function liveWashPriceCents(washValue: number | string, facts: PricingFacts): number | null {
-  const v = String(Number(washValue))
-  return facts.singles.find((s) => s.washValue === v)?.price ?? null
-}
-
 const HAS_PLACEHOLDER = /\{[a-zA-Z]+(?::[0-9x]+)?\}/
 const normQuestion = (q: string) => q.trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+
+/**
+ * The priced questions, recognised by what they ask rather than their exact
+ * wording — the CMS says "What do wash tokens cost?" where the built-in FAQ
+ * says "What does a wash token cost?", and both must get live prices.
+ */
+const PRICED_TOPICS: { topic: string; test: RegExp }[] = [
+  { topic: 'token-cost', test: /\btokens?\b.*\b(cost|price|prices|priced|how much)\b|\b(cost|price|how much)\b.*\btokens?\b/ },
+  { topic: 'token-worth', test: /\btokens?\b.*\bworth\b|\bworth\b.*\btokens?\b/ },
+]
+
+function topicOf(q: string): string | null {
+  const n = normQuestion(q)
+  return PRICED_TOPICS.find((t) => t.test.test(n))?.topic ?? null
+}
 
 /**
  * FAQ answers with live prices.
  *
  * A CMS answer that uses placeholders is filled and used as written. A CMS
- * answer to one of the priced questions in the built-in FAQ that still quotes
- * literal numbers (written before prices lived in Stripe) is replaced by the
- * built-in, placeholder-driven answer — otherwise the FAQ would keep quoting
- * packs that no longer exist until someone noticed and re-typed it. Every
- * other answer passes through untouched.
+ * answer to one of the priced questions (by topic — see PRICED_TOPICS) that
+ * still quotes literal numbers is replaced by the built-in, placeholder-driven
+ * answer; otherwise the FAQ keeps quoting tokens that are no longer sold until
+ * someone notices and re-types it. Every other answer passes through untouched.
  */
 export function fillFaqs<T extends { q: string; a: string }>(
   faqs: readonly T[],
   builtIn: readonly { q: string; a: string }[],
   facts: PricingFacts,
 ): T[] {
-  const priced = new Map(
-    builtIn.filter((f) => HAS_PLACEHOLDER.test(f.a)).map((f) => [normQuestion(f.q), f.a]),
-  )
+  const priced = new Map<string, string>()
+  for (const f of builtIn) {
+    if (!HAS_PLACEHOLDER.test(f.a)) continue
+    const topic = topicOf(f.q)
+    if (topic && !priced.has(topic)) priced.set(topic, f.a)
+  }
   return faqs.map((f) => {
-    const ours = priced.get(normQuestion(f.q))
+    const topic = topicOf(f.q)
+    const ours = topic ? priced.get(topic) : undefined
     const a = !HAS_PLACEHOLDER.test(f.a) && ours ? ours : f.a
     return { ...f, a: fillPricing(a, facts) }
   })

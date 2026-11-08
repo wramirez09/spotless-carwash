@@ -16,11 +16,11 @@ export const faqs: FAQ[] = [
   },
   {
     q: 'Are car wash tokens worth it?',
-    a: 'For regular customers, yes. Every token pack comes with {discount} off automatically, which brings a wash down to as little as {lowestPackPerWash}. Tokens never expire, work at both Forest Park locations, and skip the cash station — they make decent gifts too.',
+    a: 'Yes. Wash tokens offer added value and convenience for frequent customers. There is a token for each of our washes — {washPrices} — and every pack of four comes with {discount} off. Tokens never expire and can be used at either Forest Park location.',
   },
   {
     q: 'What does a wash token cost?',
-    a: 'Tokens are sold in packs: {packPrices} — prices include the {discount} pack discount, applied automatically at checkout. Each token is good for one wash at its face value: an $8 token for the $8 wash, a $12 token for the $12 wash, and so on.',
+    a: 'Wash tokens are sold in packs: {packPrices}. Prices include the {discount} pack discount, applied automatically at checkout. Each token is good for the wash of the same value — {washPrices}.',
   },
   {
     q: 'What are your hours?',

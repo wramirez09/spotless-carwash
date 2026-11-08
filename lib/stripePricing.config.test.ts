@@ -14,6 +14,12 @@ const { getPricingSnapshot, secret, pricesRetrieve, couponsRetrieve } = vi.hoist
 }))
 
 vi.mock('./pricingStore', () => ({ getPricingSnapshot }))
+// The wash packages decide which token values are sold. Default: the CMS
+// didn't answer, which must never filter anything out.
+const washLineup = vi.hoisted(() => ({
+  value: { source: 'fallback', tiers: [] as { name: string; washValue: string; priceCents: number }[], packages: [] },
+}))
+vi.mock('./washPackages', () => ({ getWashLineup: async () => washLineup.value }))
 vi.mock('./stripeEnv', () => ({
   getStripeSecretKey: () => secret(),
   getPackPriceId: (v: string) => `env_pack_${v}`,
@@ -79,6 +85,7 @@ function sale(overrides: Record<string, unknown> = {}) {
 }
 
 beforeEach(() => {
+  washLineup.value = { source: 'fallback', tiers: [], packages: [] }
   vi.clearAllMocks()
   secret.mockReturnValue(undefined)
   getPricingSnapshot.mockResolvedValue(snapshot())
@@ -271,5 +278,48 @@ describe('getCheckoutPricing with Stripe unavailable', () => {
     const pricing = await fresh.getCheckoutPricing(NOW)
     expect(pricing.packs).toHaveLength(4)
     expect(pricing.packs[0].price).toBeGreaterThan(0)
+  })
+})
+
+describe('wash packages decide which tokens are sold', () => {
+  const LIVE = [
+    { name: 'Deluxe', washValue: '10', priceCents: 1000 },
+    { name: 'Ultimate', washValue: '12', priceCents: 1200 },
+    { name: 'Lustre', washValue: '14', priceCents: 1400 },
+  ]
+
+  it('offers only token values that are a wash package', async () => {
+    washLineup.value = { source: 'cms', tiers: LIVE, packages: [] }
+    const config = await resolveCheckoutConfig(NOW)
+    expect([...new Set(config.catalog.map((s) => s.washValue))].sort()).toEqual(['10', '12'])
+    expect(config.tiers).toEqual(LIVE)
+  })
+
+  it('so checkout refuses a $8 or $9 token once those washes are gone', async () => {
+    washLineup.value = { source: 'cms', tiers: LIVE, packages: [] }
+    const skus = (await resolveCheckoutConfig(NOW)).catalog.map((s) => s.sku)
+    expect(skus).not.toContain('spotless_pack_8')
+    expect(skus).not.toContain('spotless_single_9')
+  })
+
+  it('never filters on the built-in fallback — a CMS outage must not stop sales', async () => {
+    washLineup.value = { source: 'fallback', tiers: LIVE, packages: [] }
+    expect((await resolveCheckoutConfig(NOW)).catalog).toHaveLength(8)
+  })
+
+  it('quotes a token whose amount is unknown from its wash price', async () => {
+    // Stripe unreachable + a SKU with no stored amount: tokens × wash price is
+    // the best estimate, not the old hardcoded table.
+    washLineup.value = { source: 'cms', tiers: [{ name: 'Lustre', washValue: '14', priceCents: 1400 }], packages: [] }
+    getPricingSnapshot.mockResolvedValue(
+      snapshot({
+        catalog: [
+          { ...snapshot().catalog[0], sku: 'spotless_pack_14', washValue: '14', stripePriceId: 'p14' },
+        ],
+      }),
+    )
+    const pricing = await getCheckoutPricing(NOW)
+    expect(pricing.packs[0]).toMatchObject({ washValue: '14', price: 5600 })
+    expect(pricing.tiers).toEqual([{ name: 'Lustre', washValue: '14', priceCents: 1400 }])
   })
 })

@@ -16,6 +16,7 @@ import {
   deleteSku,
   featureSku,
   setPrice,
+  syncWithWashPackages,
 } from './actions'
 
 export type PriceRowView = {
@@ -33,9 +34,23 @@ export type PriceRowView = {
    * 'env'    — still resolving from the deploy-time env var.
    */
   source: 'stripe' | 'db' | 'env'
+  /** The wash package this token value belongs to, or null if none. */
+  tierName?: string | null
+  /** tokens × the wash package price — what this SKU should list at. */
+  expectedCents?: number | null
 }
 
-type Props = { rows: PriceRowView[] }
+export type WashTierView = { name: string; washValue: string; priceCents: number }
+
+type Props = {
+  rows: PriceRowView[]
+  /** The wash packages from the CMS — the source of truth for token prices. */
+  tiers?: WashTierView[]
+  /** False when the CMS didn't answer and the built-in lineup is shown. */
+  lineupFromCms?: boolean
+  /** What "Sync" would change, one line each. */
+  syncPlan?: string[]
+}
 
 type Feedback = { ok: boolean; message: string } | null
 
@@ -174,6 +189,16 @@ function Row({
         {perToken && (
           <p className="text-xs font-semibold text-slate-400">{perToken} / wash</p>
         )}
+        {row.expectedCents === null ? (
+          <p className="mt-1 max-w-[200px] text-[11px] font-semibold text-red-600">
+            No ${row.washValue} wash package — hidden from the store. Sync removes it.
+          </p>
+        ) : row.expectedCents !== undefined && cents !== row.expectedCents ? (
+          <p className="mt-1 max-w-[200px] text-[11px] font-semibold text-amber-700">
+            {row.tierName} wash price makes this {formatCents(row.expectedCents)}. Sync
+            resets it.
+          </p>
+        ) : null}
       </td>
       <td className="py-3 pr-4">
         <form
@@ -242,11 +267,20 @@ function Row({
 }
 
 /** "Add a pack or single token" form. */
-export function AddSkuForm() {
+export function AddSkuForm({ tiers = [] }: { tiers?: WashTierView[] }) {
   const [kind, setKind] = useState<PriceKind>('pack')
   const [feedback, setFeedback] = useState<Feedback>(null)
   const [pending, startTransition] = useTransition()
   const [formKey, setFormKey] = useState(0)
+  // Token values come from the wash packages, and the price is filled in from
+  // the wash price (tokens × price) — editable, but the sensible default.
+  const [washValue, setWashValue] = useState(tiers[0]?.washValue ?? '')
+  const [tokens, setTokens] = useState('4')
+  const [amount, setAmount] = useState<string | null>(null)
+  const tier = tiers.find((t) => t.washValue === washValue)
+  const count = kind === 'single' ? 1 : Number(tokens)
+  const suggested =
+    tier && Number.isInteger(count) && count > 0 ? ((tier.priceCents * count) / 100).toFixed(2) : ''
 
   return (
     <form
@@ -260,6 +294,8 @@ export function AddSkuForm() {
           setFeedback(res)
           if (res.ok) {
             setKind('pack')
+            setTokens('4')
+            setAmount(null)
             setFormKey((k) => k + 1)
           }
         })
@@ -281,23 +317,44 @@ export function AddSkuForm() {
             <option value="single">Single token</option>
           </select>
         </label>
-        <label className="text-xs font-bold text-slate-500">
-          Wash value ($)
-          <input
-            name="washValue"
-            inputMode="numeric"
-            placeholder="12"
-            required
-            className="mt-1 block w-20 rounded-lg border border-line px-3 py-2 text-sm font-bold text-ink"
-          />
-        </label>
+        {tiers.length > 0 ? (
+          <label className="text-xs font-bold text-slate-500">
+            Wash package
+            <select
+              name="washValue"
+              value={washValue}
+              onChange={(e) => setWashValue(e.target.value)}
+              className="mt-1 block rounded-lg border border-line px-3 py-2 text-sm font-bold text-ink"
+            >
+              {tiers.map((t) => (
+                <option key={t.washValue} value={t.washValue}>
+                  {t.name} · ${t.washValue}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <label className="text-xs font-bold text-slate-500">
+            Wash value ($)
+            <input
+              name="washValue"
+              inputMode="numeric"
+              placeholder="12"
+              required
+              value={washValue}
+              onChange={(e) => setWashValue(e.target.value)}
+              className="mt-1 block w-20 rounded-lg border border-line px-3 py-2 text-sm font-bold text-ink"
+            />
+          </label>
+        )}
         {kind === 'pack' && (
           <label className="text-xs font-bold text-slate-500">
             Tokens per pack
             <input
               name="tokens"
               inputMode="numeric"
-              defaultValue="4"
+              value={tokens}
+              onChange={(e) => setTokens(e.target.value)}
               required
               className="mt-1 block w-20 rounded-lg border border-line px-3 py-2 text-sm font-bold text-ink"
             />
@@ -310,6 +367,8 @@ export function AddSkuForm() {
             inputMode="decimal"
             placeholder="0.00"
             required
+            value={amount ?? suggested}
+            onChange={(e) => setAmount(e.target.value)}
             className="mt-1 block w-24 rounded-lg border border-line px-3 py-2 text-sm font-bold text-ink"
           />
         </label>
@@ -327,6 +386,7 @@ export function AddSkuForm() {
       </div>
       <p className="mt-2 text-[11px] text-slate-400">
         Creates the product and its price in Stripe; it appears on the site straight away.
+        {tier && ' The price is filled in from the wash package (tokens × wash price).'}
       </p>
       {feedback && (
         <p
@@ -371,7 +431,98 @@ function AdoptAllButton({ count }: { count: number }) {
   )
 }
 
-export default function PriceGrid({ rows }: Props) {
+/**
+ * The wash packages (CMS) and whether the token prices in Stripe match them.
+ * Wash packages are the source of truth: every token value and price follows
+ * them, and "Sync" applies the difference. Publishing a change in the CMS runs
+ * the same sync automatically; this is for checking, and for catching up.
+ */
+function WashPackagesPanel({
+  tiers,
+  fromCms,
+  plan,
+}: {
+  tiers: WashTierView[]
+  fromCms: boolean
+  plan: string[]
+}) {
+  const [feedback, setFeedback] = useState<Feedback>(null)
+  const [pending, startTransition] = useTransition()
+
+  return (
+    <section
+      aria-label="Wash packages"
+      className={`mt-4 rounded-xl border p-4 ${
+        plan.length ? 'border-amber-300 bg-amber-50' : 'border-line bg-paper'
+      }`}
+    >
+      <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-blue-500">
+        Wash packages · source of truth
+      </h3>
+      <p className="mt-1 text-xs text-slate-500">
+        Token values and prices follow the wash packages on the home page: a single
+        token is the wash price, and an N-pack lists at N × the wash price before
+        the pack discount. Edit the packages in the CMS.
+      </p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {tiers.map((t) => (
+          <span
+            key={t.washValue}
+            className="rounded-full border border-line bg-white px-3 py-1 text-xs font-bold text-ink"
+          >
+            {t.name} · {formatCents(t.priceCents)}
+          </span>
+        ))}
+      </div>
+
+      {!fromCms ? (
+        <p className="mt-3 text-xs font-semibold text-amber-800">
+          The CMS couldn&apos;t be reached, so these are the built-in packages and
+          syncing is off until it&apos;s back.
+        </p>
+      ) : plan.length === 0 ? (
+        <p className="mt-3 text-xs font-semibold text-green-700">
+          ✓ Every token price matches the wash packages.
+        </p>
+      ) : (
+        <div className="mt-3">
+          <p className="text-xs font-bold text-amber-900">
+            {plan.length} {plan.length === 1 ? 'change' : 'changes'} needed to match the
+            wash packages:
+          </p>
+          <ul className="mt-1 list-disc pl-5 text-xs text-amber-900">
+            {plan.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() =>
+              startTransition(async () => {
+                setFeedback(null)
+                setFeedback(await syncWithWashPackages())
+              })
+            }
+            className="mt-3 rounded-full bg-blue-700 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-white transition hover:bg-blue-500 disabled:opacity-40"
+          >
+            {pending ? 'Syncing…' : 'Sync to wash packages'}
+          </button>
+        </div>
+      )}
+      {feedback && (
+        <p
+          role="status"
+          className={`mt-2 text-xs font-semibold ${feedback.ok ? 'text-green-700' : 'text-red-600'}`}
+        >
+          {feedback.message}
+        </p>
+      )}
+    </section>
+  )
+}
+
+export default function PriceGrid({ rows, tiers = [], lineupFromCms = false, syncPlan = [] }: Props) {
   const packs = rows.filter((r) => r.kind === 'pack')
   const singles = rows.filter((r) => r.kind === 'single')
   const unlinked = rows.filter((r) => r.source !== 'stripe').length
@@ -381,11 +532,14 @@ export default function PriceGrid({ rows }: Props) {
     <div className="rounded-2xl border border-line bg-white p-6">
       <h2 className="display text-[26px] leading-none text-blue-700">Token packs &amp; prices</h2>
       <p className="mt-2 max-w-2xl text-sm text-slate-500">
-        Everything here lives in Stripe, and the site lists exactly what&apos;s in
-        this table. Saving a price creates a new price in Stripe and points the
-        store at it immediately; removing an item archives it in Stripe. Orders
+        Everything here lives in Stripe. The site sells the items that match a wash
+        package; saving a price creates a new price in Stripe and points the store
+        at it immediately, and removing an item archives it in Stripe. Orders
         already placed keep the price they were bought at.
       </p>
+      {tiers.length > 0 && (
+        <WashPackagesPanel tiers={tiers} fromCms={lineupFromCms} plan={syncPlan} />
+      )}
       {unlinked > 0 && <AdoptAllButton count={unlinked} />}
       {notice && (
         <p role="status" className="mt-4 rounded-lg bg-green-50 p-3 text-xs font-semibold text-green-700">
@@ -422,7 +576,7 @@ export default function PriceGrid({ rows }: Props) {
         </div>
       ))}
 
-      <AddSkuForm />
+      <AddSkuForm tiers={tiers} />
     </div>
   )
 }

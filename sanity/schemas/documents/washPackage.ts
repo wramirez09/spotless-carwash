@@ -11,12 +11,15 @@ export default defineType({
       name: 'price',
       type: 'string',
       description:
-        'Shown only if Stripe has no single token of this value — otherwise the site shows the Stripe price.',
+        'Display price, e.g. "$14". The site shows the Price (number) below formatted, so keep the two the same.',
     }),
     defineField({
       name: 'priceNumber',
+      title: 'Price (number)',
       type: 'number',
-      description: 'The token value this wash takes (8, 9, 10, 12). Its live price is read from Stripe.',
+      description:
+        'The price of this wash in whole dollars, e.g. 14. This is the source of truth for token pricing: it is the value of this wash’s token, a single token costs this much, and a pack of N lists at N × this. Publishing a change updates the token prices in Stripe automatically.',
+      validation: (r) => r.required().integer().min(1).max(100),
     }),
     defineField({
       name: 'color',

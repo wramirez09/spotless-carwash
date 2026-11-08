@@ -24,6 +24,8 @@ import {
 } from './pricing/model'
 import { formatSaleEndLabel } from './pricing/time'
 import { adoptSku, loadStripeCatalog } from './stripeCatalog'
+import { getWashLineup } from './washPackages'
+import { describeSyncAction, planCatalogSync, type SyncAction } from './washPricing'
 
 // The WRITE side of admin-managed pricing: the services behind the buttons on
 // /admin/pricing. Every function here does two things that must stay in step —
@@ -260,6 +262,17 @@ export async function createCatalogSku(
     cents: input.unitAmountCents,
   })
   if (invalid) return { ok: false, message: invalid }
+
+  // Token values come from the wash packages on the home page. A token for a
+  // wash that doesn't exist couldn't be sold anyway (the storefront and
+  // checkout only offer package values), so refuse it up front.
+  const washes = await getWashLineup()
+  if (washes.source === 'cms' && !washes.tiers.some((t) => t.washValue === input.washValue)) {
+    return {
+      ok: false,
+      message: `There's no $${input.washValue} wash package. Token values follow the wash packages — add the package in the CMS first.`,
+    }
+  }
 
   const stripe = getStripe()
   if (!stripe) return { ok: false, message: 'Stripe is not configured for this deployment.' }
@@ -998,4 +1011,99 @@ export async function updateBaseDiscount(
     ok: true,
     message: `Every 4-pack now saves ${formatCents(cents)}. Scheduled sales still carry their old coupon — re-issue any that show as out of date.`,
   }
+}
+
+// ---------------------------------------------------------------------------
+// Sync the token catalog to the wash packages
+// ---------------------------------------------------------------------------
+
+export type SyncResult = { applied: string[]; failed: string[]; plan: SyncAction[] }
+
+/**
+ * Bring every token price in Stripe in line with the wash packages (the
+ * source of truth — see lib/washPricing.ts): add missing 4-packs, re-price
+ * anything that doesn't match tokens × wash price, and remove tokens for
+ * values that are no longer a package.
+ *
+ * Runs from the admin "Sync" button and from the CMS publish webhook. Each
+ * change goes through the same create / re-price / remove services as the
+ * admin buttons, so validation, Stripe-first ordering and the audit trail are
+ * identical. Idempotent: run twice and the second run changes nothing.
+ *
+ * Acts only on a real answer from both systems. A Sanity outage falls back to
+ * a built-in lineup and a Stripe outage to the deploy-config catalog; syncing
+ * either of those could delete live products.
+ */
+export async function syncCatalogToWashPackages(
+  actorEmail: string | null,
+): Promise<AdminResult<SyncResult>> {
+  const washes = await getWashLineup({ fresh: true })
+  if (washes.source !== 'cms') {
+    return {
+      ok: false,
+      message: "Couldn't read the wash packages from the CMS, so nothing was changed. Try again shortly.",
+    }
+  }
+  const stripe = getStripe()
+  if (!stripe) return { ok: false, message: 'Stripe is not configured for this deployment.' }
+  if (!(await loadStripeCatalog(stripe)).ok) {
+    return { ok: false, message: 'Stripe could not be reached, so nothing was changed. Try again shortly.' }
+  }
+
+  // Plan against what customers are charged right now: legacy SKUs priced by a
+  // bare env-var Price carry no amount in the snapshot, so read it.
+  const snapshot = await getPricingSnapshot({ fresh: true })
+  const current = await Promise.all(
+    snapshot.catalog.map(async (s) => ({
+      ...s,
+      cents:
+        s.cents ??
+        (await stripe.prices.retrieve(s.stripePriceId).then(
+          (p) => p.unit_amount,
+          () => null,
+        )),
+    })),
+  )
+  const plan = planCatalogSync(current, washes.tiers)
+  if (plan.length === 0) {
+    return {
+      ok: true,
+      message: 'Token prices already match the wash packages — nothing to change.',
+      data: { applied: [], failed: [], plan },
+    }
+  }
+
+  const applied: string[] = []
+  const failed: string[] = []
+  for (const action of plan) {
+    const label = describeSyncAction(action)
+    const res =
+      action.type === 'create'
+        ? await createCatalogSku({
+            kind: action.kind,
+            washValue: action.washValue,
+            tokens: action.tokens,
+            unitAmountCents: action.cents,
+            actorEmail,
+          })
+        : action.type === 'reprice'
+          ? await updateCatalogPrice({ sku: action.sku, unitAmountCents: action.to, actorEmail })
+          : await deleteCatalogSku(action.sku, actorEmail)
+    if (res.ok) applied.push(label)
+    else failed.push(`${label}: ${res.message}`)
+  }
+
+  await audit(actorEmail, 'catalog.sync', { applied, failed }, failed.length === 0)
+  invalidatePricingCache()
+  const n = applied.length
+  return failed.length
+    ? {
+        ok: false,
+        message: `Synced ${n} of ${plan.length} changes. ${failed.join(' ')}`,
+      }
+    : {
+        ok: true,
+        message: `Token prices now match the wash packages (${n} change${n === 1 ? '' : 's'}).`,
+        data: { applied, failed, plan },
+      }
 }

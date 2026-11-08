@@ -98,7 +98,8 @@ export default async function Page() {
           {faqs.map((f) => (
             <article key={f.q} className="bg-white border border-line rounded-2xl p-7">
               <h2 className="display text-[24px] sm:text-[28px] m-0 mb-3 text-ink">{f.q}</h2>
-              <p className="text-[#445273] leading-relaxed m-0">{f.a}</p>
+              {/* pre-line: CMS answers use line breaks for lists ("4 × $12 …"). */}
+              <p className="text-[#445273] leading-relaxed m-0 whitespace-pre-line">{f.a}</p>
             </article>
           ))}
         </div>
