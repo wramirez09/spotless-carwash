@@ -4,6 +4,7 @@ import { sanityFetch } from '@/lib/sanityFetch'
 import { getCheckoutPricing } from '@/lib/stripePricing'
 import { subscriptionsEnabled } from '@/lib/featureFlags'
 import { fillDiscountCopy, fillPricing, pricingFacts } from '@/lib/pricingCopy'
+import { initialPackFor } from '@/lib/buyTokensLink'
 
 const BUY_TOKENS_FALLBACK: BuyTokensCopy = {
   metaTitle: 'Buy Wash Tokens',
@@ -179,6 +180,9 @@ export default async function BuyTokensPage({
       copy={filled}
       pricing={pricing}
       showSubscribeLink={subscriptionsEnabled()}
+      // ?wash=12 from a wash card on the home page: open with that pack in
+      // the order, so the customer lands on checkout ready to pay.
+      initialPackId={initialPackFor(pricing.packs, { wash: params.wash, pack: params.pack })}
     />
   )
 }

@@ -118,12 +118,15 @@ export default function BuyTokensClient({
   copy,
   pricing,
   showSubscribeLink,
+  initialPackId = null,
 }: {
   copy: BuyTokensCopy
   pricing: PricingProp
   /** Resolved on the server — this is a client component, so it can't read
    *  VERCEL_ENV itself. See lib/featureFlags. */
   showSubscribeLink: boolean
+  /** Pack to open with, from a `?wash=` link (a wash card on the home page). */
+  initialPackId?: string | null
 }) {
   // Both lists come straight from the Stripe catalog, so whatever is set up in
   // /admin/pricing is exactly what's offered here. Single tokens only appear
@@ -145,7 +148,26 @@ export default function BuyTokensClient({
   const PACKAGES = mode === 'single' ? singleItems : pricing.packs
   const defaultIdFor = (items: Pkg[]) =>
     (items.find((p) => p.featured) ?? items[items.length - 1])?.id ?? ''
-  const [selectedPackId, setSelectedPackId] = useState<string>(defaultIdFor(pricing.packs))
+  const linkedPackId =
+    initialPackId && pricing.packs.some((p) => p.id === initialPackId) ? initialPackId : null
+  const [selectedPackId, setSelectedPackId] = useState<string>(
+    linkedPackId ?? defaultIdFor(pricing.packs),
+  )
+  // Arrived from a wash card: bring the chosen pack into view and say it's in
+  // the order. The note goes away once the customer picks something else.
+  const [addedFromLink, setAddedFromLink] = useState(Boolean(linkedPackId))
+  useEffect(() => {
+    if (!linkedPackId) return
+    document
+      .getElementById(`pkg-${linkedPackId}`)
+      ?.closest('label')
+      ?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    // Only on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  useEffect(() => {
+    if (mode !== 'pack' || selectedPackId !== linkedPackId) setAddedFromLink(false)
+  }, [mode, selectedPackId, linkedPackId])
   const [selectedSingleId, setSelectedSingleId] = useState<string>(defaultIdFor(singleItems))
   const selectedId = mode === 'single' ? selectedSingleId : selectedPackId
   const setSelectedId = mode === 'single' ? setSelectedSingleId : setSelectedPackId
@@ -806,6 +828,14 @@ export default function BuyTokensClient({
                 </span>
               </div>
               <div className="p-6">
+                {addedFromLink && (
+                  <p
+                    role="status"
+                    className="mb-4 inline-flex items-center gap-2 rounded-full bg-yellow-400/15 px-3 py-1 text-[12px] font-extrabold text-yellow-400"
+                  >
+                    ✓ Added to your order
+                  </p>
+                )}
                 <div className="flex items-start justify-between gap-3 pb-4 border-b border-white/15">
                   <div>
                     <div className="font-extrabold text-[16px]">
