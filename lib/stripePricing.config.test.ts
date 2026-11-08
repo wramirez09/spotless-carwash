@@ -14,8 +14,14 @@ const { getPricingSnapshot, secret, pricesRetrieve, couponsRetrieve } = vi.hoist
 }))
 
 vi.mock('./pricingStore', () => ({ getPricingSnapshot }))
-// The wash packages decide which token values are sold. Default: the CMS
-// didn't answer, which must never filter anything out.
+// The wash packages decide which token values are sold and what an unknown
+// amount is estimated at. Default: a lineup covering this file's $8–$12
+// fixture catalog, so the tests below are about pricing, not filtering.
+const FIXTURE_TIERS = ['8', '9', '10', '12'].map((v) => ({
+  name: v + ' wash',
+  washValue: v,
+  priceCents: Number(v) * 100,
+}))
 const washLineup = vi.hoisted(() => ({
   value: { source: 'fallback', tiers: [] as { name: string; washValue: string; priceCents: number }[], packages: [] },
 }))
@@ -85,7 +91,7 @@ function sale(overrides: Record<string, unknown> = {}) {
 }
 
 beforeEach(() => {
-  washLineup.value = { source: 'fallback', tiers: [], packages: [] }
+  washLineup.value = { source: 'cms', tiers: FIXTURE_TIERS, packages: [] }
   vi.clearAllMocks()
   secret.mockReturnValue(undefined)
   getPricingSnapshot.mockResolvedValue(snapshot())
@@ -302,9 +308,10 @@ describe('wash packages decide which tokens are sold', () => {
     expect(skus).not.toContain('spotless_single_9')
   })
 
-  it('never filters on the built-in fallback — a CMS outage must not stop sales', async () => {
+  it('holds to the built-in lineup ($10/$12/$14) while the CMS is unreachable', async () => {
     washLineup.value = { source: 'fallback', tiers: LIVE, packages: [] }
-    expect((await resolveCheckoutConfig(NOW)).catalog).toHaveLength(8)
+    const values = [...new Set((await resolveCheckoutConfig(NOW)).catalog.map((s) => s.washValue))]
+    expect(values.sort()).toEqual(['10', '12'])
   })
 
   it('quotes a token whose amount is unknown from its wash price', async () => {

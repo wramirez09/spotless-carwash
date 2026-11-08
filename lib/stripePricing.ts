@@ -6,13 +6,12 @@ import {
 } from './salesSchedule'
 import {
   getPackDiscountCouponId,
-  getPackPriceId,
   getSeasonalCouponId,
   getStripeSecretKey,
-  getSinglePriceId,
 } from './stripeEnv'
 import Stripe from 'stripe'
-import { SANDBOX_PRICE_IDS, getPricingSnapshot } from './pricingStore'
+import * as React from 'react'
+import { getPricingSnapshot } from './pricingStore'
 import { getWashLineup } from './washPackages'
 import { expectedListCents, type WashTier } from './washPricing'
 import {
@@ -26,25 +25,6 @@ import {
 
 export { getActiveSeasonalSale, isSeasonalSaleActive }
 export type { SeasonalSale }
-
-// ---------- Stripe IDs (resolved via lib/stripeEnv.ts at module load).
-// Picks PROD_* on Vercel Production, DEV_* otherwise. The hardcoded sandbox
-// IDs below are only ever used as last-resort fallbacks for DEV_* misses —
-// on Vercel Production the getters throw before the `??` fallback applies.
-
-export const PACK_PRICES: Record<'8' | '9' | '10' | '12', string> = {
-  '8': getPackPriceId('8') ?? SANDBOX_PRICE_IDS.pack['8'],
-  '9': getPackPriceId('9') ?? SANDBOX_PRICE_IDS.pack['9'],
-  '10': getPackPriceId('10') ?? SANDBOX_PRICE_IDS.pack['10'],
-  '12': getPackPriceId('12') ?? SANDBOX_PRICE_IDS.pack['12'],
-}
-
-export const SINGLE_PRICES: Record<'8' | '9' | '10' | '12', string> = {
-  '8': getSinglePriceId('8') ?? SANDBOX_PRICE_IDS.single['8'],
-  '9': getSinglePriceId('9') ?? SANDBOX_PRICE_IDS.single['9'],
-  '10': getSinglePriceId('10') ?? SANDBOX_PRICE_IDS.single['10'],
-  '12': getSinglePriceId('12') ?? SANDBOX_PRICE_IDS.single['12'],
-}
 
 // Stripe Checkout only allows one coupon per session, so the seasonal-sale
 // coupon stands in for the combined sale price at checkout; the FE renders
@@ -89,9 +69,6 @@ export function seasonalCouponId(sale: SeasonalSale): string {
 // $5 the site shipped with. Used purely to split the displayed savings into
 // two chips on the FE — Stripe still applies exactly one coupon per session.
 const BUNDLE_BASE_DISCOUNT_FALLBACK_CENTS = 500
-
-export const WASH_VALUES = ['8', '9', '10', '12'] as const
-export type WashValue = (typeof WASH_VALUES)[number]
 
 export type { CatalogSku }
 
@@ -148,21 +125,6 @@ function toSaleInfo(sale: ResolvedSale | null): ActiveSaleInfo | null {
   if (!sale) return null
   const { id, label, badge, emoji, endLabel } = sale
   return { id, label, badge, emoji, endLabel }
-}
-
-// Hardcoded list fallbacks used only if Stripe is unreachable. Match the
-// sandbox configuration created on 2026-05-18.
-const PACK_FALLBACK_CENTS: Record<WashValue, number> = {
-  '8': 3200,
-  '9': 3600,
-  '10': 4000,
-  '12': 4800,
-}
-const SINGLE_FALLBACK_CENTS: Record<WashValue, number> = {
-  '8': 800,
-  '9': 900,
-  '10': 1000,
-  '12': 1200,
 }
 
 /**
@@ -244,9 +206,10 @@ export async function resolveCheckoutConfig(
       (s) =>
         Boolean(s.stripePriceId) &&
         // Only token values that are a wash package on the home page are
-        // sold — a $9 token is meaningless once there is no $9 wash. Applied
-        // only when the CMS actually answered: an outage must not stop sales.
-        (washes.source !== 'cms' || washes.tiers.some((t) => t.washValue === s.washValue)),
+        // sold — a $9 token is meaningless once there is no $9 wash. The
+        // built-in lineup (src/data/washes.ts) mirrors the CMS, so this holds
+        // even while the CMS is unreachable.
+        washes.tiers.some((t) => t.washValue === s.washValue),
     ),
     packCouponId: sale ? sale.couponId : baseCouponId,
     sale,
@@ -335,7 +298,7 @@ function splitCouponBreakdown(
   ]
 }
 
-export async function getCheckoutPricing(
+async function loadCheckoutPricing(
   nowOverrideMs?: number,
 ): Promise<CheckoutPricing> {
   const now = nowOverrideMs ?? Date.now()
@@ -375,17 +338,13 @@ export async function getCheckoutPricing(
   }
 }
 
+/**
+ * Best estimate of a token's price when Stripe can't say: tokens × its wash
+ * package's price. There is no other table — the wash packages are the only
+ * place prices are written down.
+ */
 function legacyFallbackCents(s: CatalogSku, tiers: readonly WashTier[] = []): number | null {
-  // The wash price is the best estimate of what a token costs; the old
-  // hardcoded table only covers values that aren't a package.
-  const fromWash = expectedListCents(tiers, s.washValue, s.tokens)
-  if (fromWash != null) return fromWash
-  const v = s.washValue
-  const singles: Record<string, number> = SINGLE_FALLBACK_CENTS
-  const packs: Record<string, number> = PACK_FALLBACK_CENTS
-  if (s.kind === 'single') return singles[v] ?? null
-  if (s.tokens === 4) return packs[v] ?? null
-  return null
+  return expectedListCents(tiers, s.washValue, s.tokens)
 }
 
 function buildPricing(
@@ -455,3 +414,14 @@ function fallbackPricing(
   )
   return { ...pricing, packCouponAmountOff: saveCents, tiers: [...tiers] }
 }
+
+// React's per-request memo (server components only). The home page renders
+// both <Washes /> and <Tokens />, and each needs the same pricing; without
+// this every request resolves it — Stripe coupon and price lookups included —
+// twice. Outside a React server render (tests, route handlers) `cache` is
+// absent or a no-op, and every call simply runs.
+const memoize: <T extends (...args: never[]) => unknown>(fn: T) => T =
+  (React as unknown as { cache?: <T>(fn: T) => T }).cache ?? ((fn) => fn)
+
+/** Everything the pack cards and summaries need, memoized per request. */
+export const getCheckoutPricing = memoize(loadCheckoutPricing)

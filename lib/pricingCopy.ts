@@ -90,6 +90,27 @@ export function countWord(n: number): string {
   return COUNT_WORDS[n] ?? String(n)
 }
 
+/** ['10','12','14'] → "10, 12, or 14". */
+function orList(values: readonly string[]): string {
+  if (values.length <= 2) return values.join(' or ')
+  return `${values.slice(0, -1).join(', ')}, or ${values.at(-1)}`
+}
+
+/**
+ * Make a list of wash/token values in copy agree with the lineup: fills
+ * `{washValues}` ("10, 12, or 14") and rewrites a parenthesised list of
+ * plain numbers left in the CMS from an older lineup — "Pick your wash
+ * (8, 9, 10, or 12)" — to the current one. Only a bracketed run of bare
+ * numbers joined by commas and "or"/"and" is touched, never prices or times.
+ */
+export function fillWashValues(text: string, values: readonly string[]): string {
+  if (!text || values.length === 0) return text
+  const list = orList(values)
+  return text
+    .replaceAll('{washValues}', list)
+    .replace(/\(\s*\d{1,3}(?:\s*,\s*\d{1,3})*\s*,?\s*(?:or|and)\s+\d{1,3}\s*\)/g, `(${list})`)
+}
+
 /**
  * Make a heading's count agree with what's listed: fills `{washCount}`, and
  * rewrites a LEADING count word ("Four ways to…") left in the CMS from when
@@ -100,7 +121,9 @@ export function fillCountWord(text: string, n: number): string {
   if (!text || n <= 0) return text
   const word = countWord(n)
   const filled = text.replaceAll('{washCount}', word)
-  return filled.replace(/^(\s*)([A-Za-z]+)\b/, (whole, lead: string, first: string) => {
+  // A count only when followed by a plural noun ("Four ways", "Two washes"):
+  // "One stop for…" and "Ten-minute shine" are not counts and stay as written.
+  return filled.replace(/^(\s*)([A-Za-z]+)(?= [A-Za-z]+s\b)/, (whole, lead: string, first: string) => {
     const i = COUNT_WORDS.findIndex((w) => w.toLowerCase() === first.toLowerCase())
     if (i < 1 || i === n) return whole
     const cased = first === first.toLowerCase() ? word.toLowerCase() : word
@@ -176,16 +199,17 @@ export function fillPricing(text: string, facts: PricingFacts): string {
  *
  * This exists because those fields were written into the CMS as "$5" before
  * the discount was editable, and the live site must not wait on someone
- * re-typing them. Placeholders are filled first, so a field already converted
- * to `{discount}` is unaffected.
+ * re-typing them. Only amounts typed into the text are rewritten — placeholders
+ * are filled afterwards, so `{lowestPackPerWash}` or `{pack:12}` in the same
+ * field keep their own value instead of turning into the discount.
  */
 export function fillDiscountCopy(
   text: string,
   facts: PricingFacts,
   amountCents: number = facts.discountCents,
 ): string {
-  const filled = fillPricing(text, facts)
-  return filled.replace(/\$\d+(?:\.\d{2})?(?!\d)/g, formatUSD(amountCents))
+  const literalsFixed = text.replace(/\$\d+(?:\.\d{2})?(?!\d)/g, formatUSD(amountCents))
+  return fillPricing(literalsFixed, facts)
 }
 
 const HAS_PLACEHOLDER = /\{[a-zA-Z]+(?::[0-9x]+)?\}/

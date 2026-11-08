@@ -33,7 +33,7 @@ export default async function PricingAdminPage() {
   // reading it here means this screen shows the prices customers are actually
   // being charged — including SKUs still priced from the deploy config, whose
   // amounts live only in Stripe.
-  const [snapshot, sales, pricing, user] = await Promise.all([
+  const [snapshot, sales, pricing, user, washes] = await Promise.all([
     // Always a fresh read here. The cache is per serverless instance, so the
     // re-render after a save can land on an instance that still holds the old
     // snapshot — which would show the admin the price they just replaced.
@@ -41,10 +41,10 @@ export default async function PricingAdminPage() {
     listAllSales(),
     getCheckoutPricing(),
     getSessionUser(),
+    // Fresh: an editor who just changed a wash price in the CMS and came here
+    // to check should see the new number, not a 60-second-old one.
+    getWashLineup({ fresh: true }),
   ])
-  // Fresh: an editor who just changed a wash price in the CMS and came here to
-  // check should see the new number, not a 60-second-old one.
-  const washes = await getWashLineup({ fresh: true })
   const tierFor = (v: string) => washes.tiers.find((t) => t.washValue === v)
 
   // Legacy SKUs still priced from an env-var Price ID carry no amount in the
@@ -75,10 +75,7 @@ export default async function PricingAdminPage() {
   // CMS answer — never against the built-in fallback lineup.
   const syncPlan =
     washes.source === 'cms'
-      ? planCatalogSync(
-          priceRows.map((r) => ({ ...r, cents: r.cents })),
-          washes.tiers,
-        ).map(describeSyncAction)
+      ? planCatalogSync(priceRows, washes.tiers).map(describeSyncAction)
       : []
 
   const saleViews: SaleView[] = sales.map((sale) => ({

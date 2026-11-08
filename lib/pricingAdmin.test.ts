@@ -65,10 +65,16 @@ vi.mock('stripe', () => {
 vi.mock('./supabase', () => ({ getSupabaseAdmin }))
 vi.mock('./stripeEnv', () => ({ getStripeSecretKey }))
 // Wash packages (CMS). Default: no CMS answer, so nothing is restricted.
+type Lineup = { source: string; tiers: { name: string; washValue: string; priceCents: number }[]; packages: never[] }
 const washLineup = vi.hoisted(() => ({
-  value: { source: 'fallback', tiers: [] as { name: string; washValue: string; priceCents: number }[], packages: [] },
+  value: { source: 'fallback', tiers: [], packages: [] } as Lineup,
+  /** What a stale (cached) read returns, when a test needs it to differ. */
+  cached: null as Lineup | null,
 }))
-vi.mock('./washPackages', () => ({ getWashLineup: async () => washLineup.value }))
+vi.mock('./washPackages', () => ({
+  getWashLineup: async (opts?: { fresh?: boolean }) =>
+    opts?.fresh ? washLineup.value : (washLineup.cached ?? washLineup.value),
+}))
 
 vi.mock('./pricingStore', async () => {
   const { mapSaleRow } = await vi.importActual<typeof import('./pricingStore')>(
@@ -208,6 +214,7 @@ const baseSaleInput = {
 
 beforeEach(() => {
   washLineup.value = { source: 'fallback', tiers: [], packages: [] }
+  washLineup.cached = null
   vi.clearAllMocks()
   queues = {}
   inserts = []
@@ -970,5 +977,96 @@ describe('syncCatalogToWashPackages', () => {
     const result = await syncCatalogToWashPackages(null)
     expect(result.ok).toBe(false)
     expect(result.message).toMatch(/Stripe could not be reached/)
+  })
+})
+
+// =========================================================================
+// Code-review regressions
+// =========================================================================
+
+describe('sync after a wash price change (review #1)', () => {
+  const ultimateAt13 = [
+    { name: 'Deluxe', washValue: '10', priceCents: 1000 },
+    { name: 'Ultimate', washValue: '13', priceCents: 1300 },
+  ]
+
+  it('creates the new value even while the cached lineup still has the old one', async () => {
+    // Publish moved Ultimate $12 → $13. The 60s cache still says $12.
+    washLineup.value = { source: 'cms', tiers: ultimateAt13, packages: [] }
+    washLineup.cached = { source: 'cms', tiers: LIVE_TIERS, packages: [] }
+    listing(
+      stripeProduct('spotless_pack_10', { id: 'prod_10', cents: 4000 }),
+      stripeProduct('spotless_pack_12', { id: 'prod_12', cents: 4800 }),
+    )
+    getPricingSnapshot.mockResolvedValue({
+      ...SNAPSHOT,
+      catalog: [catalogEntry('pack', '10', 4000), catalogEntry('pack', '12', 4800)],
+    })
+    productsCreate.mockResolvedValue({ id: 'prod_13' })
+
+    const result = await syncCatalogToWashPackages('sanity-webhook')
+
+    expect(result.ok).toBe(true)
+    expect(productsCreate.mock.calls[0][0].metadata.lookup_key).toBe('spotless_pack_13')
+    expect(productsUpdate).toHaveBeenCalledWith('prod_12', expect.objectContaining({ active: false }))
+  })
+
+  it('holds back removals if any addition failed, so a wash is never left unsold', async () => {
+    washLineup.value = { source: 'cms', tiers: ultimateAt13, packages: [] }
+    listing(
+      stripeProduct('spotless_pack_10', { id: 'prod_10', cents: 4000 }),
+      stripeProduct('spotless_pack_12', { id: 'prod_12', cents: 4800 }),
+    )
+    getPricingSnapshot.mockResolvedValue({
+      ...SNAPSHOT,
+      catalog: [catalogEntry('pack', '10', 4000), catalogEntry('pack', '12', 4800)],
+    })
+    productsCreate.mockRejectedValue(new StripeError('rate limited'))
+
+    const result = await syncCatalogToWashPackages(null)
+
+    expect(result.ok).toBe(false)
+    expect(result.message).toMatch(/Held back 1 removal/)
+    // The $12 pack is still on sale.
+    expect(productsUpdate).not.toHaveBeenCalledWith('prod_12', expect.objectContaining({ active: false }))
+  })
+
+  it('lists the Stripe catalog once for the whole run, not once per change', async () => {
+    washLineup.value = { source: 'cms', tiers: LIVE_TIERS, packages: [] }
+    listing(stripeProduct('spotless_pack_8', { id: 'prod_8', cents: 3200 }))
+    getPricingSnapshot.mockResolvedValue({ ...SNAPSHOT, catalog: [catalogEntry('pack', '8', 3200)] })
+    productsCreate.mockImplementation(async (p: { metadata: { lookup_key: string } }) => ({
+      id: `prod_${p.metadata.lookup_key}`,
+    }))
+
+    await syncCatalogToWashPackages(null)
+
+    // 3 creates + 1 remove, one listing.
+    expect(productsList).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('removing a custom pack size (review #2)', () => {
+  it('leaves the 4-pack’s price history alone', async () => {
+    listing(stripeProduct('spotless_pack_12_x10', { id: 'prod_x10' }))
+    await deleteCatalogSku('spotless_pack_12_x10', null)
+    expect(updates.filter((u) => u.table === 'catalog_prices')).toEqual([])
+  })
+})
+
+describe('Stripe listing down (review #6)', () => {
+  it('refuses to re-price rather than act on the deploy-config Price', async () => {
+    productsList.mockRejectedValue(new Error('down'))
+    const result = await updateCatalogPrice({ sku: 'spotless_pack_12', unitAmountCents: 4500, actorEmail: null })
+    expect(result.ok).toBe(false)
+    expect(result.message).toMatch(/could not be reached/)
+    expect(pricesCreate).not.toHaveBeenCalled()
+  })
+
+  it('refuses to remove', async () => {
+    productsList.mockRejectedValue(new Error('down'))
+    const result = await deleteCatalogSku('spotless_pack_12', null)
+    expect(result.ok).toBe(false)
+    expect(productsUpdate).not.toHaveBeenCalled()
   })
 })

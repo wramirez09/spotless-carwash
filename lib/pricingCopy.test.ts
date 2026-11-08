@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   fillDiscountCopy,
+  fillWashValues,
   fillFaqs,
   fillPricing,
   formatUSD,
@@ -204,5 +205,41 @@ describe('formatUSD', () => {
   it('drops cents on whole dollars only', () => {
     expect(formatUSD(500)).toBe('$5')
     expect(formatUSD(675)).toBe('$6.75')
+  })
+})
+
+describe('code-review regressions', () => {
+  it('fillDiscountCopy rewrites only typed amounts, never other placeholders (review #3)', () => {
+    expect(
+      fillDiscountCopy('From {lowestPackPerWash} a wash — save $5 per pack', everyday),
+    ).toBe('From $6.50 a wash — save $6 per pack')
+    expect(fillDiscountCopy('{pack:12} after {discount} off', everyday)).toBe('$42 after $6 off')
+  })
+
+  it('fillCountWord leaves leading words that are not counts alone (review #8)', () => {
+    expect(fillCountWord('One stop for a spotless car', 3)).toBe('One stop for a spotless car')
+    expect(fillCountWord('Ten-minute shine, every time', 3)).toBe('Ten-minute shine, every time')
+    expect(fillCountWord('Two washes, one price', 3)).toBe('Three washes, one price')
+  })
+})
+
+describe('fillWashValues', () => {
+  const values = ['10', '12', '14']
+
+  it('corrects the stale pay-station list left in the CMS', () => {
+    expect(
+      fillWashValues('Tap, card, cash, or token. Pick your wash (8, 9, 10, or 12) and confirm.', values),
+    ).toBe('Tap, card, cash, or token. Pick your wash (10, 12, or 14) and confirm.')
+  })
+
+  it('fills the placeholder', () => {
+    expect(fillWashValues('Pick your wash ({washValues})', values)).toBe('Pick your wash (10, 12, or 14)')
+    expect(fillWashValues('({washValues})', ['10', '12'])).toBe('(10 or 12)')
+  })
+
+  it('never touches prices, times or ordinary brackets', () => {
+    for (const text of ['$4.00 for 5 minutes', '(708) 771-2945', 'open (7am–10pm) daily', 'bills ($1, $5, or $10)']) {
+      expect(fillWashValues(text, values)).toBe(text)
+    }
   })
 })

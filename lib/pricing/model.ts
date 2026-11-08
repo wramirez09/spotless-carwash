@@ -7,6 +7,13 @@
 
 import { formatSaleEndLabel } from './time'
 
+/**
+ * The values of the ORIGINAL eight hand-made Stripe SKUs and their env vars
+ * (PROD_/DEV_STRIPE_PRICE_{PACK,SINGLE}_<v>) — kept only so those legacy
+ * Products can still be found, adopted and removed. This is NOT the lineup:
+ * what is sold is decided by the wash packages (lib/washPricing.ts), which
+ * today are $10 / $12 / $14, and the storefront drops anything else.
+ */
 export const WASH_VALUES = ['8', '9', '10', '12'] as const
 export type WashValue = (typeof WASH_VALUES)[number]
 

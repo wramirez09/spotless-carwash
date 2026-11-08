@@ -33,6 +33,21 @@ vi.mock('./stripeEnv', () => ({
   getSeasonalCouponId,
 }))
 
+// The Labor Day 2026 sale ran on the $8 / $9 / $10 / $12 lineup, and these
+// tests pin the prices Joe published for it — so they run against that
+// lineup, not today's wash packages.
+vi.mock('./washPackages', () => ({
+  getWashLineup: async () => ({
+    source: 'cms',
+    packages: [],
+    tiers: ['8', '9', '10', '12'].map((v) => ({
+      name: v + ' wash',
+      washValue: v,
+      priceCents: Number(v) * 100,
+    })),
+  }),
+}))
+
 import { getCheckoutPricing } from './stripePricing'
 import { LABOR_DAY_SALE_END_MS, LABOR_DAY_SALE_START_MS } from './salesSchedule'
 

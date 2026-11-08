@@ -6,6 +6,7 @@ import {
   getPricingSnapshot,
   invalidatePricingCache,
   mapSaleRow,
+  type PricingSnapshot,
 } from './pricingStore'
 import {
   PACK_TOKEN_COUNT,
@@ -23,8 +24,8 @@ import {
   type SaleRecord,
 } from './pricing/model'
 import { formatSaleEndLabel } from './pricing/time'
-import { adoptSku, loadStripeCatalog } from './stripeCatalog'
-import { getWashLineup } from './washPackages'
+import { adoptSku, loadStripeCatalog, type StripeCatalog } from './stripeCatalog'
+import { getWashLineup, type WashLineup } from './washPackages'
 import { describeSyncAction, planCatalogSync, type SyncAction } from './washPricing'
 
 // The WRITE side of admin-managed pricing: the services behind the buttons on
@@ -132,8 +133,15 @@ async function recordPriceHistory(args: {
   if (insertError) console.error('[pricingAdmin] price history insert failed', insertError)
 }
 
-/** Deactivate the history row so the Stripe-down fallback forgets a deleted SKU. */
-async function retirePriceHistory(kind: PriceKind, washValue: string): Promise<void> {
+/**
+ * Deactivate the history row so the Stripe-down fallback forgets a deleted SKU.
+ *
+ * Rows exist only for the original 4-packs and singles (see
+ * recordPriceHistory) and are keyed by kind + value, so deleting any other
+ * pack size must touch nothing — at the same value the row is the 4-pack's.
+ */
+async function retirePriceHistory(kind: PriceKind, washValue: string, tokens: number): Promise<void> {
+  if (kind === 'pack' && tokens !== PACK_TOKEN_COUNT) return
   const supabase = getSupabaseAdmin()
   if (!supabase) return
   const { error } = await supabase
@@ -158,16 +166,29 @@ function describeSku(s: { kind: PriceKind; washValue: string; tokens: number }):
  * and re-creating a SKU reuses its Product instead of littering the account
  * with duplicates), then a legacy SKU's env-var Price.
  */
+/**
+ * State shared across the operations of one batch (a sync, adopt-all,
+ * featuring), loaded once instead of once per SKU. Each SKU in a batch is
+ * touched once, so a listing taken at the start stays accurate for it.
+ */
+type BatchContext = {
+  catalog?: StripeCatalog
+  snapshot?: PricingSnapshot
+  /** The wash lineup the batch was planned from (fresh). */
+  washes?: WashLineup
+}
+
 async function locateSku(
   stripe: Stripe,
   sku: string,
+  ctx: BatchContext = {},
 ): Promise<{
   productId: string | null
   current: { priceId: string; cents: number | null } | null
   archived: boolean
   catalogOk: boolean
 }> {
-  const catalog = await loadStripeCatalog(stripe)
+  const catalog = ctx.catalog ?? (await loadStripeCatalog(stripe))
   const keyed = catalog.skus.get(sku)
   if (keyed) {
     return {
@@ -181,7 +202,7 @@ async function locateSku(
   }
   // Not keyed in Stripe. A legacy SKU may still be on sale from an env-var
   // Price whose hand-made Product carries no lookup key.
-  const snapshot = await getPricingSnapshot({ fresh: true })
+  const snapshot = ctx.snapshot ?? (await getPricingSnapshot({ fresh: true }))
   const legacy = snapshot.catalog.find((s) => s.sku === sku)
   if (legacy?.stripePriceId) {
     const price = await stripe.prices.retrieve(legacy.stripePriceId).catch(() => null)
@@ -221,10 +242,13 @@ async function archiveIfOurs(stripe: Stripe, priceId: string, keepId: string): P
  * explicit `featured: 'false'` to lose it.
  */
 async function clearOtherFeatured(stripe: Stripe, keepSku: string): Promise<void> {
-  const { catalog } = await getPricingSnapshot({ fresh: true })
-  for (const other of catalog) {
+  const ctx: BatchContext = {
+    snapshot: await getPricingSnapshot({ fresh: true }),
+    catalog: await loadStripeCatalog(stripe),
+  }
+  for (const other of ctx.snapshot!.catalog) {
     if (other.sku === keepSku || !other.featured) continue
-    const found = await locateSku(stripe, other.sku)
+    const found = await locateSku(stripe, other.sku, ctx)
     if (!found.productId || !found.current) continue
     const parsed = parseSkuLookupKey(other.sku)
     if (!parsed) continue
@@ -253,6 +277,7 @@ export type CreateSkuInput = {
  */
 export async function createCatalogSku(
   input: CreateSkuInput,
+  ctx: BatchContext = {},
 ): Promise<AdminResult<{ sku: string; stripePriceId: string }>> {
   const tokens = input.kind === 'single' ? 1 : input.tokens
   const invalid = validateSkuInput({
@@ -266,7 +291,10 @@ export async function createCatalogSku(
   // Token values come from the wash packages on the home page. A token for a
   // wash that doesn't exist couldn't be sold anyway (the storefront and
   // checkout only offer package values), so refuse it up front.
-  const washes = await getWashLineup()
+  // Fresh, not the 60-second cached copy: right after an editor publishes a
+  // new price in the CMS, the cached lineup still names the OLD value — and
+  // the sync that publish triggers is creating the NEW one.
+  const washes = ctx.washes ?? (await getWashLineup({ fresh: true }))
   if (washes.source === 'cms' && !washes.tiers.some((t) => t.washValue === input.washValue)) {
     return {
       ok: false,
@@ -284,7 +312,7 @@ export async function createCatalogSku(
   let priceId: string
   let productId: string
   try {
-    const found = await locateSku(stripe, sku)
+    const found = await locateSku(stripe, sku, ctx)
     if (!found.catalogOk) {
       return { ok: false, message: 'Stripe could not be reached. Nothing was created — try again.' }
     }
@@ -370,6 +398,7 @@ export type UpdatePriceInput = {
  */
 export async function updateCatalogPrice(
   input: UpdatePriceInput,
+  ctx: BatchContext = {},
 ): Promise<AdminResult<{ stripePriceId: string }>> {
   const { sku, unitAmountCents, actorEmail } = input
   const parsed = parseSkuLookupKey(sku)
@@ -385,7 +414,12 @@ export async function updateCatalogPrice(
   let productId: string
   let fromCents: number | null = null
   try {
-    const found = await locateSku(stripe, sku)
+    const found = await locateSku(stripe, sku, ctx)
+    if (!found.catalogOk) {
+      // Without the listing this would act on the deploy-config Price instead
+      // of the live one — compare against, and archive, the wrong thing.
+      return { ok: false, message: 'Stripe could not be reached. Nothing was changed — try again.' }
+    }
     if (found.archived || !found.productId || !found.current) {
       return {
         ok: false,
@@ -457,6 +491,7 @@ export async function updateCatalogPrice(
 export async function deleteCatalogSku(
   sku: string,
   actorEmail: string | null,
+  ctx: BatchContext = {},
 ): Promise<AdminResult> {
   const parsed = parseSkuLookupKey(sku)
   if (!parsed) return { ok: false, message: 'That is not a valid product.' }
@@ -466,7 +501,12 @@ export async function deleteCatalogSku(
   const name = describeSku(parsed)
   let productId: string
   try {
-    const found = await locateSku(stripe, sku)
+    const found = await locateSku(stripe, sku, ctx)
+    if (!found.catalogOk) {
+      // Without the listing this would act on the deploy-config Price instead
+      // of the live one — compare against, and archive, the wrong thing.
+      return { ok: false, message: 'Stripe could not be reached. Nothing was changed — try again.' }
+    }
     if (found.archived) return { ok: false, message: `The ${name} has already been removed.` }
     if (!found.productId) return { ok: false, message: `The ${name} isn't in Stripe.` }
     productId = found.productId
@@ -485,7 +525,7 @@ export async function deleteCatalogSku(
     return { ok: false, message: `Stripe rejected the change: ${message}` }
   }
 
-  await retirePriceHistory(parsed.kind, parsed.washValue)
+  await retirePriceHistory(parsed.kind, parsed.washValue, parsed.tokens)
   await audit(actorEmail, 'sku.delete', { sku, productId })
   invalidatePricingCache()
   return { ok: true, message: `The ${name} has been removed from the store.` }
@@ -544,6 +584,7 @@ export async function setSkuFeatured(
 export async function adoptCatalogSku(
   sku: string,
   actorEmail: string | null,
+  ctx: BatchContext = {},
 ): Promise<AdminResult> {
   const parsed = parseSkuLookupKey(sku)
   if (!parsed) return { ok: false, message: 'That is not a valid product.' }
@@ -551,7 +592,7 @@ export async function adoptCatalogSku(
   if (!stripe) return { ok: false, message: 'Stripe is not configured for this deployment.' }
 
   const name = describeSku(parsed)
-  const snapshot = await getPricingSnapshot({ fresh: true })
+  const snapshot = ctx.snapshot ?? (await getPricingSnapshot({ fresh: true }))
   const current = snapshot.catalog.find((s) => s.sku === sku)
   if (!current?.stripePriceId) {
     return { ok: false, message: `The ${name} has no Stripe price yet — set a price first.` }
@@ -581,7 +622,7 @@ export async function adoptAllCatalogSkus(actorEmail: string | null): Promise<Ad
   }
   const failures: string[] = []
   for (const s of pending) {
-    const res = await adoptCatalogSku(s.sku, actorEmail)
+    const res = await adoptCatalogSku(s.sku, actorEmail, { snapshot })
     if (!res.ok) failures.push(`${describeSku(s)}: ${res.message}`)
   }
   if (failures.length) {
@@ -1046,13 +1087,17 @@ export async function syncCatalogToWashPackages(
   }
   const stripe = getStripe()
   if (!stripe) return { ok: false, message: 'Stripe is not configured for this deployment.' }
-  if (!(await loadStripeCatalog(stripe)).ok) {
+  // One listing and one snapshot for the whole run; every action reuses them
+  // instead of re-listing the catalog per SKU.
+  const catalog = await loadStripeCatalog(stripe)
+  if (!catalog.ok) {
     return { ok: false, message: 'Stripe could not be reached, so nothing was changed. Try again shortly.' }
   }
+  const snapshot = await getPricingSnapshot({ fresh: true })
+  const ctx: BatchContext = { catalog, snapshot, washes }
 
   // Plan against what customers are charged right now: legacy SKUs priced by a
   // bare env-var Price carry no amount in the snapshot, so read it.
-  const snapshot = await getPricingSnapshot({ fresh: true })
   const current = await Promise.all(
     snapshot.catalog.map(async (s) => ({
       ...s,
@@ -1073,24 +1118,45 @@ export async function syncCatalogToWashPackages(
     }
   }
 
+  // Additions and re-prices first, removals last — and removals only if
+  // everything before them succeeded. When a wash price changes ($12 → $13),
+  // the $13 tokens are created and the $12 ones removed; if creating failed,
+  // removing anyway would leave that wash with nothing for sale.
   const applied: string[] = []
   const failed: string[] = []
-  for (const action of plan) {
+  const skipped: string[] = []
+  const ordered = [
+    ...plan.filter((a) => a.type !== 'remove'),
+    ...plan.filter((a) => a.type === 'remove'),
+  ]
+  for (const action of ordered) {
     const label = describeSyncAction(action)
+    if (action.type === 'remove' && failed.length > 0) {
+      skipped.push(label)
+      continue
+    }
     const res =
       action.type === 'create'
-        ? await createCatalogSku({
-            kind: action.kind,
-            washValue: action.washValue,
-            tokens: action.tokens,
-            unitAmountCents: action.cents,
-            actorEmail,
-          })
+        ? await createCatalogSku(
+            {
+              kind: action.kind,
+              washValue: action.washValue,
+              tokens: action.tokens,
+              unitAmountCents: action.cents,
+              actorEmail,
+            },
+            ctx,
+          )
         : action.type === 'reprice'
-          ? await updateCatalogPrice({ sku: action.sku, unitAmountCents: action.to, actorEmail })
-          : await deleteCatalogSku(action.sku, actorEmail)
+          ? await updateCatalogPrice({ sku: action.sku, unitAmountCents: action.to, actorEmail }, ctx)
+          : await deleteCatalogSku(action.sku, actorEmail, ctx)
     if (res.ok) applied.push(label)
     else failed.push(`${label}: ${res.message}`)
+  }
+  if (skipped.length) {
+    failed.push(
+      `Held back ${skipped.length} removal${skipped.length === 1 ? '' : 's'} so nothing is left unsold — run Sync again once the errors above are fixed.`,
+    )
   }
 
   await audit(actorEmail, 'catalog.sync', { applied, failed }, failed.length === 0)

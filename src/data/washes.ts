@@ -8,6 +8,8 @@ export type Pkg = {
   color: WashColor
   features: { text: string; included: boolean }[]
   featured?: boolean
+  /** Sanity document id, where it differs from `washPackage-<num>` (seed only). */
+  docId?: string
 }
 
 // Mirrors the washPackage documents in Sanity, which are the source of truth
@@ -16,6 +18,7 @@ export type Pkg = {
 // This copy is only used when the CMS can't be reached — keep it in step.
 export const packages: Pkg[] = [
   {
+    docId: 'washPackage-09',
     num: '10',
     name: 'Deluxe',
     price: '$10',
@@ -32,6 +35,7 @@ export const packages: Pkg[] = [
     ],
   },
   {
+    docId: 'washPackage-10',
     num: '12',
     name: 'Ultimate',
     price: '$12',
@@ -47,11 +51,13 @@ export const packages: Pkg[] = [
     ],
   },
   {
+    docId: 'washPackage-12',
     num: '14',
     name: 'Lustre',
     price: '$14',
     priceNumber: 14,
     color: 'blue',
+    featured: true,
     features: [
       { text: 'Undercarriage spray', included: true },
       { text: 'Double presoak', included: true },

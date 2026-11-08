@@ -1,4 +1,6 @@
 import { sanityFetch } from '@/lib/sanityFetch'
+import { fillWashValues } from '@/lib/pricingCopy'
+import { getWashLineup } from '@/lib/washPackages'
 import HowClient, { type HowData } from './HowClient'
 
 const HOW_QUERY = `*[_type == "howSection"][0]{
@@ -20,7 +22,7 @@ const FALLBACK: HowData = {
     {
       n: '01',
       title: 'Pay at the station',
-      description: 'Tap, card, cash, or token — Apple Pay too. Pick your wash (8, 9, 10, or 12) and confirm.',
+      description: 'Tap, card, cash, or token — Apple Pay too. Pick your wash ({washValues}) and confirm.',
     },
     {
       n: '02',
@@ -42,11 +44,17 @@ const FALLBACK: HowData = {
 }
 
 export default async function How() {
-  const data = await sanityFetch<Partial<HowData>>(HOW_QUERY)
-  const merged: HowData = {
-    ...FALLBACK,
-    ...(data ?? {}),
-    steps: data?.steps?.length ? data.steps : FALLBACK.steps,
-  }
+  const [data, washes] = await Promise.all([
+    sanityFetch<Partial<HowData>>(HOW_QUERY),
+    getWashLineup(),
+  ])
+  // The wash numbers on the pay station follow the wash packages; a stale
+  // "(8, 9, 10, or 12)" left in the CMS is corrected to the current lineup.
+  const values = washes.tiers.map((t) => t.washValue)
+  const steps = (data?.steps?.length ? data.steps : FALLBACK.steps).map((s) => ({
+    ...s,
+    description: fillWashValues(s.description, values),
+  }))
+  const merged: HowData = { ...FALLBACK, ...(data ?? {}), steps }
   return <HowClient data={merged} />
 }
