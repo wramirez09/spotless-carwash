@@ -9,12 +9,27 @@ export default defineType({
     defineField({ name: 'eyebrow', type: 'string', initialValue: 'Wash tokens' }),
     defineField({ name: 'sectionNumber', type: 'string', initialValue: '07' }),
     defineField({ name: 'headlineLine1', type: 'string' }),
-    defineField({ name: 'headlineLine2', type: 'string' }),
-    defineField({ name: 'valueLine', type: 'text', rows: 2, description: 'Yellow line — e.g. "Each token = one Ultimate wash ($10 value)..."' }),
-    defineField({ name: 'description', type: 'text', rows: 4 }),
+    defineField({
+      name: 'headlineLine2',
+      type: 'string',
+      description:
+        'e.g. "Save **{discount}** every pack." Any dollar amount is replaced with the live pack discount from Stripe.',
+    }),
+    defineField({ name: 'valueLine', type: 'text', rows: 2, description: "Token prices live in Stripe (set them at /admin/pricing). Don't type a price here — use {discount}, {saleDiscount}, {packPrices}, {singlePrices}, {lowestPackPerWash}, {pack:12}, {pack:12x10} or {single:12}." }),
+    defineField({
+      name: 'description',
+      type: 'text',
+      rows: 4,
+      description:
+        'Any dollar amount is replaced with the live pack discount from Stripe. Prefer {discount}.',
+    }),
     defineField({ name: 'cta', type: 'ctaLink' }),
     defineField({
       name: 'tiers',
+      title: 'Tiers (unused)',
+      description:
+        'No longer shown on the site — the token pack cards are built from Stripe. Manage packs at /admin/pricing.',
+      hidden: true,
       type: 'array',
       of: [
         defineArrayMember({

@@ -3,6 +3,7 @@ import BuyTokensClient, { type BuyTokensCopy } from './BuyTokensClient'
 import { sanityFetch } from '@/lib/sanityFetch'
 import { getCheckoutPricing } from '@/lib/stripePricing'
 import { subscriptionsEnabled } from '@/lib/featureFlags'
+import { fillDiscountCopy, fillPricing, pricingFacts } from '@/lib/pricingCopy'
 
 const BUY_TOKENS_FALLBACK: BuyTokensCopy = {
   metaTitle: 'Buy Wash Tokens',
@@ -31,7 +32,8 @@ const BUY_TOKENS_FALLBACK: BuyTokensCopy = {
   quantityInputLabel: 'Number of packs',
   modeHelper: 'Choose how you want to buy',
   modeSingleLabel: 'Single tokens',
-  modePackLabel: '4-Pack · Save $5',
+  // Filled in from Stripe by the page — see lib/pricingCopy.ts.
+  modePackLabel: 'Token packs · Save {discount}',
   packTokensSuffixSingle: 'wash · single',
   quantityHeadingSingle: 'Number of tokens',
   quantitySubtextSingle: 'Buy any number of individual tokens at the same wash value.',
@@ -158,9 +160,23 @@ export default async function BuyTokensPage({
     loadCopy(),
     getCheckoutPricing(nowOverrideMs),
   ])
+  // Every price on the page comes from Stripe. Copy may name one with a
+  // {placeholder} (lib/pricingCopy.ts); the pack toggle has only ever quoted
+  // the bundle discount, so a literal "$5" left in the CMS is rewritten too.
+  const facts = pricingFacts(pricing)
+  const filled = Object.fromEntries(
+    Object.entries(copy).map(([k, v]) => [
+      k,
+      typeof v === 'string'
+        ? k === 'modePackLabel'
+          ? fillDiscountCopy(v, facts)
+          : fillPricing(v, facts)
+        : v,
+    ]),
+  ) as BuyTokensCopy
   return (
     <BuyTokensClient
-      copy={copy}
+      copy={filled}
       pricing={pricing}
       showSubscribeLink={subscriptionsEnabled()}
     />

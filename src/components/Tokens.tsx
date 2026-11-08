@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { sanityFetch } from '@/lib/sanityFetch'
 import { renderHighlight } from '@/lib/renderHighlight'
 import { getCheckoutPricing } from '@/lib/stripePricing'
+import { fillDiscountCopy, fillPricing, formatUSD, pricingFacts } from '@/lib/pricingCopy'
 
 type TokensCopy = {
   eyebrow: string
@@ -26,18 +27,13 @@ const FALLBACK: TokensCopy = {
   eyebrow: 'Wash tokens',
   sectionNumber: '07',
   headlineLine1: 'Buy a 4-pack.',
-  headlineLine2: 'Save **$5** every wash.',
+  headlineLine2: 'Save **{discount}** every pack.',
   valueLine: '4 tokens per pack. Never expires. Works at both locations.',
   description:
-    'Prepaid wash tokens save you $5 per 4-pack. Keep them in your glovebox, skip the cash station — and they make a great Forest Park gift.',
+    'Prepaid wash tokens save you {discount} per pack. Keep them in your glovebox, skip the cash station — and they make a great Forest Park gift.',
   cta: { label: 'Buy tokens', href: '/buy-tokens' },
   unitLabel: '/ wash · 4-pack',
-  saleHeadline: 'Extra **$5 off** every 4-pack.',
-}
-
-function formatUSD(cents: number): string {
-  if (cents % 100 === 0) return `$${cents / 100}`
-  return `$${(cents / 100).toFixed(2)}`
+  saleHeadline: 'Extra **{saleDiscount} off** every pack.',
 }
 
 export default async function Tokens() {
@@ -50,13 +46,35 @@ export default async function Tokens() {
   // left to second-guess here.
   const sale = pricing.activeSale
 
-  const t: TokensCopy = {
+  const merged: TokensCopy = {
     ...FALLBACK,
     ...(copyData ?? {}),
     cta: { ...FALLBACK.cta, ...(copyData?.cta ?? {}) },
   }
 
-  const packsDesc = [...pricing.packs].sort((a, b) => Number(b.id) - Number(a.id))
+  // Prices come from Stripe, never from the copy. The headline, description
+  // and sale headline have only ever quoted the pack discount, so any dollar
+  // figure in them — including a stale "$5" typed into the CMS — is rewritten
+  // to the live amount. Every field also accepts the {placeholders} listed in
+  // lib/pricingCopy.ts.
+  const facts = pricingFacts(pricing)
+  const t: TokensCopy = {
+    ...merged,
+    headlineLine1: fillPricing(merged.headlineLine1, facts),
+    headlineLine2: fillDiscountCopy(merged.headlineLine2, facts),
+    valueLine: fillPricing(merged.valueLine, facts),
+    description: fillDiscountCopy(merged.description, facts),
+    saleHeadline: fillDiscountCopy(
+      merged.saleHeadline,
+      facts,
+      facts.saleExtraCents ?? facts.discountCents,
+    ),
+  }
+
+  // Biggest denomination first, then biggest pack — the premium option leads.
+  const packsDesc = [...pricing.packs].sort(
+    (a, b) => Number(b.washValue) - Number(a.washValue) || b.tokens - a.tokens,
+  )
 
   return (
     <section id="tokens" className="pb-16 md:pb-24">
@@ -118,10 +136,10 @@ export default async function Tokens() {
                 >
                   <div className="flex items-center gap-3 md:gap-4">
                     <span className="display text-[30px] md:text-[34px] leading-none pr-3 md:pr-4 border-r-2 border-blue-700">
-                      ${pack.id}
+                      ${pack.washValue}
                     </span>
                     <span className="text-[11px] md:text-[13px] font-extrabold tracking-[0.08em] uppercase whitespace-nowrap leading-tight">
-                      {t.unitLabel}
+                      {pack.tokens === 4 ? t.unitLabel : `/ wash · ${pack.tokens}-pack`}
                     </span>
                     <span className="ml-auto flex flex-col items-end leading-none">
                       {hasDiscount && (

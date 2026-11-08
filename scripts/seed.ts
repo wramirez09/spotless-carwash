@@ -191,7 +191,7 @@ const singletons: Record<string, SeedDoc> = {
         n: '01',
         title: 'Pay at the station',
         description:
-          'Tap, card, cash, or token — Apple Pay too. Pick your wash (8, 9, 10, or 12) and confirm.',
+          'Tap, card, cash, or token — Apple Pay too. Pick your wash ({washValues}) and confirm.',
       },
       {
         n: '02',
@@ -879,7 +879,10 @@ const locationDocs = locationsData.map((l) => {
 })
 
 const washPackageDocs = packagesData.map((p, i) => ({
-  _id: `washPackage-${p.num}`,
+  // The live documents keep the ids they were created with, which no longer
+  // match their numbers (Deluxe $10 is washPackage-09). Keying by number
+  // would overwrite the wrong package and leave a duplicate.
+  _id: p.docId ?? `washPackage-${p.num}`,
   _type: 'washPackage',
   num: p.num,
   name: p.name,

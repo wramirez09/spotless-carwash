@@ -4,7 +4,12 @@ import { revalidatePath } from 'next/cache'
 import { createServerSupabase } from '@/lib/supabase/authServer'
 import { isAdminEmail } from '@/lib/adminAccess'
 import {
+  adoptAllCatalogSkus,
   adoptCatalogSku,
+  createCatalogSku,
+  deleteCatalogSku,
+  setSkuFeatured,
+  syncCatalogToWashPackages,
   cancelSale as cancelSaleService,
   publishSale as publishSaleService,
   reprovisionSale as reprovisionSaleService,
@@ -14,11 +19,10 @@ import {
 } from '@/lib/pricingAdmin'
 import {
   PRICE_KINDS,
-  WASH_VALUES,
   parseDollarsToCents,
+  parseSkuLookupKey,
   slugify,
   type PriceKind,
-  type WashValue,
 } from '@/lib/pricing/model'
 import { parseChicagoLocalInput } from '@/lib/pricing/time'
 
@@ -71,41 +75,89 @@ export async function setPrice(formData: FormData): Promise<ActionResult> {
   const actor = await requireAdmin()
   if (!actor) return { ok: false, message: EXPIRED }
 
-  const kind = String(formData.get('kind') ?? '') as PriceKind
-  const washValue = String(formData.get('washValue') ?? '') as WashValue
+  const sku = String(formData.get('sku') ?? '')
   const amount = String(formData.get('amount') ?? '')
-
-  if (!PRICE_KINDS.includes(kind) || !WASH_VALUES.includes(washValue)) {
-    return { ok: false, message: 'That is not a valid product.' }
-  }
+  if (!parseSkuLookupKey(sku)) return { ok: false, message: 'That is not a valid product.' }
 
   const cents = parseDollarsToCents(amount)
   if (cents == null) {
     return { ok: false, message: `"${amount}" is not a valid dollar amount.` }
   }
 
-  const result = await updateCatalogPrice({
+  const result = await updateCatalogPrice({ sku, unitAmountCents: cents, actorEmail: actor })
+  if (result.ok) revalidateStorefront()
+  return toResult(result)
+}
+
+/** Add a new pack size / denomination, or a single token, to the store. */
+export async function createSku(formData: FormData): Promise<ActionResult> {
+  const actor = await requireAdmin()
+  if (!actor) return { ok: false, message: EXPIRED }
+
+  const kind = String(formData.get('kind') ?? '') as PriceKind
+  if (!PRICE_KINDS.includes(kind)) return { ok: false, message: 'Choose a pack or a single token.' }
+  const washValue = String(formData.get('washValue') ?? '').trim().replace(/^\$/, '')
+  const tokens = kind === 'single' ? 1 : Number(String(formData.get('tokens') ?? '').trim())
+  const amount = String(formData.get('amount') ?? '')
+  const cents = parseDollarsToCents(amount)
+  if (cents == null) return { ok: false, message: `"${amount}" is not a valid dollar amount.` }
+  const featured = formData.get('featured') === 'on' || formData.get('featured') === 'true'
+
+  const result = await createCatalogSku({
     kind,
     washValue,
+    tokens,
     unitAmountCents: cents,
+    featured: featured || undefined,
     actorEmail: actor,
   })
   if (result.ok) revalidateStorefront()
   return toResult(result)
 }
 
-/** Make Stripe authoritative for a SKU that still resolves from deploy config. */
-export async function adoptSkuFromStripe(
-  kind: PriceKind,
-  washValue: WashValue,
-): Promise<ActionResult> {
+/** Take a SKU off sale (archives its Stripe Product). */
+export async function deleteSku(sku: string): Promise<ActionResult> {
   const actor = await requireAdmin()
   if (!actor) return { ok: false, message: EXPIRED }
-  if (!PRICE_KINDS.includes(kind) || !WASH_VALUES.includes(washValue)) {
-    return { ok: false, message: 'That is not a valid product.' }
-  }
-  const result = await adoptCatalogSku(kind, washValue, actor)
+  if (!parseSkuLookupKey(sku)) return { ok: false, message: 'That is not a valid product.' }
+  const result = await deleteCatalogSku(sku, actor)
   if (result.ok) revalidateStorefront()
+  return toResult(result)
+}
+
+export async function featureSku(sku: string, featured: boolean): Promise<ActionResult> {
+  const actor = await requireAdmin()
+  if (!actor) return { ok: false, message: EXPIRED }
+  if (!parseSkuLookupKey(sku)) return { ok: false, message: 'That is not a valid product.' }
+  const result = await setSkuFeatured(sku, featured, actor)
+  if (result.ok) revalidateStorefront()
+  return toResult(result)
+}
+
+/** Make Stripe authoritative for a SKU that still resolves from deploy config. */
+export async function adoptSkuFromStripe(sku: string): Promise<ActionResult> {
+  const actor = await requireAdmin()
+  if (!actor) return { ok: false, message: EXPIRED }
+  if (!parseSkuLookupKey(sku)) return { ok: false, message: 'That is not a valid product.' }
+  const result = await adoptCatalogSku(sku, actor)
+  if (result.ok) revalidateStorefront()
+  return toResult(result)
+}
+
+export async function adoptAllSkusFromStripe(): Promise<ActionResult> {
+  const actor = await requireAdmin()
+  if (!actor) return { ok: false, message: EXPIRED }
+  const result = await adoptAllCatalogSkus(actor)
+  revalidateStorefront()
+  return toResult(result)
+}
+
+/** Bring every token price in Stripe in line with the wash packages. */
+export async function syncWithWashPackages(): Promise<ActionResult> {
+  const actor = await requireAdmin()
+  if (!actor) return { ok: false, message: EXPIRED }
+  const result = await syncCatalogToWashPackages(actor)
+  revalidateStorefront()
   return toResult(result)
 }
 

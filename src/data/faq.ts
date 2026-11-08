@@ -1,5 +1,10 @@
 export type FAQ = { q: string; a: string }
 
+// Token prices are NOT written here. Answers name them with placeholders
+// ({packPrices}, {discount}, …) that are filled from Stripe at render time —
+// see lib/pricingCopy.ts — so an admin price change can't leave the FAQ
+// quoting last month's numbers.
+
 export const faqs: FAQ[] = [
   {
     q: 'How does a touchless car wash work?',
@@ -11,11 +16,11 @@ export const faqs: FAQ[] = [
   },
   {
     q: 'Are car wash tokens worth it?',
-    a: 'For regular customers, yes. Each token equals one Ultimate wash (a $10 value). The 10-pack is $85 (save $5) and the 25-pack is $200 (save $25). Tokens never expire, work at both Forest Park locations, and skip the cash station — they make decent gifts too.',
+    a: 'Yes. Wash tokens offer added value and convenience for frequent customers. There is a token for each of our washes — {washPrices} — and every pack of four comes with {discount} off. Tokens never expire and can be used at either Forest Park location.',
   },
   {
     q: 'What does a wash token cost?',
-    a: 'Tokens are sold in packs: 5 for $45, 10 for $85 (save $5), and 25 for $200 (save $25). Each token redeems for one Ultimate-tier wash, normally $10.',
+    a: 'Wash tokens are sold in packs: {packPrices}. Prices include the {discount} pack discount, applied automatically at checkout. Each token is good for the wash of the same value — {washPrices}.',
   },
   {
     q: 'What are your hours?',

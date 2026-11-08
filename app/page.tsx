@@ -11,7 +11,6 @@ import Subscription from '@/src/components/Subscription'
 import Email from '@/src/components/Email'
 import OrganizationSchema from '@/src/components/seo/OrganizationSchema'
 import LocalBusinessSchema from '@/src/components/seo/LocalBusinessSchema'
-import OfferCatalogSchema from '@/src/components/seo/OfferCatalogSchema'
 import HowToSchema from '@/src/components/seo/HowToSchema'
 import { locations } from '@/src/data/locations'
 import { subscriptionsEnabled } from '@/lib/featureFlags'
@@ -25,7 +24,6 @@ export default function HomePage() {
       {locations.map((loc) => (
         <LocalBusinessSchema key={loc.slug} location={loc} />
       ))}
-      <OfferCatalogSchema />
       <HowToSchema />
 
       <Hero />

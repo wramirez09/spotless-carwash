@@ -1,24 +1,18 @@
 import type { Metadata } from 'next'
 import { getSessionUser } from '@/lib/supabase/authServer'
+import { getPricingSnapshot, listAllSales } from '@/lib/pricingStore'
 import {
-  getPricingSnapshot,
-  listAllSales,
-  listCatalogPrices,
-} from '@/lib/pricingStore'
-import {
-  PRICE_KINDS,
-  WASH_VALUES,
   couponDrift,
   formatCents,
   isProvisioned,
   pickActiveSale,
   saleEndLabel,
   saleState,
-  type PriceKind,
-  type WashValue,
 } from '@/lib/pricing/model'
 import { formatChicagoAdmin, toChicagoLocalInput } from '@/lib/pricing/time'
 import { getCheckoutPricing } from '@/lib/stripePricing'
+import { getWashLineup } from '@/lib/washPackages'
+import { describeSyncAction, expectedListCents, planCatalogSync } from '@/lib/washPricing'
 import { signOut } from '../login/actions'
 import PriceGrid, { type PriceRowView } from './PriceGrid'
 import BundleDiscountCard from './BundleDiscountCard'
@@ -39,46 +33,50 @@ export default async function PricingAdminPage() {
   // reading it here means this screen shows the prices customers are actually
   // being charged — including SKUs still priced from the deploy config, whose
   // amounts live only in Stripe.
-  const [snapshot, sales, catalog, pricing, user] = await Promise.all([
+  const [snapshot, sales, pricing, user, washes] = await Promise.all([
     // Always a fresh read here. The cache is per serverless instance, so the
     // re-render after a save can land on an instance that still holds the old
     // snapshot — which would show the admin the price they just replaced.
     getPricingSnapshot({ fresh: true }),
     listAllSales(),
-    listCatalogPrices(),
     getCheckoutPricing(),
     getSessionUser(),
+    // Fresh: an editor who just changed a wash price in the CMS and came here
+    // to check should see the new number, not a 60-second-old one.
+    getWashLineup({ fresh: true }),
   ])
+  const tierFor = (v: string) => washes.tiers.find((t) => t.washValue === v)
 
-  const livePackCents = new Map(pricing.packs.map((p) => [p.id, p.price]))
-  const liveSingleCents = new Map(pricing.singles.map((p) => [p.id, p.price]))
+  // Legacy SKUs still priced from an env-var Price ID carry no amount in the
+  // snapshot; the storefront's own resolution fills those in.
+  const liveCents = new Map<string, number>([
+    ...pricing.packs.map((p) => [p.id, p.price] as const),
+    ...pricing.singles.map((p) => [p.id, p.price] as const),
+  ])
 
   const now = Date.now()
   const live = pickActiveSale(snapshot.sales, now)
 
-  // A SKU priced through this screen has a catalog row; one that still comes
-  // from the deploy config doesn't. The distinction is worth showing — it is
-  // the difference between "I can change this here" and "this is whatever was
-  // deployed".
-  const catalogBySku = new Map(catalog.map((c) => [`${c.kind}-${c.washValue}`, c]))
-  const priceRows: PriceRowView[] = PRICE_KINDS.flatMap((kind: PriceKind) =>
-    WASH_VALUES.map((washValue: WashValue): PriceRowView => {
-      const row = catalogBySku.get(`${kind}-${washValue}`)
-      const resolved = snapshot.prices[kind][washValue]
-      const liveCents =
-        kind === 'pack' ? livePackCents.get(washValue) : liveSingleCents.get(washValue)
-      // Prefer the resolved amount over the catalog row's stored copy: when
-      // Stripe is authoritative for this SKU it is the live number, and the
-      // stored copy is only a record of what it was set to here.
-      return {
-        kind,
-        washValue,
-        cents: resolved.cents ?? liveCents ?? row?.unitAmountCents ?? null,
-        stripePriceId: resolved.stripePriceId || (row?.stripePriceId ?? ''),
-        source: resolved.source,
-      }
-    }),
-  )
+  // Exactly what the storefront lists — the catalog IS the store.
+  const priceRows: PriceRowView[] = snapshot.catalog.map((sku) => ({
+    sku: sku.sku,
+    kind: sku.kind,
+    washValue: sku.washValue,
+    tokens: sku.tokens,
+    cents: sku.cents ?? liveCents.get(sku.sku) ?? null,
+    stripePriceId: sku.stripePriceId,
+    featured: sku.featured,
+    source: sku.source,
+    tierName: tierFor(sku.washValue)?.name ?? null,
+    expectedCents: expectedListCents(washes.tiers, sku.washValue, sku.tokens),
+  }))
+
+  // What "Sync to wash packages" would change. Only planned against a real
+  // CMS answer — never against the built-in fallback lineup.
+  const syncPlan =
+    washes.source === 'cms'
+      ? planCatalogSync(priceRows, washes.tiers).map(describeSyncAction)
+      : []
 
   const saleViews: SaleView[] = sales.map((sale) => ({
     id: sale.id,
@@ -191,12 +189,18 @@ export default async function PricingAdminPage() {
         )}
 
         <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-          <PriceGrid rows={priceRows} />
+          <PriceGrid
+            rows={priceRows}
+            tiers={washes.tiers}
+            lineupFromCms={washes.source === 'cms'}
+            syncPlan={syncPlan}
+          />
           <BundleDiscountCard
             currentCents={snapshot.settings.baseDiscountCents}
             driftCount={driftCount}
           />
         </div>
+
 
         <SalesManager
           sales={saleViews}

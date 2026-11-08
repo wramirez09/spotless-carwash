@@ -8,27 +8,23 @@ export type Pkg = {
   color: WashColor
   features: { text: string; included: boolean }[]
   featured?: boolean
+  /** Sanity document id, where it differs from `washPackage-<num>` (seed only). */
+  docId?: string
 }
 
+// Mirrors the washPackage documents in Sanity, which are the source of truth
+// for the wash lineup AND for token pricing: each package's price is the value
+// of its token, and every token pack is priced from it (see lib/washPricing.ts).
+// This copy is only used when the CMS can't be reached — keep it in step.
 export const packages: Pkg[] = [
   {
-    num: '08',
-    name: 'Quick',
-    price: '$8',
-    priceNumber: 8,
-    color: 'red',
-    features: [
-      { text: 'Single presoak', included: true },
-      { text: 'High-pressure rinse', included: true },
-      { text: 'Polish', included: true },
-    ],
-  },
-  {
-    num: '09',
+    docId: 'washPackage-09',
+    num: '10',
     name: 'Deluxe',
-    price: '$9',
-    priceNumber: 9,
+    price: '$10',
+    priceNumber: 10,
     color: 'green',
+    featured: true,
     features: [
       { text: 'Undercarriage spray', included: true },
       { text: 'Single presoak', included: true },
@@ -39,10 +35,11 @@ export const packages: Pkg[] = [
     ],
   },
   {
-    num: '10',
+    docId: 'washPackage-10',
+    num: '12',
     name: 'Ultimate',
-    price: '$10',
-    priceNumber: 10,
+    price: '$12',
+    priceNumber: 12,
     color: 'purple',
     features: [
       { text: 'Undercarriage spray', included: true },
@@ -54,10 +51,11 @@ export const packages: Pkg[] = [
     ],
   },
   {
-    num: '12',
+    docId: 'washPackage-12',
+    num: '14',
     name: 'Lustre',
-    price: '$12',
-    priceNumber: 12,
+    price: '$14',
+    priceNumber: 14,
     color: 'blue',
     featured: true,
     features: [

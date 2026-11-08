@@ -1,7 +1,12 @@
-import { faqs } from '@/src/data/faq'
+import type { FAQ } from '@/src/data/faq'
 import JsonLd from './JsonLd'
 
-export default function FAQPageSchema() {
+/**
+ * FAQPage structured data. Takes the SAME answers the page renders — prices
+ * already filled from Stripe — so search results can't quote a different
+ * number from the page itself.
+ */
+export default function FAQPageSchema({ faqs }: { faqs: readonly FAQ[] }) {
   const data = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',

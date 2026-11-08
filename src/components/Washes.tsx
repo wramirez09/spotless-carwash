@@ -1,6 +1,10 @@
 import { sanityFetch } from '@/lib/sanityFetch'
 import { renderHighlight } from '@/lib/renderHighlight'
-import { packages as fallbackPackages, type Pkg, type WashColor } from '@/src/data/washes'
+import type { Pkg, WashColor } from '@/src/data/washes'
+import { getCheckoutPricing } from '@/lib/stripePricing'
+import { fillCountWord, formatUSD } from '@/lib/pricingCopy'
+import { getWashLineup } from '@/lib/washPackages'
+import OfferCatalogSchema from '@/src/components/seo/OfferCatalogSchema'
 
 type WashesData = {
   eyebrow: string
@@ -10,20 +14,14 @@ type WashesData = {
   packages: Pkg[]
 }
 
-const WASHES_QUERY = `{
-  "section": *[_type == "washesSection"][0]{
-    eyebrow, sectionNumber, heading, subhead
-  },
-  "packages": *[_type == "washPackage"] | order(order asc, priceNumber asc){
-    num, name, price, priceNumber, color, featured,
-    features[]{ text, included }
-  }
+const SECTION_QUERY = `*[_type == "washesSection"][0]{
+  eyebrow, sectionNumber, heading, subhead
 }`
 
 const WASHES_FALLBACK: Omit<WashesData, 'packages'> = {
   eyebrow: 'Wash packages',
   sectionNumber: '01',
-  heading: 'Four ways to make your car **shine**.',
+  heading: '{washCount} ways to make your car **shine**.',
   subhead:
     'Top three packages include the air cannon dryers. Pay at the cash station with Visa, Mastercard, Amex, tap, Apple Pay, cash, or wash tokens — choose, then wait for green.',
 }
@@ -131,16 +129,29 @@ function Card({ pkg }: { pkg: Pkg }) {
 }
 
 export default async function Washes() {
-  const data = await sanityFetch<{
-    section?: Partial<WashesData>
-    packages?: Pkg[]
-  }>(WASHES_QUERY)
+  const [sectionData, washes, pricing] = await Promise.all([
+    sanityFetch<Partial<WashesData>>(SECTION_QUERY),
+    getWashLineup(),
+    getCheckoutPricing(),
+  ])
 
-  const section = { ...WASHES_FALLBACK, ...(data?.section ?? {}) }
-  const packages: Pkg[] = data?.packages?.length ? data.packages : fallbackPackages
+  const merged = { ...WASHES_FALLBACK, ...(sectionData ?? {}) }
+  // "Four ways to make your car shine" must not survive the lineup going to
+  // three packages: the count word in the heading follows the packages.
+  const section = { ...merged, heading: fillCountWord(merged.heading, washes.packages.length) }
+  // These packages are the source of truth for pricing (lib/washPricing.ts).
+  // The number is what everything else — token packs, checkout — is priced
+  // from, so the card shows that number rather than the separately typed
+  // display string, which could drift from it.
+  const packages: Pkg[] = washes.packages.map((pkg) =>
+    Number.isFinite(pkg.priceNumber) && pkg.priceNumber > 0
+      ? { ...pkg, price: formatUSD(Math.round(pkg.priceNumber * 100)) }
+      : pkg,
+  )
 
   return (
     <section id="washes" className="py-16 md:py-24">
+      <OfferCatalogSchema packages={packages} packs={pricing.packs} />
       <div className="max-w-[1240px] mx-auto px-5 md:px-7">
         <div className="flex items-end justify-between gap-10 mb-10 md:mb-12 flex-wrap">
           <div>

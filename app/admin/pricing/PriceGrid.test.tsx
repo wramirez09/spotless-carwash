@@ -7,14 +7,21 @@ import { renderToStaticMarkup } from 'react-dom/server'
 vi.mock('./actions', () => ({
   setPrice: vi.fn(),
   adoptSkuFromStripe: vi.fn(),
+  adoptAllSkusFromStripe: vi.fn(),
+  createSku: vi.fn(),
+  deleteSku: vi.fn(),
+  featureSku: vi.fn(),
 }))
 
 import PriceGrid, { type PriceRowView } from './PriceGrid'
 
 function row(over: Partial<PriceRowView> = {}): PriceRowView {
   return {
+    sku: 'spotless_pack_12',
     kind: 'pack',
     washValue: '12',
+    tokens: 4,
+    featured: false,
     cents: 4800,
     stripePriceId: 'price_abc',
     source: 'stripe',
@@ -76,5 +83,43 @@ describe('PriceGrid — price source', () => {
   it('shows the per-token price for packs only', () => {
     expect(html([row()])).toContain('$12.00') // 4800 / 4
     expect(html([row({ kind: 'single', cents: 1200 })])).not.toContain('/ wash')
+  })
+})
+
+describe('PriceGrid — catalog management', () => {
+  it('names an admin-created pack by its size and per-token price', () => {
+    const markup = html([
+      row({ sku: 'spotless_pack_12_x10', tokens: 10, cents: 10000 }),
+    ])
+    expect(markup).toContain('$12 wash · 10-pack')
+    expect(markup).toContain('$10.00 / wash')
+  })
+
+  it('offers Remove on every row', () => {
+    expect(html([row()])).toContain('Remove the $12 wash · 4-pack')
+  })
+
+  it('badges the Most Popular SKU and offers to unmark it', () => {
+    const markup = html([row({ featured: true })])
+    expect(markup).toContain('Most popular')
+    expect(markup).toContain('Unmark most popular')
+  })
+
+  it('always renders the add-product form', () => {
+    const markup = html([])
+    expect(markup).toContain('Add a product')
+    expect(markup).toContain('Add to store')
+    expect(markup).toContain('No packs on sale.')
+    expect(markup).toContain('No single tokens on sale.')
+  })
+
+  it('offers to link every deploy-config SKU to Stripe at once', () => {
+    const markup = html([row({ source: 'env' }), row({ sku: 'spotless_pack_8', source: 'db' })])
+    expect(markup).toContain('2 items are')
+    expect(markup).toContain('Link all to Stripe')
+  })
+
+  it('posts the SKU id, not the bare denomination', () => {
+    expect(html([row()])).toContain('name="sku" value="spotless_pack_12"')
   })
 })

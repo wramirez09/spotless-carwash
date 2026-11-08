@@ -9,7 +9,11 @@ function formatUSD(cents: number): string {
 // Async server component: the banner renders in the root layout, so it reads
 // through the pricing store's cache rather than hitting Supabase per request.
 export default async function SalesBanner() {
-  const { sales, settings } = await getPricingSnapshot()
+  const { sales, settings, catalog } = await getPricingSnapshot()
+  // "every 4-pack" stays accurate only while 4-packs are all that's sold.
+  const packs = catalog.filter((s) => s.kind === 'pack')
+  const packWord = packs.length > 0 && packs.every((p) => p.tokens === 4) ? '4-pack' : 'pack'
+
   const sale = pickActiveSale(sales)
   // Advertise the real numbers. Hardcoded "$5 OFF" copy was correct only for
   // as long as the discount stayed $5 — which is exactly what /admin/pricing
@@ -38,13 +42,13 @@ export default async function SalesBanner() {
 
         {sale ? (
           <span className="sale-msg">
-            Extra <b>{extraOff} OFF</b> every 4-pack
+            Extra <b>{extraOff} OFF</b> every {packWord}
             <span className="sep">·</span>
             Now through {saleEndLabel(sale)}
           </span>
         ) : (
           <span className="sale-msg">
-            <b>{baseOff} OFF</b> every 4-pack
+            <b>{baseOff} OFF</b> every {packWord}
             <span className="sep">·</span>
             Auto-applied at checkout
           </span>

@@ -7,8 +7,20 @@ export default defineType({
   fields: [
     defineField({ name: 'num', type: 'string', title: 'Display number', description: 'e.g. "08", "09", "10", "12"', validation: (r) => r.required() }),
     defineField({ name: 'name', type: 'string', validation: (r) => r.required() }),
-    defineField({ name: 'price', type: 'string', description: 'Display price, e.g. "$9"' }),
-    defineField({ name: 'priceNumber', type: 'number' }),
+    defineField({
+      name: 'price',
+      type: 'string',
+      description:
+        'Display price, e.g. "$14". The site shows the Price (number) below formatted, so keep the two the same.',
+    }),
+    defineField({
+      name: 'priceNumber',
+      title: 'Price (number)',
+      type: 'number',
+      description:
+        'The price of this wash in whole dollars, e.g. 14. This is the source of truth for token pricing: it is the value of this wash’s token, a single token costs this much, and a pack of N lists at N × this. Publishing a change updates the token prices in Stripe automatically.',
+      validation: (r) => r.required().integer().min(1).max(100),
+    }),
     defineField({
       name: 'color',
       type: 'string',

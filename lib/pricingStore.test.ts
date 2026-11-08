@@ -36,6 +36,7 @@ vi.mock('stripe', () => ({
 }))
 
 import {
+  type PricingSnapshot,
   getPricingSnapshot,
   invalidatePricingCache,
   listAllSales,
@@ -43,6 +44,11 @@ import {
   resolveActiveSale,
 } from './pricingStore'
 import { LABOR_DAY_SALE_START_MS } from './salesSchedule'
+
+/** The snapshot entry for one of the original SKUs, by kind + denomination. */
+function sku(snap: PricingSnapshot, kind: 'pack' | 'single', v: string) {
+  return snap.catalog.find((s) => s.sku === `spotless_${kind}_${v}`)!
+}
 
 const HOUR = 3_600_000
 const NOW = Date.UTC(2026, 7, 25, 12, 0, 0)
@@ -141,8 +147,8 @@ describe('fallback when Supabase is unavailable', () => {
 
   it('serves the env-var Price IDs so checkout keeps working', async () => {
     const snap = await getPricingSnapshot()
-    expect(snap.prices.pack['12'].stripePriceId).toBe('env_price_pack_12')
-    expect(snap.prices.single['8'].stripePriceId).toBe('env_price_single_8')
+    expect(sku(snap, 'pack', '12').stripePriceId).toBe('env_price_pack_12')
+    expect(sku(snap, 'single', '8').stripePriceId).toBe('env_price_single_8')
   })
 
   it('keeps the legacy hardcoded sales running', async () => {
@@ -184,7 +190,7 @@ describe('reading from the database', () => {
     const snap = await getPricingSnapshot()
 
     expect(snap.source).toBe('db')
-    expect(snap.prices.pack['12']).toEqual({
+    expect(sku(snap, 'pack', '12')).toMatchObject({
       stripePriceId: 'price_db_pack_12',
       cents: 4500,
       source: 'db',
@@ -206,9 +212,9 @@ describe('reading from the database', () => {
     getSupabaseAdmin.mockReturnValue(makeSupabase({ prices: [priceRow()] }))
     const snap = await getPricingSnapshot()
 
-    expect(snap.prices.pack['12'].stripePriceId).toBe('price_db_pack_12')
-    expect(snap.prices.pack['8'].stripePriceId).toBe('env_price_pack_8')
-    expect(snap.prices.pack['8'].cents).toBeNull()
+    expect(sku(snap, 'pack', '12').stripePriceId).toBe('price_db_pack_12')
+    expect(sku(snap, 'pack', '8').stripePriceId).toBe('env_price_pack_8')
+    expect(sku(snap, 'pack', '8').cents).toBeNull()
   })
 
   it('resolves the live sale from the database', async () => {
@@ -226,7 +232,7 @@ describe('reading from the database', () => {
     getSupabaseAdmin.mockReturnValue(makeSupabase({ error: { message: 'boom' } }))
     const snap = await getPricingSnapshot()
     expect(snap.source).toBe('fallback')
-    expect(snap.prices.pack['12'].stripePriceId).toBe('env_price_pack_12')
+    expect(sku(snap, 'pack', '12').stripePriceId).toBe('env_price_pack_12')
   })
 })
 
@@ -258,7 +264,7 @@ describe('failure backoff', () => {
     vi.setSystemTime(NOW + 1_000)
     const snap = await getPricingSnapshot()
 
-    expect(snap.prices.pack['12'].stripePriceId).toBe('changed_pack_12')
+    expect(sku(snap, 'pack', '12').stripePriceId).toBe('changed_pack_12')
     envs.pack = (v: string) => `env_price_pack_${v}`
   })
 
@@ -377,7 +383,7 @@ describe('Stripe precedence', () => {
 
     const snap = await getPricingSnapshot()
 
-    expect(snap.prices.pack['12']).toEqual({
+    expect(sku(snap, 'pack', '12')).toMatchObject({
       stripePriceId: 'price_from_stripe',
       cents: 4200,
       source: 'stripe',
@@ -392,7 +398,7 @@ describe('Stripe precedence', () => {
 
     const snap = await getPricingSnapshot()
 
-    expect(snap.prices.single['8']).toMatchObject({
+    expect(sku(snap, 'single', '8')).toMatchObject({
       stripePriceId: 'price_stripe_s8',
       cents: 850,
       source: 'stripe',
@@ -408,9 +414,9 @@ describe('Stripe precedence', () => {
 
     const snap = await getPricingSnapshot()
 
-    expect(snap.prices.pack['8'].source).toBe('stripe')
-    expect(snap.prices.pack['12'].source).toBe('db')
-    expect(snap.prices.pack['9'].source).toBe('env')
+    expect(sku(snap, 'pack', '8').source).toBe('stripe')
+    expect(sku(snap, 'pack', '12').source).toBe('db')
+    expect(sku(snap, 'pack', '9').source).toBe('env')
   })
 
   it('falls back cleanly when Stripe cannot answer', async () => {
@@ -420,11 +426,78 @@ describe('Stripe precedence', () => {
 
     const snap = await getPricingSnapshot()
 
-    expect(snap.prices.pack['12']).toEqual({
+    expect(sku(snap, 'pack', '12')).toMatchObject({
       stripePriceId: 'price_db_pack_12',
       cents: 4500,
       source: 'db',
     })
+  })
+
+  it('lists a SKU that exists only in Stripe — an admin-created pack size', async () => {
+    getSupabaseAdmin.mockReturnValue(makeSupabase())
+    productsList.mockResolvedValue({
+      data: [
+        {
+          id: 'prod_12_x10',
+          active: true,
+          metadata: { lookup_key: 'spotless_pack_12_x10' },
+          default_price: { id: 'price_12_x10', active: true, unit_amount: 11000 },
+        },
+      ],
+    })
+
+    const snap = await getPricingSnapshot()
+    expect(snap.catalog.find((s) => s.sku === 'spotless_pack_12_x10')).toMatchObject({
+      kind: 'pack',
+      washValue: '12',
+      tokens: 10,
+      cents: 11000,
+      stripeProductId: 'prod_12_x10',
+      source: 'stripe',
+    })
+  })
+
+  it('does NOT resurrect a deleted legacy SKU from the env vars', async () => {
+    // Deleting archives the keyed Product. The env var still names a Price
+    // for it, but listing it again would silently undo the admin's delete.
+    getSupabaseAdmin.mockReturnValue(makeSupabase({ prices: [priceRow()] }))
+    productsList.mockResolvedValue({
+      data: [{ ...stripeProduct('pack', '12', 'price_x', 4800), active: false }],
+    })
+
+    const snap = await getPricingSnapshot()
+    expect(snap.catalog.find((s) => s.sku === 'spotless_pack_12')).toBeUndefined()
+    // Its siblings are untouched.
+    expect(sku(snap, 'pack', '8')).toBeDefined()
+  })
+
+  it('keeps a legacy SKU whose keyed Product has no price yet on its env value', async () => {
+    getSupabaseAdmin.mockReturnValue(makeSupabase())
+    productsList.mockResolvedValue({
+      data: [{ ...stripeProduct('pack', '9', 'p', 1), default_price: null }],
+    })
+    // Keyed but unpriced means "set up halfway", not "deleted" — but it also
+    // can't be sold from Stripe, so it drops out rather than going to env.
+    const snap = await getPricingSnapshot()
+    expect(snap.catalog.find((s) => s.sku === 'spotless_pack_9')).toBeUndefined()
+  })
+
+  it('sorts packs before singles, then by denomination and size', async () => {
+    getSupabaseAdmin.mockReturnValue(null)
+    productsList.mockResolvedValue({
+      data: [
+        {
+          id: 'prod_8_x10',
+          active: true,
+          metadata: { lookup_key: 'spotless_pack_8_x10' },
+          default_price: { id: 'price_8_x10', active: true, unit_amount: 7000 },
+        },
+      ],
+    })
+    const snap = await getPricingSnapshot()
+    const order = snap.catalog.map((s) => s.sku)
+    expect(order.slice(0, 3)).toEqual(['spotless_pack_8', 'spotless_pack_8_x10', 'spotless_pack_9'])
+    expect(order.at(-1)).toBe('spotless_single_12')
   })
 
   it('does not call Stripe at all when no secret key is set', async () => {
@@ -453,7 +526,7 @@ describe('Stripe precedence', () => {
     const snap = await getPricingSnapshot()
 
     expect(snap.source).toBe('fallback')
-    expect(snap.prices.pack['12']).toMatchObject({
+    expect(sku(snap, 'pack', '12')).toMatchObject({
       stripePriceId: 'price_stripe_12',
       source: 'stripe',
     })
@@ -499,10 +572,10 @@ describe('fresh reads — propagating an admin price change', () => {
     )
 
     const fresh = await getPricingSnapshot({ fresh: true })
-    expect(fresh.prices.pack['12'].cents).toBe(3000)
+    expect(sku(fresh, 'pack', '12').cents).toBe(3000)
 
     const next = await getPricingSnapshot()
-    expect(next.prices.pack['12'].cents).toBe(3000)
+    expect(sku(next, 'pack', '12').cents).toBe(3000)
   })
 
   it('clears a failure breaker so a retry is not blocked', async () => {

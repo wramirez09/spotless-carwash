@@ -8,13 +8,21 @@ import {
 } from './stripeEnv'
 import { SEASONAL_SALES } from './salesSchedule'
 import { getStripeSecretKey } from './stripeEnv'
-import { catalogKey, loadStripeCatalog } from './stripeCatalog'
+import { loadStripeCatalog } from './stripeCatalog'
 import Stripe from 'stripe'
 import {
+  DEFAULT_SORT_ORDER,
+  PACK_TOKEN_COUNT,
+  PRICE_KINDS,
   WASH_VALUES,
+  defaultFeatured,
   pickActiveSale,
+  skuLookupKey,
+  sortCatalog,
   type CatalogPriceRecord,
+  type CatalogSku,
   type PriceKind,
+  type PriceSource,
   type PricingSettings,
   type SaleRecord,
   type SaleStatus,
@@ -35,17 +43,16 @@ import {
 //     short TTL cache is enough: sale windows turn over on a schedule measured
 //     in weeks, and admin writes invalidate the cache directly.
 
-/** Where a SKU's price came from, highest precedence first. */
-export type PriceSource = 'stripe' | 'db' | 'env'
-
-export type PriceEntry = {
-  stripePriceId: string
-  cents: number | null
-  source: PriceSource
-}
+export type { PriceSource }
 
 export type PricingSnapshot = {
-  prices: Record<PriceKind, Record<WashValue, PriceEntry>>
+  /**
+   * Every one-time SKU currently for sale, sorted for display. Stripe decides
+   * membership: a keyed, active Product is in; a keyed, archived one is out.
+   * The original eight SKUs that were never keyed still resolve from the
+   * database / env vars so the store keeps working until they are adopted.
+   */
+  catalog: CatalogSku[]
   sales: SaleRecord[]
   settings: PricingSettings
   /** 'db' when Supabase answered, 'fallback' when env config was used. */
@@ -130,31 +137,74 @@ function fallbackSales(): SaleRecord[] {
   })
 }
 
+// Sandbox Price IDs, used only when the DEV_* env var is unset (local dev
+// without a full .env). On Vercel Production the getters throw first, so these
+// can never reach a live checkout.
+export const SANDBOX_PRICE_IDS: Record<PriceKind, Record<WashValue, string>> = {
+  pack: {
+    '8': 'price_1TYbXTGhjWB5e4mpkuHG1Ckd',
+    '9': 'price_1TYbXcGhjWB5e4mpodKcrTAG',
+    '10': 'price_1TYbXkGhjWB5e4mpZnBQM9PI',
+    '12': 'price_1TYbXwGhjWB5e4mpjvVl1Oqf',
+  },
+  single: {
+    '8': 'price_1TYEItGhjWB5e4mpWsLAcRMJ',
+    '9': 'price_1TYEJ3GhjWB5e4mpfgqpzfql',
+    '10': 'price_1TYEJBGhjWB5e4mpEIEfFyrT',
+    '12': 'price_1TYEJKGhjWB5e4mpdpMew8qJ',
+  },
+}
+
 function envPriceId(kind: PriceKind, v: WashValue): string {
   try {
     const id = kind === 'pack' ? getPackPriceId(v) : getSinglePriceId(v)
-    return id ?? ''
+    return id ?? SANDBOX_PRICE_IDS[kind][v]
   } catch {
     return ''
   }
 }
 
-function fallbackPrices(): PricingSnapshot['prices'] {
-  const build = (kind: PriceKind) =>
-    Object.fromEntries(
-      WASH_VALUES.map((v) => [
-        v,
-        { stripePriceId: envPriceId(kind, v), cents: null, source: 'env' as PriceSource },
-      ]),
-    ) as Record<WashValue, PriceEntry>
-  return { pack: build('pack'), single: build('single') }
+function legacySku(
+  kind: PriceKind,
+  v: WashValue,
+  stripePriceId: string,
+  cents: number | null,
+  source: PriceSource,
+): CatalogSku {
+  const tokens = kind === 'pack' ? PACK_TOKEN_COUNT : 1
+  return {
+    sku: skuLookupKey(kind, v, tokens),
+    kind,
+    washValue: v,
+    tokens,
+    cents,
+    stripePriceId,
+    stripeProductId: null,
+    featured: defaultFeatured(kind, v, tokens),
+    sortOrder: DEFAULT_SORT_ORDER,
+    source,
+  }
+}
+
+/** The original eight SKUs, priced from the deploy-time env vars. */
+function fallbackPrices(): Map<string, CatalogSku> {
+  const out = new Map<string, CatalogSku>()
+  for (const kind of PRICE_KINDS) {
+    for (const v of WASH_VALUES) {
+      const id = envPriceId(kind, v)
+      if (!id) continue
+      const sku = legacySku(kind, v, id, null, 'env')
+      out.set(sku.sku, sku)
+    }
+  }
+  return out
 }
 
 async function fallbackSnapshot(): Promise<PricingSnapshot> {
   return {
     // Stripe still answers for prices even with the database unavailable —
     // it is a separate system, and the whole point is that it is authoritative.
-    prices: await applyStripeCatalog(fallbackPrices()),
+    catalog: await applyStripeCatalog(fallbackPrices()),
     sales: fallbackSales(),
     settings: fallbackSettings(),
     source: 'fallback',
@@ -188,26 +238,41 @@ function getStripe(): Stripe | null {
  * the lower-precedence value, so adoption can happen one SKU at a time.
  */
 async function applyStripeCatalog(
-  prices: PricingSnapshot['prices'],
-): Promise<PricingSnapshot['prices']> {
+  legacy: Map<string, CatalogSku>,
+): Promise<CatalogSku[]> {
   const stripe = getStripe()
-  if (!stripe) return prices
+  if (!stripe) return sortCatalog([...legacy.values()])
 
   const catalog = await loadStripeCatalog(stripe)
-  if (catalog.size === 0) return prices
+  // Stripe unreachable: show what the deploy config knows rather than an
+  // empty store. Checkout would fail anyway, but the pages still render.
+  if (!catalog.ok) return sortCatalog([...legacy.values()])
 
-  for (const kind of ['pack', 'single'] as PriceKind[]) {
-    for (const v of WASH_VALUES) {
-      const sku = catalog.get(catalogKey(kind, v))
-      if (!sku) continue
-      prices[kind][v] = {
-        stripePriceId: sku.stripePriceId,
-        cents: sku.cents,
-        source: 'stripe',
-      }
-    }
+  const out = new Map<string, CatalogSku>()
+  for (const s of catalog.skus.values()) {
+    if (!s.active || !s.stripePriceId) continue
+    out.set(s.sku, {
+      sku: s.sku,
+      kind: s.kind,
+      washValue: s.washValue,
+      tokens: s.tokens,
+      cents: s.cents,
+      stripePriceId: s.stripePriceId,
+      stripeProductId: s.productId,
+      featured: s.featured,
+      sortOrder: s.sortOrder,
+      source: 'stripe',
+    })
   }
-  return prices
+
+  // A legacy SKU fills in only when Stripe has never heard of its key. A
+  // keyed-but-archived Product means an admin deleted it — bringing it back
+  // from the env vars would undo the delete.
+  for (const [key, sku] of legacy) {
+    if (catalog.skus.has(key)) continue
+    out.set(key, sku)
+  }
+  return sortCatalog([...out.values()])
 }
 
 type SaleRow = {
@@ -298,25 +363,15 @@ async function loadSnapshot(): Promise<PricingSnapshot> {
       return await fallbackSnapshot()
     }
 
-    const fallback = fallbackPrices()
+    // A SKU with no active row keeps its env-var Price ID — so adopting this
+    // table doesn't require backfilling all eight SKUs before it's usable.
     const prices = fallbackPrices()
     for (const raw of (pricesRes.data ?? []) as PriceRow[]) {
       const row = mapPriceRow(raw)
-      const kindBucket = prices[row.kind]
-      if (!kindBucket || !kindBucket[row.washValue]) continue
-      kindBucket[row.washValue] = {
-        stripePriceId: row.stripePriceId,
-        cents: row.unitAmountCents,
-        source: 'db',
-      }
-    }
-
-    // A SKU with no active row keeps its env-var Price ID — so adopting this
-    // table doesn't require backfilling all eight SKUs before it's usable.
-    for (const kind of ['pack', 'single'] as PriceKind[]) {
-      for (const v of WASH_VALUES) {
-        if (!prices[kind][v].stripePriceId) prices[kind][v] = fallback[kind][v]
-      }
+      if (!PRICE_KINDS.includes(row.kind) || !WASH_VALUES.includes(row.washValue)) continue
+      if (!row.stripePriceId) continue
+      const sku = legacySku(row.kind, row.washValue, row.stripePriceId, row.unitAmountCents, 'db')
+      prices.set(sku.sku, sku)
     }
 
     const sales = ((salesRes.data ?? []) as SaleRow[]).map(mapSaleRow)
@@ -333,7 +388,7 @@ async function loadSnapshot(): Promise<PricingSnapshot> {
       : envSettings
 
     dbFailedAt = 0
-    return { prices: await applyStripeCatalog(prices), sales, settings, source: 'db' }
+    return { catalog: await applyStripeCatalog(prices), sales, settings, source: 'db' }
   } catch (err) {
     dbFailedAt = Date.now()
     console.error('[pricingStore] read threw; using env fallback', err)

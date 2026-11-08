@@ -6,18 +6,27 @@ import {
   getPricingSnapshot,
   invalidatePricingCache,
   mapSaleRow,
+  type PricingSnapshot,
 } from './pricingStore'
 import {
+  PACK_TOKEN_COUNT,
+  WASH_VALUES,
   combinedCouponAmountCents,
   findWindowConflict,
   formatCents,
+  parseSkuLookupKey,
   saleState,
+  skuLookupKey,
+  skuProductName,
+  validatePriceCents,
+  validateSkuInput,
   type PriceKind,
   type SaleRecord,
-  type WashValue,
 } from './pricing/model'
 import { formatSaleEndLabel } from './pricing/time'
-import { adoptSku } from './stripeCatalog'
+import { adoptSku, loadStripeCatalog, type StripeCatalog } from './stripeCatalog'
+import { getWashLineup, type WashLineup } from './washPackages'
+import { describeSyncAction, planCatalogSync, type SyncAction } from './washPricing'
 
 // The WRITE side of admin-managed pricing: the services behind the buttons on
 // /admin/pricing. Every function here does two things that must stay in step —
@@ -72,48 +81,310 @@ async function audit(
 }
 
 // ---------------------------------------------------------------------------
-// Catalog prices
+// Catalog (one-time token SKUs)
 // ---------------------------------------------------------------------------
 
+/**
+ * Best-effort history row in `catalog_prices`.
+ *
+ * Stripe is authoritative — by the time this runs the Product already points
+ * at the new Price, so customers are already seeing it. The row only exists
+ * as a price history and as the fallback for when Stripe can't be listed, and
+ * its CHECK constraints only admit the original eight SKUs. So it is written
+ * for those, never for a custom pack size, and a failure is logged rather
+ * than reported as a failed price change.
+ */
+async function recordPriceHistory(args: {
+  kind: PriceKind
+  washValue: string
+  tokens: number
+  cents: number
+  priceId: string
+  productId: string
+  actorEmail: string | null
+}): Promise<void> {
+  const legacyShape =
+    (WASH_VALUES as readonly string[]).includes(args.washValue) &&
+    (args.kind === 'single' || args.tokens === PACK_TOKEN_COUNT)
+  if (!legacyShape) return
+  const supabase = getSupabaseAdmin()
+  if (!supabase) return
+
+  // Deactivate first: the partial unique index allows one active row per SKU.
+  const { error: deactivateError } = await supabase
+    .from('catalog_prices')
+    .update({ active: false })
+    .eq('kind', args.kind)
+    .eq('wash_value', args.washValue)
+    .eq('active', true)
+  if (deactivateError) {
+    console.error('[pricingAdmin] price history deactivate failed', deactivateError)
+    return
+  }
+  const { error: insertError } = await supabase.from('catalog_prices').insert({
+    kind: args.kind,
+    wash_value: args.washValue,
+    unit_amount_cents: args.cents,
+    stripe_price_id: args.priceId,
+    stripe_product_id: args.productId,
+    active: true,
+    created_by: args.actorEmail,
+  })
+  if (insertError) console.error('[pricingAdmin] price history insert failed', insertError)
+}
 
 /**
- * The Stripe Product a SKU's Prices hang off, created on demand.
+ * Deactivate the history row so the Stripe-down fallback forgets a deleted SKU.
  *
- * Looked up by a deterministic lookup key rather than by name so repeated
- * calls converge on one Product instead of littering the account with
- * duplicates — including across the two Stripe accounts, since the sandbox and
- * live account each get their own copy under the same key.
+ * Rows exist only for the original 4-packs and singles (see
+ * recordPriceHistory) and are keyed by kind + value, so deleting any other
+ * pack size must touch nothing — at the same value the row is the 4-pack's.
  */
-async function findOrCreateProduct(
-  stripe: Stripe,
-  kind: PriceKind,
-  washValue: WashValue,
-): Promise<string> {
-  const lookupKey = `spotless_${kind}_${washValue}`
-  const search = await stripe.products
-    .search({ query: `metadata['lookup_key']:'${lookupKey}'`, limit: 1 })
-    .catch(() => null)
-  const found = search?.data?.[0]
-  if (found) return found.id
+async function retirePriceHistory(kind: PriceKind, washValue: string, tokens: number): Promise<void> {
+  if (kind === 'pack' && tokens !== PACK_TOKEN_COUNT) return
+  const supabase = getSupabaseAdmin()
+  if (!supabase) return
+  const { error } = await supabase
+    .from('catalog_prices')
+    .update({ active: false })
+    .eq('kind', kind)
+    .eq('wash_value', washValue)
+    .eq('active', true)
+  if (error) console.error('[pricingAdmin] price history retire failed', error)
+}
 
-  const created = await stripe.products.create({
-    name:
-      kind === 'pack'
-        ? `$${washValue} Wash Token — 4-Pack`
-        : `$${washValue} Wash Token`,
-    description:
-      kind === 'pack'
-        ? `Four pre-paid $${washValue} wash tokens for the Spotless automatic bays.`
-        : `One pre-paid $${washValue} wash token for the Spotless automatic bays.`,
-    shippable: true,
-    metadata: { lookup_key: lookupKey, sku_kind: kind, wash_value: washValue, source: 'admin_pricing' },
+function describeSku(s: { kind: PriceKind; washValue: string; tokens: number }): string {
+  return s.kind === 'single'
+    ? `$${s.washValue} single token`
+    : `$${s.washValue} ${s.tokens}-pack`
+}
+
+/**
+ * The Product a SKU lives on, if Stripe or the deploy config knows of one.
+ *
+ * Checks the Stripe catalog first (including ARCHIVED Products, so deleting
+ * and re-creating a SKU reuses its Product instead of littering the account
+ * with duplicates), then a legacy SKU's env-var Price.
+ */
+/**
+ * State shared across the operations of one batch (a sync, adopt-all,
+ * featuring), loaded once instead of once per SKU. Each SKU in a batch is
+ * touched once, so a listing taken at the start stays accurate for it.
+ */
+type BatchContext = {
+  catalog?: StripeCatalog
+  snapshot?: PricingSnapshot
+  /** The wash lineup the batch was planned from (fresh). */
+  washes?: WashLineup
+}
+
+async function locateSku(
+  stripe: Stripe,
+  sku: string,
+  ctx: BatchContext = {},
+): Promise<{
+  productId: string | null
+  current: { priceId: string; cents: number | null } | null
+  archived: boolean
+  catalogOk: boolean
+}> {
+  const catalog = ctx.catalog ?? (await loadStripeCatalog(stripe))
+  const keyed = catalog.skus.get(sku)
+  if (keyed) {
+    return {
+      productId: keyed.productId,
+      current: keyed.active && keyed.stripePriceId
+        ? { priceId: keyed.stripePriceId, cents: keyed.cents }
+        : null,
+      archived: !keyed.active,
+      catalogOk: catalog.ok,
+    }
+  }
+  // Not keyed in Stripe. A legacy SKU may still be on sale from an env-var
+  // Price whose hand-made Product carries no lookup key.
+  const snapshot = ctx.snapshot ?? (await getPricingSnapshot({ fresh: true }))
+  const legacy = snapshot.catalog.find((s) => s.sku === sku)
+  if (legacy?.stripePriceId) {
+    const price = await stripe.prices.retrieve(legacy.stripePriceId).catch(() => null)
+    if (price) {
+      return {
+        productId: typeof price.product === 'string' ? price.product : price.product.id,
+        current: { priceId: price.id, cents: price.unit_amount ?? legacy.cents },
+        archived: false,
+        catalogOk: catalog.ok,
+      }
+    }
+  }
+  return { productId: null, current: null, archived: false, catalogOk: catalog.ok }
+}
+
+/**
+ * Archive a Price this tool created, once it's been superseded.
+ *
+ * Env-var Price IDs are left ACTIVE on purpose: they are the fallback the
+ * storefront reverts to when Stripe's catalog can't be listed (see
+ * lib/pricingStore.ts), and archived Prices can't be used in new Checkout
+ * Sessions — archiving one would turn a Stripe blip into a checkout outage.
+ */
+async function archiveIfOurs(stripe: Stripe, priceId: string, keepId: string): Promise<void> {
+  if (!priceId || priceId === keepId) return
+  const old = await stripe.prices.retrieve(priceId).catch(() => null)
+  if (old?.metadata?.source !== 'admin_pricing') return
+  await stripe.prices.update(priceId, { active: false }).catch((err) => {
+    // Non-fatal: an un-archived old Price is clutter, not a defect.
+    console.error('[pricingAdmin] archiving superseded price failed', err)
   })
-  return created.id
+}
+
+/**
+ * Keep "Most Popular" on one SKU: un-flag every other SKU that shows it —
+ * including one that only has it by default (the $12 4-pack), which needs an
+ * explicit `featured: 'false'` to lose it.
+ */
+async function clearOtherFeatured(stripe: Stripe, keepSku: string): Promise<void> {
+  const ctx: BatchContext = {
+    snapshot: await getPricingSnapshot({ fresh: true }),
+    catalog: await loadStripeCatalog(stripe),
+  }
+  for (const other of ctx.snapshot!.catalog) {
+    if (other.sku === keepSku || !other.featured) continue
+    const found = await locateSku(stripe, other.sku, ctx)
+    if (!found.productId || !found.current) continue
+    const parsed = parseSkuLookupKey(other.sku)
+    if (!parsed) continue
+    // Adopt first so the flag is on a keyed Product the store reads.
+    await adoptSku(stripe, { productId: found.productId, priceId: found.current.priceId, ...parsed })
+    await stripe.products.update(found.productId, { metadata: { featured: 'false' } })
+  }
+}
+
+export type CreateSkuInput = {
+  kind: PriceKind
+  washValue: string
+  /** Ignored for singles. */
+  tokens: number
+  unitAmountCents: number
+  featured?: boolean
+  actorEmail: string | null
+}
+
+/**
+ * Put a new pack or single token on sale.
+ *
+ * Creates (or revives) the Stripe Product, gives it a Price, and keys it so
+ * the storefront lists it on the next read. No database row is needed for it
+ * to sell — the Stripe catalog IS the list of what's for sale.
+ */
+export async function createCatalogSku(
+  input: CreateSkuInput,
+  ctx: BatchContext = {},
+): Promise<AdminResult<{ sku: string; stripePriceId: string }>> {
+  const tokens = input.kind === 'single' ? 1 : input.tokens
+  const invalid = validateSkuInput({
+    kind: input.kind,
+    washValue: input.washValue,
+    tokens,
+    cents: input.unitAmountCents,
+  })
+  if (invalid) return { ok: false, message: invalid }
+
+  // Token values come from the wash packages on the home page. A token for a
+  // wash that doesn't exist couldn't be sold anyway (the storefront and
+  // checkout only offer package values), so refuse it up front.
+  // Fresh, not the 60-second cached copy: right after an editor publishes a
+  // new price in the CMS, the cached lineup still names the OLD value — and
+  // the sync that publish triggers is creating the NEW one.
+  const washes = ctx.washes ?? (await getWashLineup({ fresh: true }))
+  if (washes.source === 'cms' && !washes.tiers.some((t) => t.washValue === input.washValue)) {
+    return {
+      ok: false,
+      message: `There's no $${input.washValue} wash package. Token values follow the wash packages — add the package in the CMS first.`,
+    }
+  }
+
+  const stripe = getStripe()
+  if (!stripe) return { ok: false, message: 'Stripe is not configured for this deployment.' }
+
+  const { kind, washValue, unitAmountCents, actorEmail } = input
+  const sku = skuLookupKey(kind, washValue, tokens)
+  const name = describeSku({ kind, washValue, tokens })
+
+  let priceId: string
+  let productId: string
+  try {
+    const found = await locateSku(stripe, sku, ctx)
+    if (!found.catalogOk) {
+      return { ok: false, message: 'Stripe could not be reached. Nothing was created — try again.' }
+    }
+    if (found.current) {
+      return {
+        ok: false,
+        message: `The ${name} already exists. Change its price in the table instead.`,
+      }
+    }
+
+    if (found.productId) {
+      productId = found.productId
+    } else {
+      const created = await stripe.products.create({
+        name: skuProductName(kind, washValue, tokens),
+        description:
+          kind === 'pack'
+            ? `${tokens} pre-paid $${washValue} wash tokens for the Spotless automatic bays.`
+            : `One pre-paid $${washValue} wash token for the Spotless automatic bays.`,
+        shippable: true,
+        metadata: {
+          lookup_key: sku,
+          sku_kind: kind,
+          wash_value: washValue,
+          token_count: String(tokens),
+          source: 'admin_pricing',
+        },
+      })
+      productId = created.id
+    }
+
+    const price = await stripe.prices.create({
+      product: productId,
+      currency: CURRENCY,
+      unit_amount: unitAmountCents,
+      metadata: {
+        sku_kind: kind,
+        wash_value: washValue,
+        token_count: String(tokens),
+        source: 'admin_pricing',
+      },
+    })
+    priceId = price.id
+
+    // Keying + default_price is what puts it on sale; this also un-archives a
+    // Product that was deleted earlier.
+    await adoptSku(stripe, { productId, priceId, kind, washValue, tokens })
+    if (input.featured !== undefined) {
+      await stripe.products.update(productId, {
+        metadata: { featured: input.featured ? 'true' : 'false' },
+      })
+      if (input.featured) await clearOtherFeatured(stripe, sku)
+    }
+  } catch (err) {
+    const message = stripeMessage(err)
+    await audit(actorEmail, 'sku.create', { sku, unitAmountCents, error: message }, false)
+    return { ok: false, message: `Stripe rejected the new item: ${message}` }
+  }
+
+  await recordPriceHistory({ kind, washValue, tokens, cents: unitAmountCents, priceId, productId, actorEmail })
+  await audit(actorEmail, 'sku.create', { sku, unitAmountCents, stripePriceId: priceId, productId })
+  invalidatePricingCache()
+
+  return {
+    ok: true,
+    message: `The ${name} is on sale at ${formatCents(unitAmountCents)}.`,
+    data: { sku, stripePriceId: priceId },
+  }
 }
 
 export type UpdatePriceInput = {
-  kind: PriceKind
-  washValue: WashValue
+  sku: string
   unitAmountCents: number
   actorEmail: string | null
 }
@@ -122,127 +393,79 @@ export type UpdatePriceInput = {
  * Change what a SKU costs.
  *
  * Stripe Prices are immutable, so this creates a NEW Price on the same Product
- * and repoints `catalog_prices` at it. The previous Price is left ACTIVE in
- * Stripe on purpose — see the note on `shouldArchive` below.
+ * and makes it the Product's `default_price` — which is what the storefront
+ * and checkout read. Orders already placed keep the Price they were bought at.
  */
 export async function updateCatalogPrice(
   input: UpdatePriceInput,
+  ctx: BatchContext = {},
 ): Promise<AdminResult<{ stripePriceId: string }>> {
-  const { kind, washValue, unitAmountCents, actorEmail } = input
-
-  if (!Number.isInteger(unitAmountCents) || unitAmountCents <= 0) {
-    return { ok: false, message: 'Enter a price greater than $0.00.' }
-  }
-  // A fat-fingered "3200" in a dollars field becomes $3,200. Nothing in this
-  // catalog is anywhere near $500, so refuse rather than publish it.
-  if (unitAmountCents > 50_000) {
-    return {
-      ok: false,
-      message: `${formatCents(unitAmountCents)} looks like a typo — prices above $500 are blocked.`,
-    }
-  }
+  const { sku, unitAmountCents, actorEmail } = input
+  const parsed = parseSkuLookupKey(sku)
+  if (!parsed) return { ok: false, message: 'That is not a valid product.' }
+  const invalid = validatePriceCents(unitAmountCents)
+  if (invalid) return { ok: false, message: invalid }
 
   const stripe = getStripe()
-  const supabase = getSupabaseAdmin()
   if (!stripe) return { ok: false, message: 'Stripe is not configured for this deployment.' }
-  if (!supabase) return { ok: false, message: 'The database is not configured for this deployment.' }
 
-  const snapshot = await getPricingSnapshot()
-  const current = snapshot.prices[kind][washValue]
-  if (current?.cents === unitAmountCents) {
-    return { ok: false, message: 'That is already the current price.' }
-  }
-
+  const name = describeSku(parsed)
   let newPriceId: string
-  let productId: string | null = null
+  let productId: string
+  let fromCents: number | null = null
   try {
-    // Resolve the Product to hang the new Price off. A SKU that has never been
-    // priced through this tool has no Stripe Price to read a Product from, so
-    // one is created — that's what keeps a new denomination from requiring a
-    // trip to the Stripe dashboard.
-    let existing: Stripe.Price | null = null
-    if (current?.stripePriceId) {
-      existing = await stripe.prices.retrieve(current.stripePriceId).catch(() => null)
+    const found = await locateSku(stripe, sku, ctx)
+    if (!found.catalogOk) {
+      // Without the listing this would act on the deploy-config Price instead
+      // of the live one — compare against, and archive, the wrong thing.
+      return { ok: false, message: 'Stripe could not be reached. Nothing was changed — try again.' }
     }
-
-    if (existing) {
-      productId = typeof existing.product === 'string' ? existing.product : existing.product.id
-    } else {
-      productId = await findOrCreateProduct(stripe, kind, washValue)
+    if (found.archived || !found.productId || !found.current) {
+      return {
+        ok: false,
+        message: `The ${name} isn't on sale. Add it again instead of changing its price.`,
+      }
     }
+    if (found.current.cents === unitAmountCents) {
+      return { ok: false, message: 'That is already the current price.' }
+    }
+    fromCents = found.current.cents
+    productId = found.productId
 
     const created = await stripe.prices.create({
       product: productId,
       currency: CURRENCY,
       unit_amount: unitAmountCents,
-      metadata: { sku_kind: kind, wash_value: washValue, source: 'admin_pricing' },
+      metadata: {
+        sku_kind: parsed.kind,
+        wash_value: parsed.washValue,
+        token_count: String(parsed.tokens),
+        source: 'admin_pricing',
+      },
     })
     newPriceId = created.id
 
     // Point the Product at the new Price and stamp the SKU lookup key. This is
-    // what makes the change authoritative: the app resolves prices from the
-    // Product's default_price, so until this runs the new Price exists but
-    // nothing is using it.
-    await adoptSku(stripe, { productId, priceId: newPriceId, kind, washValue })
-
-    // Archive the SUPERSEDED price only when this system created it. The
-    // env-var Price IDs are the fallback the storefront reverts to when
-    // Supabase is unreachable (see lib/pricingStore.ts) — archiving one would
-    // turn a database blip into a checkout outage, because archived Prices
-    // can't be used in new Checkout Sessions.
-    const shouldArchive =
-      existing?.metadata?.source === 'admin_pricing' && existing.id !== newPriceId
-    if (shouldArchive && existing) {
-      await stripe.prices.update(existing.id, { active: false }).catch((err) => {
-        // Non-fatal: an un-archived old Price is clutter, not a defect.
-        console.error('[pricingAdmin] archiving superseded price failed', err)
-      })
-    }
+    // what makes the change authoritative: until this runs the new Price
+    // exists but nothing is using it.
+    await adoptSku(stripe, { productId, priceId: newPriceId, ...parsed })
+    await archiveIfOurs(stripe, found.current.priceId, newPriceId)
   } catch (err) {
     const message = stripeMessage(err)
-    await audit(actorEmail, 'price.update', { kind, washValue, unitAmountCents, error: message }, false)
+    await audit(actorEmail, 'price.update', { sku, unitAmountCents, error: message }, false)
     return { ok: false, message: `Stripe rejected the new price: ${message}` }
   }
 
-  // Deactivate the old row, then insert the new one. The partial unique index
-  // allows only one active row per SKU, so this order avoids tripping it.
-  const { error: deactivateError } = await supabase
-    .from('catalog_prices')
-    .update({ active: false })
-    .eq('kind', kind)
-    .eq('wash_value', washValue)
-    .eq('active', true)
-
-  if (deactivateError) {
-    await audit(actorEmail, 'price.update', { kind, washValue, unitAmountCents, newPriceId, error: deactivateError.message }, false)
-    return {
-      ok: false,
-      message: `Stripe Price ${newPriceId} was created but the database did not record it. Nothing changed for customers — retry, and tell Will if it keeps failing.`,
-    }
-  }
-
-  const { error: insertError } = await supabase.from('catalog_prices').insert({
-    kind,
-    wash_value: washValue,
-    unit_amount_cents: unitAmountCents,
-    stripe_price_id: newPriceId,
-    stripe_product_id: productId,
-    active: true,
-    created_by: actorEmail,
+  await recordPriceHistory({
+    ...parsed,
+    cents: unitAmountCents,
+    priceId: newPriceId,
+    productId,
+    actorEmail,
   })
-
-  if (insertError) {
-    await audit(actorEmail, 'price.update', { kind, washValue, unitAmountCents, newPriceId, error: insertError.message }, false)
-    return {
-      ok: false,
-      message: `Stripe Price ${newPriceId} was created but could not be saved. The previous price is no longer marked active — reload and set the price again.`,
-    }
-  }
-
   await audit(actorEmail, 'price.update', {
-    kind,
-    washValue,
-    from: current?.cents ?? null,
+    sku,
+    from: fromCents,
     to: unitAmountCents,
     stripePriceId: newPriceId,
   })
@@ -250,8 +473,99 @@ export async function updateCatalogPrice(
 
   return {
     ok: true,
-    message: `$${washValue} ${kind} is now ${formatCents(unitAmountCents)}.`,
+    message: `The ${name} is now ${formatCents(unitAmountCents)}.`,
     data: { stripePriceId: newPriceId },
+  }
+}
+
+/**
+ * Take a SKU off sale.
+ *
+ * Archives the Stripe Product, which is what removes it everywhere at once:
+ * the storefront stops listing it, and Stripe itself refuses new Checkout
+ * Sessions for its Prices — so even a page rendered before the delete can't
+ * buy it. The Product keeps its lookup key, which (a) tells the store not to
+ * resurrect a legacy SKU from the env vars, and (b) lets "add" revive the same
+ * Product later. Past orders are untouched.
+ */
+export async function deleteCatalogSku(
+  sku: string,
+  actorEmail: string | null,
+  ctx: BatchContext = {},
+): Promise<AdminResult> {
+  const parsed = parseSkuLookupKey(sku)
+  if (!parsed) return { ok: false, message: 'That is not a valid product.' }
+  const stripe = getStripe()
+  if (!stripe) return { ok: false, message: 'Stripe is not configured for this deployment.' }
+
+  const name = describeSku(parsed)
+  let productId: string
+  try {
+    const found = await locateSku(stripe, sku, ctx)
+    if (!found.catalogOk) {
+      // Without the listing this would act on the deploy-config Price instead
+      // of the live one — compare against, and archive, the wrong thing.
+      return { ok: false, message: 'Stripe could not be reached. Nothing was changed — try again.' }
+    }
+    if (found.archived) return { ok: false, message: `The ${name} has already been removed.` }
+    if (!found.productId) return { ok: false, message: `The ${name} isn't in Stripe.` }
+    productId = found.productId
+    await stripe.products.update(productId, {
+      active: false,
+      metadata: {
+        lookup_key: sku,
+        sku_kind: parsed.kind,
+        wash_value: parsed.washValue,
+        token_count: String(parsed.tokens),
+      },
+    })
+  } catch (err) {
+    const message = stripeMessage(err)
+    await audit(actorEmail, 'sku.delete', { sku, error: message }, false)
+    return { ok: false, message: `Stripe rejected the change: ${message}` }
+  }
+
+  await retirePriceHistory(parsed.kind, parsed.washValue, parsed.tokens)
+  await audit(actorEmail, 'sku.delete', { sku, productId })
+  invalidatePricingCache()
+  return { ok: true, message: `The ${name} has been removed from the store.` }
+}
+
+/** Mark a SKU as the store's "Most Popular" (or clear it). */
+export async function setSkuFeatured(
+  sku: string,
+  featured: boolean,
+  actorEmail: string | null,
+): Promise<AdminResult> {
+  const parsed = parseSkuLookupKey(sku)
+  if (!parsed) return { ok: false, message: 'That is not a valid product.' }
+  const stripe = getStripe()
+  if (!stripe) return { ok: false, message: 'Stripe is not configured for this deployment.' }
+
+  const name = describeSku(parsed)
+  try {
+    const found = await locateSku(stripe, sku)
+    if (!found.productId || !found.current) {
+      return { ok: false, message: `The ${name} isn't on sale.` }
+    }
+    // Featuring requires the SKU to be keyed, so adopt it in the same call.
+    await adoptSku(stripe, { productId: found.productId, priceId: found.current.priceId, ...parsed })
+    await stripe.products.update(found.productId, {
+      metadata: { featured: featured ? 'true' : 'false' },
+    })
+    if (featured) await clearOtherFeatured(stripe, sku)
+  } catch (err) {
+    const message = stripeMessage(err)
+    await audit(actorEmail, 'sku.feature', { sku, featured, error: message }, false)
+    return { ok: false, message: `Stripe rejected the change: ${message}` }
+  }
+  await audit(actorEmail, 'sku.feature', { sku, featured })
+  invalidatePricingCache()
+  return {
+    ok: true,
+    message: featured
+      ? `The ${name} is now marked Most Popular.`
+      : `The ${name} is no longer marked Most Popular.`,
   }
 }
 
@@ -268,43 +582,53 @@ export async function updateCatalogPrice(
  * is idempotent and safe to re-run.
  */
 export async function adoptCatalogSku(
-  kind: PriceKind,
-  washValue: WashValue,
+  sku: string,
   actorEmail: string | null,
+  ctx: BatchContext = {},
 ): Promise<AdminResult> {
+  const parsed = parseSkuLookupKey(sku)
+  if (!parsed) return { ok: false, message: 'That is not a valid product.' }
   const stripe = getStripe()
   if (!stripe) return { ok: false, message: 'Stripe is not configured for this deployment.' }
 
-  const snapshot = await getPricingSnapshot()
-  const current = snapshot.prices[kind][washValue]
+  const name = describeSku(parsed)
+  const snapshot = ctx.snapshot ?? (await getPricingSnapshot({ fresh: true }))
+  const current = snapshot.catalog.find((s) => s.sku === sku)
   if (!current?.stripePriceId) {
-    return {
-      ok: false,
-      message: `The $${washValue} ${kind} has no Stripe price yet — set a price first.`,
-    }
+    return { ok: false, message: `The ${name} has no Stripe price yet — set a price first.` }
   }
 
   try {
     const price = await stripe.prices.retrieve(current.stripePriceId)
     const productId = typeof price.product === 'string' ? price.product : price.product.id
-    await adoptSku(stripe, { productId, priceId: price.id, kind, washValue })
-    await audit(actorEmail, 'price.adopt', {
-      kind,
-      washValue,
-      productId,
-      priceId: price.id,
-    })
+    await adoptSku(stripe, { productId, priceId: price.id, ...parsed })
+    await audit(actorEmail, 'price.adopt', { sku, productId, priceId: price.id })
   } catch (err) {
     const message = stripeMessage(err)
-    await audit(actorEmail, 'price.adopt', { kind, washValue, error: message }, false)
+    await audit(actorEmail, 'price.adopt', { sku, error: message }, false)
     return { ok: false, message: `Stripe rejected the change: ${message}` }
   }
 
   invalidatePricingCache()
-  return {
-    ok: true,
-    message: `The $${washValue} ${kind} now reads its price from Stripe.`,
+  return { ok: true, message: `The ${name} now reads its price from Stripe.` }
+}
+
+/** Adopt every legacy SKU still priced from the deploy config, in one go. */
+export async function adoptAllCatalogSkus(actorEmail: string | null): Promise<AdminResult> {
+  const snapshot = await getPricingSnapshot({ fresh: true })
+  const pending = snapshot.catalog.filter((s) => s.source !== 'stripe')
+  if (pending.length === 0) {
+    return { ok: false, message: 'Every item already reads its price from Stripe.' }
   }
+  const failures: string[] = []
+  for (const s of pending) {
+    const res = await adoptCatalogSku(s.sku, actorEmail, { snapshot })
+    if (!res.ok) failures.push(`${describeSku(s)}: ${res.message}`)
+  }
+  if (failures.length) {
+    return { ok: false, message: `Some items could not be linked. ${failures.join(' ')}` }
+  }
+  return { ok: true, message: `${pending.length} item(s) now read their price from Stripe.` }
 }
 
 // ---------------------------------------------------------------------------
@@ -728,4 +1052,124 @@ export async function updateBaseDiscount(
     ok: true,
     message: `Every 4-pack now saves ${formatCents(cents)}. Scheduled sales still carry their old coupon — re-issue any that show as out of date.`,
   }
+}
+
+// ---------------------------------------------------------------------------
+// Sync the token catalog to the wash packages
+// ---------------------------------------------------------------------------
+
+export type SyncResult = { applied: string[]; failed: string[]; plan: SyncAction[] }
+
+/**
+ * Bring every token price in Stripe in line with the wash packages (the
+ * source of truth — see lib/washPricing.ts): add missing 4-packs, re-price
+ * anything that doesn't match tokens × wash price, and remove tokens for
+ * values that are no longer a package.
+ *
+ * Runs from the admin "Sync" button and from the CMS publish webhook. Each
+ * change goes through the same create / re-price / remove services as the
+ * admin buttons, so validation, Stripe-first ordering and the audit trail are
+ * identical. Idempotent: run twice and the second run changes nothing.
+ *
+ * Acts only on a real answer from both systems. A Sanity outage falls back to
+ * a built-in lineup and a Stripe outage to the deploy-config catalog; syncing
+ * either of those could delete live products.
+ */
+export async function syncCatalogToWashPackages(
+  actorEmail: string | null,
+): Promise<AdminResult<SyncResult>> {
+  const washes = await getWashLineup({ fresh: true })
+  if (washes.source !== 'cms') {
+    return {
+      ok: false,
+      message: "Couldn't read the wash packages from the CMS, so nothing was changed. Try again shortly.",
+    }
+  }
+  const stripe = getStripe()
+  if (!stripe) return { ok: false, message: 'Stripe is not configured for this deployment.' }
+  // One listing and one snapshot for the whole run; every action reuses them
+  // instead of re-listing the catalog per SKU.
+  const catalog = await loadStripeCatalog(stripe)
+  if (!catalog.ok) {
+    return { ok: false, message: 'Stripe could not be reached, so nothing was changed. Try again shortly.' }
+  }
+  const snapshot = await getPricingSnapshot({ fresh: true })
+  const ctx: BatchContext = { catalog, snapshot, washes }
+
+  // Plan against what customers are charged right now: legacy SKUs priced by a
+  // bare env-var Price carry no amount in the snapshot, so read it.
+  const current = await Promise.all(
+    snapshot.catalog.map(async (s) => ({
+      ...s,
+      cents:
+        s.cents ??
+        (await stripe.prices.retrieve(s.stripePriceId).then(
+          (p) => p.unit_amount,
+          () => null,
+        )),
+    })),
+  )
+  const plan = planCatalogSync(current, washes.tiers)
+  if (plan.length === 0) {
+    return {
+      ok: true,
+      message: 'Token prices already match the wash packages — nothing to change.',
+      data: { applied: [], failed: [], plan },
+    }
+  }
+
+  // Additions and re-prices first, removals last — and removals only if
+  // everything before them succeeded. When a wash price changes ($12 → $13),
+  // the $13 tokens are created and the $12 ones removed; if creating failed,
+  // removing anyway would leave that wash with nothing for sale.
+  const applied: string[] = []
+  const failed: string[] = []
+  const skipped: string[] = []
+  const ordered = [
+    ...plan.filter((a) => a.type !== 'remove'),
+    ...plan.filter((a) => a.type === 'remove'),
+  ]
+  for (const action of ordered) {
+    const label = describeSyncAction(action)
+    if (action.type === 'remove' && failed.length > 0) {
+      skipped.push(label)
+      continue
+    }
+    const res =
+      action.type === 'create'
+        ? await createCatalogSku(
+            {
+              kind: action.kind,
+              washValue: action.washValue,
+              tokens: action.tokens,
+              unitAmountCents: action.cents,
+              actorEmail,
+            },
+            ctx,
+          )
+        : action.type === 'reprice'
+          ? await updateCatalogPrice({ sku: action.sku, unitAmountCents: action.to, actorEmail }, ctx)
+          : await deleteCatalogSku(action.sku, actorEmail, ctx)
+    if (res.ok) applied.push(label)
+    else failed.push(`${label}: ${res.message}`)
+  }
+  if (skipped.length) {
+    failed.push(
+      `Held back ${skipped.length} removal${skipped.length === 1 ? '' : 's'} so nothing is left unsold — run Sync again once the errors above are fixed.`,
+    )
+  }
+
+  await audit(actorEmail, 'catalog.sync', { applied, failed }, failed.length === 0)
+  invalidatePricingCache()
+  const n = applied.length
+  return failed.length
+    ? {
+        ok: false,
+        message: `Synced ${n} of ${plan.length} changes. ${failed.join(' ')}`,
+      }
+    : {
+        ok: true,
+        message: `Token prices now match the wash packages (${n} change${n === 1 ? '' : 's'}).`,
+        data: { applied, failed, plan },
+      }
 }
