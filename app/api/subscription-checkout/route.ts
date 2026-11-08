@@ -1,13 +1,8 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { getStripeSecretKey } from '@/lib/stripeEnv'
-import {
-  getSubscriptionPlan,
-  getSubscriptionVariant,
-  isSubscriptionPlanId,
-  isSubscriptionWashValue,
-  resolveSubscriptionPriceId,
-} from '@/lib/subscriptionPricing'
+import { getSubscriptionCatalog } from '@/lib/subscriptionPricing'
+import { PLAN_ID_RE } from '@/lib/pricing/model'
 import { firstIssueMessage, subscriptionCheckoutBodySchema } from '@/lib/schemas'
 
 export const runtime = 'nodejs'
@@ -53,25 +48,33 @@ export async function POST(req: Request) {
   }
   const b = parsed.data
 
-  if (!isSubscriptionPlanId(b.plan)) {
+  if (!PLAN_ID_RE.test(b.plan)) {
     return NextResponse.json({ error: 'Bad plan' }, { status: 400 })
   }
-  if (!isSubscriptionWashValue(b.washValue)) {
+  if (!/^[1-9]\d{0,2}$/.test(b.washValue)) {
     return NextResponse.json({ error: 'Bad token value' }, { status: 400 })
   }
-  const plan = getSubscriptionPlan(b.plan)
-  const variant = getSubscriptionVariant(b.plan, b.washValue)
 
-  let priceId: string | undefined
+  // Plans and their Prices are managed in /admin/pricing and live in Stripe.
+  // Read FRESH: this decides what a subscriber is billed every month, so a
+  // plan deleted or repriced since the page rendered must not be sold.
+  let catalog: Awaited<ReturnType<typeof getSubscriptionCatalog>>
   try {
-    // Stripe first (a Price keyed from /admin/pricing), then the env var.
-    priceId = await resolveSubscriptionPriceId(plan.id, variant.washValue)
+    catalog = await getSubscriptionCatalog({ fresh: true })
   } catch (err) {
-    // getSubscriptionPriceId throws on Vercel Production when the PROD_* var is
-    // unset. Surface it as a controlled 500 rather than an unhandled crash.
-    console.error('[api/subscription-checkout] price ID unresolved:', err)
+    console.error('[api/subscription-checkout] plan lookup failed:', err)
     return NextResponse.json({ error: 'Subscriptions not configured' }, { status: 500 })
   }
+  const plan = catalog.plans.find((p) => p.id === b.plan)
+  if (!plan) {
+    return NextResponse.json({ error: 'Bad plan' }, { status: 400 })
+  }
+  const variant = plan.variants.find((v) => v.washValue === b.washValue)
+  if (!variant) {
+    return NextResponse.json({ error: 'Bad token value' }, { status: 400 })
+  }
+  // A value shown at its computed price has no Stripe Price behind it yet.
+  const priceId = variant.priceId
   if (!priceId) {
     return NextResponse.json({ error: 'Subscriptions not configured' }, { status: 500 })
   }

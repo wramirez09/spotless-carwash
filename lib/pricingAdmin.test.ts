@@ -81,7 +81,6 @@ import {
   createCatalogSku,
   deleteCatalogSku,
   setSkuFeatured,
-  updateSubscriptionPrice,
   cancelSale,
   publishSale,
   reprovisionSale,
@@ -599,68 +598,6 @@ describe('adoptCatalogSku', () => {
     const result = await adoptAllCatalogSkus(null)
     expect(result.ok).toBe(true)
     expect(productsUpdate).toHaveBeenCalledTimes(2)
-  })
-})
-
-describe('updateSubscriptionPrice', () => {
-  it('creates a recurring Price and moves the lookup key onto it', async () => {
-    pricesList.mockResolvedValue({
-      data: [{ id: 'price_w12_old', lookup_key: 'spotless_sub_weekly_12', unit_amount: 4000, product: 'prod_sub' }],
-    })
-    pricesRetrieve.mockResolvedValue({ id: 'price_w12_old', product: 'prod_sub', metadata: { source: 'admin_pricing' } })
-
-    const result = await updateSubscriptionPrice({
-      plan: 'weekly',
-      washValue: '12',
-      unitAmountCents: 4200,
-      actorEmail: null,
-    })
-
-    expect(result.ok).toBe(true)
-    expect(pricesCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        product: 'prod_sub',
-        unit_amount: 4200,
-        recurring: { interval: 'month' },
-        lookup_key: 'spotless_sub_weekly_12',
-        transfer_lookup_key: true,
-      }),
-    )
-    expect(pricesUpdate).toHaveBeenCalledWith('price_w12_old', { active: false })
-    expect(result.message).toMatch(/Existing subscribers keep/)
-  })
-
-  it('creates the shared subscription Product the first time', async () => {
-    pricesList.mockResolvedValue({ data: [] })
-    productsList.mockResolvedValue({ data: [] })
-    productsCreate.mockResolvedValue({ id: 'prod_sub_new' })
-
-    const result = await updateSubscriptionPrice({
-      plan: 'family',
-      washValue: '8',
-      unitAmountCents: 6000,
-      actorEmail: null,
-    })
-
-    expect(result.ok).toBe(true)
-    expect(productsCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ metadata: expect.objectContaining({ spotless_subscription: 'true' }) }),
-    )
-    expect(pricesCreate).toHaveBeenCalledWith(expect.objectContaining({ product: 'prod_sub_new' }))
-  })
-
-  it('rejects a no-op change', async () => {
-    pricesList.mockResolvedValue({
-      data: [{ id: 'p', lookup_key: 'spotless_sub_weekly_12', unit_amount: 4000, product: 'prod_sub' }],
-    })
-    const result = await updateSubscriptionPrice({
-      plan: 'weekly',
-      washValue: '12',
-      unitAmountCents: 4000,
-      actorEmail: null,
-    })
-    expect(result.ok).toBe(false)
-    expect(pricesCreate).not.toHaveBeenCalled()
   })
 })
 

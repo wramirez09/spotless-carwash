@@ -9,7 +9,6 @@ import {
   createCatalogSku,
   deleteCatalogSku,
   setSkuFeatured,
-  updateSubscriptionPrice,
   cancelSale as cancelSaleService,
   publishSale as publishSaleService,
   reprovisionSale as reprovisionSaleService,
@@ -25,9 +24,12 @@ import {
   type PriceKind,
 } from '@/lib/pricing/model'
 import {
-  isSubscriptionPlanId,
-  isSubscriptionWashValue,
-} from '@/lib/subscriptionPricing'
+  createSubscriptionPlan,
+  deleteSubscriptionPlan,
+  removeSubscriptionPlanPrice,
+  setSubscriptionPlanPrice,
+  updateSubscriptionPlan,
+} from '@/lib/subscriptionAdmin'
 import { parseChicagoLocalInput } from '@/lib/pricing/time'
 
 export type ActionResult = { ok: boolean; message: string }
@@ -157,25 +159,83 @@ export async function adoptAllSkusFromStripe(): Promise<ActionResult> {
   return toResult(result)
 }
 
-export async function setSubscriptionPrice(formData: FormData): Promise<ActionResult> {
+// ---------------------------------------------------------------------------
+// Subscription plans
+// ---------------------------------------------------------------------------
+
+const PLAN_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
+function planFields(formData: FormData) {
+  return {
+    name: String(formData.get('name') ?? ''),
+    tokensPerCycle: Number(String(formData.get('tokensPerCycle') ?? '').trim()),
+    blurb: String(formData.get('blurb') ?? ''),
+    featured: formData.get('featured') === 'on' || formData.get('featured') === 'true',
+  }
+}
+
+const washValueOf = (formData: FormData) =>
+  String(formData.get('washValue') ?? '').trim().replace(/^\$/, '')
+
+export async function createPlan(formData: FormData): Promise<ActionResult> {
   const actor = await requireAdmin()
   if (!actor) return { ok: false, message: EXPIRED }
-
-  const plan = String(formData.get('plan') ?? '')
-  const washValue = String(formData.get('washValue') ?? '')
-  if (!isSubscriptionPlanId(plan) || !isSubscriptionWashValue(washValue)) {
-    return { ok: false, message: 'That is not a valid plan.' }
-  }
   const amount = String(formData.get('amount') ?? '')
   const cents = parseDollarsToCents(amount)
   if (cents == null) return { ok: false, message: `"${amount}" is not a valid dollar amount.` }
-
-  const result = await updateSubscriptionPrice({
-    plan,
-    washValue,
+  const result = await createSubscriptionPlan({
+    ...planFields(formData),
+    washValue: washValueOf(formData),
     unitAmountCents: cents,
     actorEmail: actor,
   })
+  if (result.ok) revalidateStorefront()
+  return toResult(result)
+}
+
+export async function updatePlan(formData: FormData): Promise<ActionResult> {
+  const actor = await requireAdmin()
+  if (!actor) return { ok: false, message: EXPIRED }
+  const id = String(formData.get('planId') ?? '')
+  if (!PLAN_ID.test(id)) return { ok: false, message: 'That is not a valid plan.' }
+  const result = await updateSubscriptionPlan({ id, ...planFields(formData), actorEmail: actor })
+  if (result.ok) revalidateStorefront()
+  return toResult(result)
+}
+
+export async function deletePlan(id: string): Promise<ActionResult> {
+  const actor = await requireAdmin()
+  if (!actor) return { ok: false, message: EXPIRED }
+  if (!PLAN_ID.test(id)) return { ok: false, message: 'That is not a valid plan.' }
+  const result = await deleteSubscriptionPlan(id, actor)
+  if (result.ok) revalidateStorefront()
+  return toResult(result)
+}
+
+/** Add a token value to a plan, or change its monthly price. */
+export async function setPlanPrice(formData: FormData): Promise<ActionResult> {
+  const actor = await requireAdmin()
+  if (!actor) return { ok: false, message: EXPIRED }
+  const planId = String(formData.get('planId') ?? '')
+  if (!PLAN_ID.test(planId)) return { ok: false, message: 'That is not a valid plan.' }
+  const amount = String(formData.get('amount') ?? '')
+  const cents = parseDollarsToCents(amount)
+  if (cents == null) return { ok: false, message: `"${amount}" is not a valid dollar amount.` }
+  const result = await setSubscriptionPlanPrice({
+    planId,
+    washValue: washValueOf(formData),
+    unitAmountCents: cents,
+    actorEmail: actor,
+  })
+  if (result.ok) revalidateStorefront()
+  return toResult(result)
+}
+
+export async function removePlanPrice(planId: string, washValue: string): Promise<ActionResult> {
+  const actor = await requireAdmin()
+  if (!actor) return { ok: false, message: EXPIRED }
+  if (!PLAN_ID.test(planId)) return { ok: false, message: 'That is not a valid plan.' }
+  const result = await removeSubscriptionPlanPrice(planId, washValue, actor)
   if (result.ok) revalidateStorefront()
   return toResult(result)
 }

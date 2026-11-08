@@ -146,6 +146,8 @@ export default async function SubscribePage() {
   if (!subscriptionsEnabled()) notFound()
 
   const [copy, pricing] = await Promise.all([loadCopy(), getSubscriptionPricing()])
+  // No plan is on offer (all removed in /admin/pricing): nothing to sell.
+  if (pricing.plans.length === 0) notFound()
   return (
     <SubscribeClient
       copy={copy}

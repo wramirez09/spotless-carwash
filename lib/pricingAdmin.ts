@@ -17,7 +17,6 @@ import {
   saleState,
   skuLookupKey,
   skuProductName,
-  subscriptionLookupKey,
   validatePriceCents,
   validateSkuInput,
   type PriceKind,
@@ -25,12 +24,6 @@ import {
 } from './pricing/model'
 import { formatSaleEndLabel } from './pricing/time'
 import { adoptSku, loadStripeCatalog } from './stripeCatalog'
-import {
-  resolveSubscriptionPrices,
-  subscriptionVariantKey,
-  type SubscriptionPlanId,
-  type SubscriptionWashValue,
-} from './subscriptionPricing'
 
 // The WRITE side of admin-managed pricing: the services behind the buttons on
 // /admin/pricing. Every function here does two things that must stay in step —
@@ -49,7 +42,7 @@ export type AdminResult<T = undefined> =
 const CURRENCY = 'usd'
 
 let stripeSingleton: Stripe | null = null
-function getStripe(): Stripe | null {
+export function getStripe(): Stripe | null {
   if (stripeSingleton) return stripeSingleton
   const key = getStripeSecretKey()
   if (!key) return null
@@ -57,7 +50,7 @@ function getStripe(): Stripe | null {
   return stripeSingleton
 }
 
-function stripeMessage(err: unknown): string {
+export function stripeMessage(err: unknown): string {
   if (err instanceof Stripe.errors.StripeError) return err.message
   return err instanceof Error ? err.message : 'Unknown error'
 }
@@ -67,7 +60,7 @@ function stripeMessage(err: unknown): string {
  * lost log line must not roll back a price change that already happened in
  * Stripe. Failures are logged to the platform logs instead.
  */
-async function audit(
+export async function audit(
   actorEmail: string | null,
   action: string,
   detail: Record<string, unknown>,
@@ -210,7 +203,7 @@ async function locateSku(
  * lib/pricingStore.ts), and archived Prices can't be used in new Checkout
  * Sessions — archiving one would turn a Stripe blip into a checkout outage.
  */
-async function archiveIfOurs(stripe: Stripe, priceId: string, keepId: string): Promise<void> {
+export async function archiveIfOurs(stripe: Stripe, priceId: string, keepId: string): Promise<void> {
   if (!priceId || priceId === keepId) return
   const old = await stripe.prices.retrieve(priceId).catch(() => null)
   if (old?.metadata?.source !== 'admin_pricing') return
@@ -561,104 +554,6 @@ export async function adoptAllCatalogSkus(actorEmail: string | null): Promise<Ad
     return { ok: false, message: `Some items could not be linked. ${failures.join(' ')}` }
   }
   return { ok: true, message: `${pending.length} item(s) now read their price from Stripe.` }
-}
-
-// ---------------------------------------------------------------------------
-// Subscription prices
-// ---------------------------------------------------------------------------
-
-export type UpdateSubscriptionPriceInput = {
-  plan: SubscriptionPlanId
-  washValue: SubscriptionWashValue
-  unitAmountCents: number
-  actorEmail: string | null
-}
-
-/** The one Product every subscription Price hangs off, created on demand. */
-async function subscriptionProductId(stripe: Stripe): Promise<string> {
-  const products = await stripe.products.list({ limit: 100 })
-  const found = products.data.find((p) => p.metadata?.spotless_subscription === 'true')
-  if (found) {
-    if (!found.active) await stripe.products.update(found.id, { active: true })
-    return found.id
-  }
-  const created = await stripe.products.create({
-    name: 'Spotless Wash Token Subscription',
-    description: 'Wash tokens mailed monthly',
-    shippable: true,
-    metadata: { spotless_subscription: 'true', source: 'admin_pricing' },
-  })
-  return created.id
-}
-
-/**
- * Change a subscription plan's monthly price at one denomination.
- *
- * Creates a new recurring Price and moves the plan's lookup key onto it with
- * `transfer_lookup_key`, which Stripe does atomically — there is no moment
- * where the key points nowhere. New sign-ups pay the new amount; existing
- * subscribers stay on the Price they signed up at (Stripe never moves a live
- * subscription on its own), which is the safe default for a recurring charge.
- */
-export async function updateSubscriptionPrice(
-  input: UpdateSubscriptionPriceInput,
-): Promise<AdminResult<{ stripePriceId: string }>> {
-  const { plan, washValue, unitAmountCents, actorEmail } = input
-  const invalid = validatePriceCents(unitAmountCents)
-  if (invalid) return { ok: false, message: invalid }
-
-  const stripe = getStripe()
-  if (!stripe) return { ok: false, message: 'Stripe is not configured for this deployment.' }
-
-  const resolved = await resolveSubscriptionPrices()
-  const current = resolved.get(subscriptionVariantKey(plan, washValue))
-  const name = `${plan} plan at $${washValue}`
-  if (current?.cents === unitAmountCents) {
-    return { ok: false, message: 'That is already the current price.' }
-  }
-
-  let newPriceId: string
-  try {
-    let productId: string | null = null
-    if (current?.priceId) {
-      const existing = await stripe.prices.retrieve(current.priceId).catch(() => null)
-      if (existing) {
-        productId = typeof existing.product === 'string' ? existing.product : existing.product.id
-      }
-    }
-    productId ??= await subscriptionProductId(stripe)
-
-    const created = await stripe.prices.create({
-      product: productId,
-      currency: CURRENCY,
-      unit_amount: unitAmountCents,
-      recurring: { interval: 'month' },
-      lookup_key: subscriptionLookupKey(plan, washValue),
-      transfer_lookup_key: true,
-      nickname: `${plan} · $${washValue} tokens`,
-      metadata: { plan, wash_value: washValue, source: 'admin_pricing' },
-    })
-    newPriceId = created.id
-    if (current?.priceId) await archiveIfOurs(stripe, current.priceId, newPriceId)
-  } catch (err) {
-    const message = stripeMessage(err)
-    await audit(actorEmail, 'subscription.price', { plan, washValue, unitAmountCents, error: message }, false)
-    return { ok: false, message: `Stripe rejected the new price: ${message}` }
-  }
-
-  await audit(actorEmail, 'subscription.price', {
-    plan,
-    washValue,
-    from: current?.cents ?? null,
-    to: unitAmountCents,
-    stripePriceId: newPriceId,
-  })
-
-  return {
-    ok: true,
-    message: `New ${name} sign-ups now pay ${formatCents(unitAmountCents)}/mo. Existing subscribers keep their current price.`,
-    data: { stripePriceId: newPriceId },
-  }
 }
 
 // ---------------------------------------------------------------------------

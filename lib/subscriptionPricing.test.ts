@@ -150,7 +150,9 @@ describe('fallbackSubscriptionPricing', () => {
     expect(plans.map((p) => p.id)).toEqual(['weekly', 'frequent', 'family'])
     for (const plan of plans) {
       for (const v of plan.variants) {
-        expect(v.price).toBe(MATRIX[plan.id][v.washValue])
+        expect(v.price).toBe(
+          MATRIX[plan.id as SubscriptionPlanId][v.washValue as SubscriptionWashValue],
+        )
       }
     }
   })
@@ -173,42 +175,131 @@ describe('getSubscriptionPricing', () => {
   })
 })
 
-describe('getSubscriptionPricing — live prices from Stripe', () => {
-  beforeEach(() => {
-    vi.resetModules()
-    vi.unstubAllEnvs()
-    vi.doUnmock('stripe')
-    vi.doUnmock('./pricingStore')
+describe('subscription catalog — plans managed in Stripe', () => {
+  type Product = Record<string, unknown>
+  type Price = Record<string, unknown>
+  const world = { products: [] as Product[], prices: [] as Price[], retrieve: {} as Record<string, Price> }
+
+  const planProduct = (id: string, over: Record<string, unknown> = {}, meta: Record<string, string> = {}) => ({
+    id: `prod_${id}`,
+    active: true,
+    name: id[0].toUpperCase() + id.slice(1),
+    description: `${id} blurb`,
+    metadata: { spotless_sub_plan: id, tokens_per_cycle: '6', ...meta },
+    ...over,
+  })
+  const monthly = (plan: string, wash: string, cents: number) => ({
+    id: `price_${plan}_${wash}`,
+    lookup_key: `spotless_sub_${plan}_${wash}`,
+    unit_amount: cents,
+    product: `prod_${plan}`,
+    recurring: { interval: 'month', interval_count: 1 },
   })
 
-  it('reads monthly prices from keyed Stripe Prices and the "vs" figure from single tokens', async () => {
+  async function load(singles: { washValue: string; cents: number }[] = []) {
+    vi.resetModules()
     vi.stubEnv('DEV_STRIPE_SECRET_KEY', 'sk_test_fake')
     vi.doMock('stripe', () => ({
       default: class {
+        products = { list: async () => ({ data: world.products }) }
         prices = {
-          list: async ({ lookup_keys }: { lookup_keys: string[] }) => ({
-            data: lookup_keys.includes('spotless_sub_weekly_12')
-              ? [{ id: 'price_w12', lookup_key: 'spotless_sub_weekly_12', unit_amount: 4200, product: 'prod_sub' }]
-              : [],
-          }),
-          retrieve: async () => null,
+          list: async () => ({ data: world.prices }),
+          retrieve: async (id: string) => world.retrieve[id] ?? null,
         }
       },
     }))
     vi.doMock('./pricingStore', () => ({
       getPricingSnapshot: async () => ({
-        catalog: [{ kind: 'single', washValue: '12', cents: 1300 }],
+        catalog: singles.map((x) => ({ kind: 'single', washValue: x.washValue, cents: x.cents })),
       }),
     }))
+    return import('./subscriptionPricing')
+  }
 
-    const mod = await import('./subscriptionPricing')
+  beforeEach(() => {
+    vi.unstubAllEnvs()
+    world.products = []
+    world.prices = []
+    world.retrieve = {}
+  })
+
+  it('lists a plan created in Stripe, with only the token values it offers', async () => {
+    world.products = [planProduct('commuter', {}, { featured: 'true', sort_order: '1' })]
+    world.prices = [monthly('commuter', '10', 5000), monthly('commuter', '15', 7200)]
+    const mod = await load()
+
+    const { plans } = await mod.getSubscriptionPricing()
+    const commuter = plans.find((p) => p.id === 'commuter')!
+
+    expect(commuter).toMatchObject({
+      name: 'Commuter',
+      blurb: 'commuter blurb',
+      tokensPerCycle: 6,
+      featured: true,
+      source: 'stripe',
+      productId: 'prod_commuter',
+    })
+    expect(commuter.variants.map((v) => [v.washValue, v.price, v.priceId])).toEqual([
+      ['10', 5000, 'price_commuter_10'],
+      ['15', 7200, 'price_commuter_15'],
+    ])
+    // Sorted first, and the only Most Popular — the original default yields.
+    expect(plans[0].id).toBe('commuter')
+    expect(plans.filter((p) => p.featured).map((p) => p.id)).toEqual(['commuter'])
+  })
+
+  it('keeps showing the original plans until they exist in Stripe', async () => {
+    const mod = await load()
+    const { plans } = await mod.getSubscriptionCatalog({ fresh: true })
+    expect(plans.map((p) => [p.id, p.source])).toEqual([
+      ['weekly', 'legacy'],
+      ['frequent', 'legacy'],
+      ['family', 'legacy'],
+    ])
+    // No Price anywhere: shown at the computed amount, but not purchasable.
+    expect(plans[0].variants.every((v) => v.priceId === null && v.source === 'computed')).toBe(true)
+  })
+
+  it('drops an original plan that was deleted in the admin', async () => {
+    world.products = [planProduct('weekly', { active: false })]
+    const mod = await load()
+    const ids = (await mod.getSubscriptionPricing()).plans.map((p) => p.id)
+    expect(ids).toEqual(['frequent', 'family'])
+  })
+
+  it('uses the Stripe copy of an original plan once it has been moved there', async () => {
+    world.products = [planProduct('weekly', { name: 'Weekly Plus' }, { tokens_per_cycle: '5' })]
+    world.prices = [monthly('weekly', '12', 4500)]
+    const mod = await load()
+    const weekly = (await mod.getSubscriptionPricing()).plans.find((p) => p.id === 'weekly')!
+    expect(weekly).toMatchObject({ name: 'Weekly Plus', tokensPerCycle: 5, source: 'stripe' })
+    expect(weekly.variants.map((v) => v.washValue)).toEqual(['12'])
+  })
+
+  it('prices an original plan from a keyed Price before the computed amount', async () => {
+    world.prices = [monthly('weekly', '12', 4200)]
+    const mod = await load([{ washValue: '12', cents: 1300 }])
     const weekly = (await mod.getSubscriptionPricing()).plans.find((p) => p.id === 'weekly')!
     const at12 = weekly.variants.find((v) => v.washValue === '12')!
-
-    expect(at12.price).toBe(4200) // from Stripe, not the computed $40
-    expect(at12.listPerToken).toBe(1300) // a $12 token currently sells for $13
+    expect(at12).toMatchObject({ price: 4200, priceId: 'price_weekly_12', source: 'stripe' })
+    // The "vs" figure is today's single-token price from Stripe.
+    expect(at12.listPerToken).toBe(1300)
     expect(at12.savePerToken).toBe(1300 - 1050)
-    // A denomination with no single token on sale keeps the static list price.
-    expect(weekly.variants.find((v) => v.washValue === '8')!.listPerToken).toBe(800)
+  })
+
+  it('hides a plan with no token values from customers but not from the admin', async () => {
+    world.products = [planProduct('empty')]
+    const mod = await load()
+    expect((await mod.getSubscriptionPricing()).plans.some((p) => p.id === 'empty')).toBe(false)
+    expect((await mod.getSubscriptionCatalog({ fresh: true })).plans.some((p) => p.id === 'empty')).toBe(true)
+  })
+
+  it('finds the plan and token value a checkout asks for, and nothing else', async () => {
+    world.products = [planProduct('commuter')]
+    world.prices = [monthly('commuter', '10', 5000)]
+    const mod = await load()
+    expect((await mod.findSubscriptionVariant('commuter', '10'))?.variant.priceId).toBe('price_commuter_10')
+    expect(await mod.findSubscriptionVariant('commuter', '12')).toBeNull()
+    expect(await mod.findSubscriptionVariant('nope', '10')).toBeNull()
   })
 })

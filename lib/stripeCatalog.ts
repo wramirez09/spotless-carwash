@@ -2,8 +2,10 @@ import 'server-only'
 import Stripe from 'stripe'
 import {
   DEFAULT_SORT_ORDER,
+  PLAN_ID_RE,
   defaultFeatured,
   parseSkuLookupKey,
+  parseSubscriptionLookupKey,
   skuLookupKey,
   type PriceKind,
 } from './pricing/model'
@@ -165,47 +167,126 @@ export async function adoptSku(
 }
 
 // ---------------------------------------------------------------------------
-// Subscription prices (keyed by Price lookup_key)
+// Subscription plans
 // ---------------------------------------------------------------------------
+//
+// A plan is a Stripe Product carrying `metadata.spotless_sub_plan` (its id);
+// its name, description and token count live on the Product too. Each token
+// value it offers is a recurring monthly Price whose `lookup_key` is
+// `spotless_sub_<plan>_<value>` (see `subscriptionLookupKey`). An archived
+// Product is a deleted plan; an archived Price is a token value the plan no
+// longer offers. Existing subscriptions are untouched by either — Stripe keeps
+// billing a live subscription on an archived Price.
+
+export type StripeSubscriptionPlan = {
+  id: string
+  productId: string
+  active: boolean
+  name: string
+  blurb: string
+  tokensPerCycle: number
+  /** Null when not set — the caller decides the default. */
+  featured: boolean | null
+  sortOrder: number | null
+}
 
 export type StripeSubscriptionPrice = {
+  lookupKey: string
+  plan: string
+  washValue: string
   priceId: string
   cents: number
   productId: string
 }
 
-/** Stripe accepts at most 10 lookup keys per prices.list call. */
-const LOOKUP_KEY_BATCH = 10
+export type StripeSubscriptionCatalog = {
+  ok: boolean
+  plans: Map<string, StripeSubscriptionPlan>
+  /** Keyed by lookup key. Active, monthly, fixed-amount Prices only. */
+  prices: Map<string, StripeSubscriptionPrice>
+}
 
-/**
- * Resolve recurring Prices by lookup key. Returns null when Stripe could not
- * be asked, so callers can tell "unreachable" from "not keyed yet".
- */
-export async function loadSubscriptionPrices(
-  stripe: Stripe,
-  lookupKeys: readonly string[],
-): Promise<Map<string, StripeSubscriptionPrice> | null> {
-  const out = new Map<string, StripeSubscriptionPrice>()
-  try {
-    for (let i = 0; i < lookupKeys.length; i += LOOKUP_KEY_BATCH) {
-      const batch = lookupKeys.slice(i, i + LOOKUP_KEY_BATCH)
-      const res = await stripe.prices.list({
-        lookup_keys: [...batch],
-        active: true,
-        limit: 100,
-      })
-      for (const price of res.data) {
-        if (!price.lookup_key || price.unit_amount == null) continue
-        out.set(price.lookup_key, {
-          priceId: price.id,
-          cents: price.unit_amount,
-          productId: typeof price.product === 'string' ? price.product : price.product.id,
-        })
-      }
-    }
-  } catch (err) {
-    console.error('[stripeCatalog] could not list subscription prices', err)
-    return null
+async function listAll<T extends { id: string }>(
+  fetchPage: (startingAfter?: string) => Promise<{ data: T[]; has_more?: boolean }>,
+): Promise<T[]> {
+  const out: T[] = []
+  let startingAfter: string | undefined
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const res = await fetchPage(startingAfter)
+    out.push(...res.data)
+    if (!res.has_more || res.data.length === 0) break
+    startingAfter = res.data[res.data.length - 1].id
   }
   return out
+}
+
+/**
+ * Every subscription plan (active and deleted) and every keyed monthly Price,
+ * in two listings. `ok: false` means Stripe couldn't be asked — callers fall
+ * back rather than concluding there are no plans.
+ */
+export async function loadSubscriptionCatalog(
+  stripe: Stripe,
+): Promise<StripeSubscriptionCatalog> {
+  const plans = new Map<string, StripeSubscriptionPlan>()
+  const prices = new Map<string, StripeSubscriptionPrice>()
+  try {
+    const [products, recurring] = await Promise.all([
+      listAll((starting_after) =>
+        stripe.products.list({ limit: 100, ...(starting_after ? { starting_after } : {}) }),
+      ),
+      listAll((starting_after) =>
+        stripe.prices.list({
+          active: true,
+          type: 'recurring',
+          limit: 100,
+          ...(starting_after ? { starting_after } : {}),
+        }),
+      ),
+    ])
+
+    for (const product of products) {
+      const id = product.metadata?.spotless_sub_plan
+      if (!id || !PLAN_ID_RE.test(id)) continue
+      const tokens = Number(product.metadata?.tokens_per_cycle)
+      if (!Number.isInteger(tokens) || tokens < 1) continue
+      const featured = product.metadata?.featured
+      const sort = product.metadata?.sort_order
+      const plan: StripeSubscriptionPlan = {
+        id,
+        productId: product.id,
+        active: product.active !== false,
+        name: product.name,
+        blurb: product.description ?? '',
+        tokensPerCycle: tokens,
+        featured: featured === 'true' ? true : featured === 'false' ? false : null,
+        sortOrder: sort && Number.isFinite(Number(sort)) ? Number(sort) : null,
+      }
+      // A live Product beats an archived duplicate claiming the same id.
+      const prior = plans.get(id)
+      if (prior && prior.active && !plan.active) continue
+      plans.set(id, plan)
+    }
+
+    for (const price of recurring) {
+      const parsed = parseSubscriptionLookupKey(price.lookup_key)
+      if (!parsed || price.unit_amount == null) continue
+      // Only plain monthly Prices: a yearly or metered Price under the same key
+      // would bill something the page never advertised.
+      if (price.recurring?.interval !== 'month' || (price.recurring.interval_count ?? 1) !== 1) {
+        continue
+      }
+      prices.set(price.lookup_key!, {
+        lookupKey: price.lookup_key!,
+        ...parsed,
+        priceId: price.id,
+        cents: price.unit_amount,
+        productId: typeof price.product === 'string' ? price.product : price.product.id,
+      })
+    }
+  } catch (err) {
+    console.error('[stripeCatalog] could not list subscription plans', err)
+    return { ok: false, plans: new Map(), prices: new Map() }
+  }
+  return { ok: true, plans, prices }
 }
