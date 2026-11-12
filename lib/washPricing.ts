@@ -177,3 +177,92 @@ export function featuredWashIndex(
   if (!featuredValue) return -1
   return packages.findIndex((p) => String(p.priceNumber) === featuredValue)
 }
+
+// ---------------------------------------------------------------------------
+// New wash packages (admin "Add a wash package")
+// ---------------------------------------------------------------------------
+
+export const WASH_COLORS = ['red', 'green', 'purple', 'blue'] as const
+
+export type NewWashPackage = {
+  name: string
+  priceNumber: number
+  color: string
+  /** One feature per entry; blanks are ignored. */
+  features: string[]
+}
+
+/** First problem with a new package, or null. */
+export function validateNewWashPackage(
+  input: NewWashPackage,
+  existing: readonly { name?: string | null; priceNumber?: number | null }[],
+): string | null {
+  const name = input.name.trim()
+  if (!name) return 'A wash package needs a name.'
+  if (name.length > 30) return 'Keep the package name to 30 characters or fewer.'
+  if (!Number.isInteger(input.priceNumber) || input.priceNumber < 1 || input.priceNumber > 100) {
+    return 'The price must be a whole-dollar amount between $1 and $100.'
+  }
+  if (!(WASH_COLORS as readonly string[]).includes(input.color)) return 'Choose a colour.'
+  const features = input.features.map((f) => f.trim()).filter(Boolean)
+  if (features.length === 0) return 'List at least one thing the wash includes.'
+  if (features.length > 10) return 'List at most 10 features.'
+  if (features.some((f) => f.length > 60)) return 'Keep each feature to 60 characters or fewer.'
+
+  const sameName = existing.find((p) => (p.name ?? '').trim().toLowerCase() === name.toLowerCase())
+  if (sameName) return 'There is already a "' + sameName.name + '" package.'
+  // The price IS the token value, so two packages at one price would share a
+  // token — and a pack of it — with no way to tell them apart at checkout.
+  const samePrice = existing.find((p) => p.priceNumber === input.priceNumber)
+  if (samePrice) {
+    return (
+      samePrice.name + ' is already $' + input.priceNumber +
+      '. Each wash package needs its own price, because the price is its token value.'
+    )
+  }
+  return null
+}
+
+/**
+ * The `order` for a new package so it lands among the others by price,
+ * without renumbering the existing documents: halfway between its cheaper
+ * and dearer neighbours, or one past either end.
+ */
+export function orderForPrice(
+  existing: readonly { priceNumber?: number | null; order?: number | null }[],
+  priceNumber: number,
+): number {
+  const placed = existing
+    .filter((p) => Number.isFinite(p.priceNumber) && Number.isFinite(p.order))
+    .map((p) => ({ price: p.priceNumber as number, order: p.order as number }))
+  if (placed.length === 0) return 1
+  const below = placed.filter((p) => p.price < priceNumber).map((p) => p.order)
+  const above = placed.filter((p) => p.price > priceNumber).map((p) => p.order)
+  const lo = below.length ? Math.max(...below) : null
+  const hi = above.length ? Math.min(...above) : null
+  if (lo != null && hi != null && hi > lo) return (lo + hi) / 2
+  if (lo != null) return lo + 1
+  return (hi as number) - 1
+}
+
+/** The Sanity document for a new package, in the shape the existing ones use. */
+export function washPackageDocument(input: NewWashPackage, order: number, idSuffix: string) {
+  const features = input.features.map((f) => f.trim()).filter(Boolean)
+  return {
+    _id: 'washPackage-' + idSuffix,
+    _type: 'washPackage' as const,
+    num: String(input.priceNumber),
+    name: input.name.trim(),
+    price: '$' + input.priceNumber,
+    priceNumber: input.priceNumber,
+    color: input.color,
+    featured: false,
+    order,
+    features: features.map((text, i) => ({
+      _key: '_features_' + i,
+      _type: 'featureRow',
+      text,
+      included: true,
+    })),
+  }
+}

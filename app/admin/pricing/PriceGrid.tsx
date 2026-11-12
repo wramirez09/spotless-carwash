@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import {
   effectivePriceCents,
@@ -17,6 +18,7 @@ import {
   featureSku,
   setPrice,
   syncWithWashPackages,
+  addWashPackage,
 } from './actions'
 
 export type PriceRowView = {
@@ -50,6 +52,8 @@ type Props = {
   lineupFromCms?: boolean
   /** What "Sync" would change, one line each. */
   syncPlan?: string[]
+  /** Whether this deployment can write wash packages to the CMS. */
+  canAddPackages?: boolean
 }
 
 type Feedback = { ok: boolean; message: string } | null
@@ -441,10 +445,12 @@ function WashPackagesPanel({
   tiers,
   fromCms,
   plan,
+  canAddPackages,
 }: {
   tiers: WashTierView[]
   fromCms: boolean
   plan: string[]
+  canAddPackages: boolean
 }) {
   const [feedback, setFeedback] = useState<Feedback>(null)
   const [pending, startTransition] = useTransition()
@@ -462,7 +468,7 @@ function WashPackagesPanel({
       <p className="mt-1 text-xs text-slate-500">
         Token values and prices follow the wash packages on the home page: a single
         token is the wash price, and an N-pack lists at N × the wash price before
-        the pack discount. Edit the packages in the CMS.
+        the pack discount.
       </p>
       <div className="mt-2 flex flex-wrap gap-2">
         {tiers.map((t) => (
@@ -518,11 +524,154 @@ function WashPackagesPanel({
           {feedback.message}
         </p>
       )}
+
+      {canAddPackages ? (
+        <AddWashPackageForm />
+      ) : (
+        <p className="mt-3 text-xs text-slate-500">
+          To add a wash package,{' '}
+          <Link
+            href="/studio/structure/washPackage"
+            className="font-bold text-blue-600 underline underline-offset-2"
+          >
+            create it in the CMS
+          </Link>
+          ; its tokens go on sale when you publish.
+        </p>
+      )}
     </section>
   )
 }
 
-export default function PriceGrid({ rows, tiers = [], lineupFromCms = false, syncPlan = [] }: Props) {
+const WASH_COLOR_OPTIONS = [
+  { value: 'green', label: 'Green' },
+  { value: 'purple', label: 'Purple' },
+  { value: 'blue', label: 'Blue' },
+  { value: 'red', label: 'Red' },
+]
+
+/**
+ * Add a wash package. It goes on the home page and its token pack goes on
+ * sale in one step: the package is written to the CMS, then the token catalog
+ * is synced to it (see lib/washPackagesAdmin.ts).
+ */
+function AddWashPackageForm() {
+  const [open, setOpen] = useState(false)
+  const [feedback, setFeedback] = useState<Feedback>(null)
+  const [pending, startTransition] = useTransition()
+  const [formKey, setFormKey] = useState(0)
+  const field = 'mt-1 block rounded-lg border border-line bg-white px-3 py-2 text-sm font-bold text-ink'
+
+  if (!open) {
+    return (
+      <div className="mt-3">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="rounded-full border border-blue-700 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-blue-700 transition hover:bg-blue-700 hover:text-white"
+        >
+          + Add a wash package
+        </button>
+        {feedback && (
+          <p role="status" className={`mt-2 text-xs font-semibold ${feedback.ok ? 'text-green-700' : 'text-red-600'}`}>
+            {feedback.message}
+          </p>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <form
+      key={formKey}
+      aria-label="Add a wash package"
+      className="mt-4 rounded-xl border border-dashed border-line bg-white p-4"
+      action={(formData) =>
+        startTransition(async () => {
+          setFeedback(null)
+          const res = await addWashPackage(formData)
+          setFeedback(res)
+          if (res.ok) {
+            setFormKey((k) => k + 1)
+            setOpen(false)
+          }
+        })
+      }
+    >
+      <h4 className="font-mono text-[11px] uppercase tracking-[0.18em] text-blue-500">
+        Add a wash package
+      </h4>
+      <div className="mt-3 flex flex-wrap items-end gap-3">
+        <label className="text-xs font-bold text-slate-500">
+          Name
+          <input name="name" required maxLength={30} placeholder="Platinum" className={`${field} w-40`} />
+        </label>
+        <label className="text-xs font-bold text-slate-500">
+          Price per wash ($)
+          <input name="price" inputMode="numeric" required placeholder="16" className={`${field} w-24`} />
+        </label>
+        <label className="text-xs font-bold text-slate-500">
+          Colour
+          <select name="color" defaultValue="green" className={field}>
+            {WASH_COLOR_OPTIONS.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <label className="mt-3 block text-xs font-bold text-slate-500">
+        What&apos;s included — one per line
+        <textarea
+          name="features"
+          required
+          rows={5}
+          placeholder={'Undercarriage spray\nDouble presoak\nSpot-free rinse\nAir cannon dryer'}
+          className={`${field} w-full max-w-md font-semibold`}
+        />
+      </label>
+      <p className="mt-2 text-[11px] text-slate-400">
+        Adds the package to the home page and puts its token pack on sale (4 × the price,
+        less the pack discount) — the price is the token value, so each package needs its
+        own price.
+      </p>
+      <div className="mt-3 flex items-center gap-3">
+        <button
+          type="submit"
+          disabled={pending}
+          className="rounded-full bg-blue-700 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-white transition hover:bg-blue-500 disabled:opacity-40"
+        >
+          {pending ? 'Adding…' : 'Add package'}
+        </button>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => {
+            setFeedback(null)
+            setOpen(false)
+          }}
+          className="text-xs font-bold text-slate-500 underline underline-offset-2"
+        >
+          Cancel
+        </button>
+      </div>
+      {feedback && (
+        <p role="status" className={`mt-2 text-xs font-semibold ${feedback.ok ? 'text-green-700' : 'text-red-600'}`}>
+          {feedback.message}
+        </p>
+      )}
+    </form>
+  )
+}
+
+export default function PriceGrid({
+  rows,
+  tiers = [],
+  lineupFromCms = false,
+  syncPlan = [],
+  canAddPackages = false,
+}: Props) {
   const packs = rows.filter((r) => r.kind === 'pack')
   const singles = rows.filter((r) => r.kind === 'single')
   const unlinked = rows.filter((r) => r.source !== 'stripe').length
@@ -538,7 +687,12 @@ export default function PriceGrid({ rows, tiers = [], lineupFromCms = false, syn
         already placed keep the price they were bought at.
       </p>
       {tiers.length > 0 && (
-        <WashPackagesPanel tiers={tiers} fromCms={lineupFromCms} plan={syncPlan} />
+        <WashPackagesPanel
+          tiers={tiers}
+          fromCms={lineupFromCms}
+          plan={syncPlan}
+          canAddPackages={canAddPackages && lineupFromCms}
+        />
       )}
       {unlinked > 0 && <AdoptAllButton count={unlinked} />}
       {notice && (

@@ -11,6 +11,8 @@ vi.mock('./actions', () => ({
   createSku: vi.fn(),
   deleteSku: vi.fn(),
   featureSku: vi.fn(),
+  syncWithWashPackages: vi.fn(),
+  addWashPackage: vi.fn(),
 }))
 
 import PriceGrid, { type PriceRowView } from './PriceGrid'
@@ -121,5 +123,35 @@ describe('PriceGrid — catalog management', () => {
 
   it('posts the SKU id, not the bare denomination', () => {
     expect(html([row()])).toContain('name="sku" value="spotless_pack_12"')
+  })
+})
+
+describe('PriceGrid — adding a wash package', () => {
+  const tiers = [
+    { name: 'Deluxe', washValue: '10', priceCents: 1000 },
+    { name: 'Ultimate', washValue: '12', priceCents: 1200 },
+  ]
+
+  it('offers "Add a wash package" when this deployment can write to the CMS', () => {
+    const markup = renderToStaticMarkup(
+      <PriceGrid rows={[row()]} tiers={tiers} lineupFromCms canAddPackages />,
+    )
+    expect(markup).toContain('+ Add a wash package')
+    expect(markup).not.toContain('create it in the CMS')
+  })
+
+  it('points to the CMS instead when it cannot', () => {
+    const markup = renderToStaticMarkup(
+      <PriceGrid rows={[row()]} tiers={tiers} lineupFromCms canAddPackages={false} />,
+    )
+    expect(markup).toContain('href="/studio/structure/washPackage"')
+    expect(markup).not.toContain('+ Add a wash package')
+  })
+
+  it('hides the form while the CMS is unreachable', () => {
+    const markup = renderToStaticMarkup(
+      <PriceGrid rows={[row()]} tiers={tiers} lineupFromCms={false} canAddPackages />,
+    )
+    expect(markup).not.toContain('+ Add a wash package')
   })
 })
