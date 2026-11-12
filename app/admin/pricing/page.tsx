@@ -12,6 +12,7 @@ import {
 import { formatChicagoAdmin, toChicagoLocalInput } from '@/lib/pricing/time'
 import { getCheckoutPricing } from '@/lib/stripePricing'
 import { getWashLineup } from '@/lib/washPackages'
+import { washPackageWritesEnabled } from '@/lib/washPackagesAdmin'
 import { describeSyncAction, expectedListCents, planCatalogSync } from '@/lib/washPricing'
 import { signOut } from '../login/actions'
 import PriceGrid, { type PriceRowView } from './PriceGrid'
@@ -194,6 +195,7 @@ export default async function PricingAdminPage() {
             tiers={washes.tiers}
             lineupFromCms={washes.source === 'cms'}
             syncPlan={syncPlan}
+            canAddPackages={washPackageWritesEnabled()}
           />
           <BundleDiscountCard
             currentCents={snapshot.settings.baseDiscountCents}

@@ -3,6 +3,9 @@ import {
   describeSyncAction,
   expectedListCents,
   featuredWashIndex,
+  orderForPrice,
+  validateNewWashPackage,
+  washPackageDocument,
   planCatalogSync,
   tiersFromPackages,
   type SkuLike,
@@ -171,5 +174,65 @@ describe('featuredWashIndex — one "Most Popular" on the home page', () => {
 
   it('shows no badge when the admin pick has no matching wash', () => {
     expect(featuredWashIndex(cms, '99')).toBe(-1)
+  })
+})
+
+describe('adding a wash package', () => {
+  // What the CMS holds today (order 1/2/3 by price).
+  const live = [
+    { name: 'Deluxe', priceNumber: 10, order: 1 },
+    { name: 'Ultimate', priceNumber: 12, order: 2 },
+    { name: 'Lustre', priceNumber: 14, order: 3 },
+  ]
+  const ok = { name: 'Platinum', priceNumber: 16, color: 'red', features: ['Ceramic sealant', ' ', 'Air cannon dryer'] }
+
+  it('accepts a sensible new package', () => {
+    expect(validateNewWashPackage(ok, live)).toBeNull()
+  })
+
+  it.each([
+    [{ name: '  ' }, /needs a name/],
+    [{ name: 'x'.repeat(31) }, /30 characters/],
+    [{ priceNumber: 0 }, /between \$1 and \$100/],
+    [{ priceNumber: 15.5 }, /whole-dollar/],
+    [{ priceNumber: Number.NaN }, /whole-dollar/],
+    [{ color: 'orange' }, /colour/],
+    [{ features: ['', '  '] }, /at least one/],
+    [{ features: Array.from({ length: 11 }, (_, i) => 'f' + i) }, /at most 10/],
+  ])('rejects %o', (patch, message) => {
+    expect(validateNewWashPackage({ ...ok, ...patch }, live)).toMatch(message)
+  })
+
+  it('refuses a name that already exists, whatever the case', () => {
+    expect(validateNewWashPackage({ ...ok, name: 'lustre' }, live)).toMatch(/already a "Lustre"/)
+  })
+
+  it('refuses a price another package has — the price is the token value', () => {
+    expect(validateNewWashPackage({ ...ok, priceNumber: 12 }, live)).toMatch(/Ultimate is already \$12/)
+  })
+
+  it('slots a new package in by price without renumbering the others', () => {
+    expect(orderForPrice(live, 16)).toBe(4) // after Lustre
+    expect(orderForPrice(live, 11)).toBe(1.5) // between Deluxe and Ultimate
+    expect(orderForPrice(live, 8)).toBe(0) // before Deluxe
+    expect(orderForPrice([], 8)).toBe(1)
+  })
+
+  it('builds a document shaped like the existing ones', () => {
+    expect(washPackageDocument(ok, 4, 'platinum')).toEqual({
+      _id: 'washPackage-platinum',
+      _type: 'washPackage',
+      num: '16',
+      name: 'Platinum',
+      price: '$16',
+      priceNumber: 16,
+      color: 'red',
+      featured: false,
+      order: 4,
+      features: [
+        { _key: '_features_0', _type: 'featureRow', text: 'Ceramic sealant', included: true },
+        { _key: '_features_1', _type: 'featureRow', text: 'Air cannon dryer', included: true },
+      ],
+    })
   })
 })

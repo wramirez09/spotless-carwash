@@ -25,6 +25,7 @@ import {
   type PriceKind,
 } from '@/lib/pricing/model'
 import { parseChicagoLocalInput } from '@/lib/pricing/time'
+import { createWashPackage } from '@/lib/washPackagesAdmin'
 
 export type ActionResult = { ok: boolean; message: string }
 
@@ -157,6 +158,22 @@ export async function syncWithWashPackages(): Promise<ActionResult> {
   const actor = await requireAdmin()
   if (!actor) return { ok: false, message: EXPIRED }
   const result = await syncCatalogToWashPackages(actor)
+  revalidateStorefront()
+  return toResult(result)
+}
+
+/** Add a wash package to the CMS, then put its tokens on sale. */
+export async function addWashPackage(formData: FormData): Promise<ActionResult> {
+  const actor = await requireAdmin()
+  if (!actor) return { ok: false, message: EXPIRED }
+  const price = String(formData.get('price') ?? '').trim().replace(/^\$/, '')
+  const result = await createWashPackage({
+    name: String(formData.get('name') ?? ''),
+    priceNumber: /^\d{1,3}$/.test(price) ? Number(price) : Number.NaN,
+    color: String(formData.get('color') ?? ''),
+    features: String(formData.get('features') ?? '').split('\n'),
+    actorEmail: actor,
+  })
   revalidateStorefront()
   return toResult(result)
 }

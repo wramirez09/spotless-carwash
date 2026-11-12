@@ -63,7 +63,7 @@ function stripeMessage(err: unknown): string {
  * lost log line must not roll back a price change that already happened in
  * Stripe. Failures are logged to the platform logs instead.
  */
-async function audit(
+export async function audit(
   actorEmail: string | null,
   action: string,
   detail: Record<string, unknown>,
